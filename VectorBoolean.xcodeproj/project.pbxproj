@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A11131E513960B9D00C9395C /* NSBezierPath+Boolean.m in Sources */ = {isa = PBXBuildFile; fileRef = A11131E413960B9D00C9395C /* NSBezierPath+Boolean.m */; };
 		A1C48B381395FA380043E2C7 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1C48B371395FA380043E2C7 /* Cocoa.framework */; };
 		A1C48B421395FA390043E2C7 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1C48B401395FA390043E2C7 /* InfoPlist.strings */; };
 		A1C48B451395FA390043E2C7 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = A1C48B441395FA390043E2C7 /* main.m */; };
@@ -14,9 +15,17 @@
 		A1C48B4B1395FA390043E2C7 /* MyDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = A1C48B4A1395FA390043E2C7 /* MyDocument.m */; };
 		A1C48B4E1395FA390043E2C7 /* MyDocument.xib in Resources */ = {isa = PBXBuildFile; fileRef = A1C48B4C1395FA390043E2C7 /* MyDocument.xib */; };
 		A1C48B511395FA390043E2C7 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = A1C48B4F1395FA390043E2C7 /* MainMenu.xib */; };
+		A1C48B5F1395FAE20043E2C7 /* Geometry.m in Sources */ = {isa = PBXBuildFile; fileRef = A1C48B581395FAE10043E2C7 /* Geometry.m */; };
+		A1C48B601395FAE20043E2C7 /* NSBezierPath+FitCurve.m in Sources */ = {isa = PBXBuildFile; fileRef = A1C48B5A1395FAE10043E2C7 /* NSBezierPath+FitCurve.m */; };
+		A1C48B611395FAE20043E2C7 /* NSBezierPath+Simplify.m in Sources */ = {isa = PBXBuildFile; fileRef = A1C48B5C1395FAE10043E2C7 /* NSBezierPath+Simplify.m */; };
+		A1C48B621395FAE20043E2C7 /* NSBezierPath+Utilities.m in Sources */ = {isa = PBXBuildFile; fileRef = A1C48B5E1395FAE20043E2C7 /* NSBezierPath+Utilities.m */; };
+		A1C48B65139602480043E2C7 /* CanvasView.m in Sources */ = {isa = PBXBuildFile; fileRef = A1C48B64139602480043E2C7 /* CanvasView.m */; };
+		A1C48B68139602820043E2C7 /* Canvas.m in Sources */ = {isa = PBXBuildFile; fileRef = A1C48B67139602810043E2C7 /* Canvas.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A11131E313960B9D00C9395C /* NSBezierPath+Boolean.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSBezierPath+Boolean.h"; sourceTree = "<group>"; };
+		A11131E413960B9D00C9395C /* NSBezierPath+Boolean.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSBezierPath+Boolean.m"; sourceTree = "<group>"; };
 		A1C48B331395FA380043E2C7 /* VectorBoolean.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VectorBoolean.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1C48B371395FA380043E2C7 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		A1C48B3A1395FA390043E2C7 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -31,6 +40,18 @@
 		A1C48B4A1395FA390043E2C7 /* MyDocument.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MyDocument.m; sourceTree = "<group>"; };
 		A1C48B4D1395FA390043E2C7 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MyDocument.xib; sourceTree = "<group>"; };
 		A1C48B501395FA390043E2C7 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
+		A1C48B571395FAE00043E2C7 /* Geometry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Geometry.h; sourceTree = "<group>"; };
+		A1C48B581395FAE10043E2C7 /* Geometry.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Geometry.m; sourceTree = "<group>"; };
+		A1C48B591395FAE10043E2C7 /* NSBezierPath+FitCurve.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSBezierPath+FitCurve.h"; sourceTree = "<group>"; };
+		A1C48B5A1395FAE10043E2C7 /* NSBezierPath+FitCurve.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSBezierPath+FitCurve.m"; sourceTree = "<group>"; };
+		A1C48B5B1395FAE10043E2C7 /* NSBezierPath+Simplify.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSBezierPath+Simplify.h"; sourceTree = "<group>"; };
+		A1C48B5C1395FAE10043E2C7 /* NSBezierPath+Simplify.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSBezierPath+Simplify.m"; sourceTree = "<group>"; };
+		A1C48B5D1395FAE10043E2C7 /* NSBezierPath+Utilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSBezierPath+Utilities.h"; sourceTree = "<group>"; };
+		A1C48B5E1395FAE20043E2C7 /* NSBezierPath+Utilities.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSBezierPath+Utilities.m"; sourceTree = "<group>"; };
+		A1C48B63139602480043E2C7 /* CanvasView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CanvasView.h; sourceTree = "<group>"; };
+		A1C48B64139602480043E2C7 /* CanvasView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CanvasView.m; sourceTree = "<group>"; };
+		A1C48B66139602800043E2C7 /* Canvas.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Canvas.h; sourceTree = "<group>"; };
+		A1C48B67139602810043E2C7 /* Canvas.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Canvas.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +107,20 @@
 			children = (
 				A1C48B491395FA390043E2C7 /* MyDocument.h */,
 				A1C48B4A1395FA390043E2C7 /* MyDocument.m */,
+				A1C48B63139602480043E2C7 /* CanvasView.h */,
+				A1C48B64139602480043E2C7 /* CanvasView.m */,
+				A1C48B66139602800043E2C7 /* Canvas.h */,
+				A1C48B67139602810043E2C7 /* Canvas.m */,
+				A1C48B571395FAE00043E2C7 /* Geometry.h */,
+				A1C48B581395FAE10043E2C7 /* Geometry.m */,
+				A11131E313960B9D00C9395C /* NSBezierPath+Boolean.h */,
+				A11131E413960B9D00C9395C /* NSBezierPath+Boolean.m */,
+				A1C48B591395FAE10043E2C7 /* NSBezierPath+FitCurve.h */,
+				A1C48B5A1395FAE10043E2C7 /* NSBezierPath+FitCurve.m */,
+				A1C48B5B1395FAE10043E2C7 /* NSBezierPath+Simplify.h */,
+				A1C48B5C1395FAE10043E2C7 /* NSBezierPath+Simplify.m */,
+				A1C48B5D1395FAE10043E2C7 /* NSBezierPath+Utilities.h */,
+				A1C48B5E1395FAE20043E2C7 /* NSBezierPath+Utilities.m */,
 				A1C48B4C1395FA390043E2C7 /* MyDocument.xib */,
 				A1C48B4F1395FA390043E2C7 /* MainMenu.xib */,
 				A1C48B3E1395FA390043E2C7 /* Supporting Files */,
@@ -171,6 +206,13 @@
 			files = (
 				A1C48B451395FA390043E2C7 /* main.m in Sources */,
 				A1C48B4B1395FA390043E2C7 /* MyDocument.m in Sources */,
+				A1C48B5F1395FAE20043E2C7 /* Geometry.m in Sources */,
+				A1C48B601395FAE20043E2C7 /* NSBezierPath+FitCurve.m in Sources */,
+				A1C48B611395FAE20043E2C7 /* NSBezierPath+Simplify.m in Sources */,
+				A1C48B621395FAE20043E2C7 /* NSBezierPath+Utilities.m in Sources */,
+				A1C48B65139602480043E2C7 /* CanvasView.m in Sources */,
+				A1C48B68139602820043E2C7 /* Canvas.m in Sources */,
+				A11131E513960B9D00C9395C /* NSBezierPath+Boolean.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -293,6 +335,7 @@
 				A1C48B561395FA390043E2C7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

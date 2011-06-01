@@ -8,8 +8,16 @@
 
 #import <Cocoa/Cocoa.h>
 
+@class CanvasView;
+
 @interface MyDocument : NSDocument {
-@private
+    IBOutlet CanvasView *_view;
 }
+
+- (IBAction) onReset:(id)sender;
+- (IBAction) onUnion:(id)sender;
+- (IBAction) onIntersect:(id)sender;
+- (IBAction) onDifference:(id)sender; // Punch
+- (IBAction) onJoin:(id)sender; // XOR
 
 @end

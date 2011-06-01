@@ -7,6 +7,9 @@
 //
 
 #import "MyDocument.h"
+#import "CanvasView.h"
+#import "Canvas.h"
+#import "NSBezierPath+Boolean.h"
 
 @implementation MyDocument
 
@@ -31,6 +34,8 @@
 {
     [super windowControllerDidLoadNib:aController];
     // Add any code here that needs to be executed once the windowController has loaded the document's window.
+    
+    [self onReset:nil];
 }
 
 - (NSData *)dataOfType:(NSString *)typeName error:(NSError **)outError {
@@ -53,6 +58,67 @@
         *outError = [NSError errorWithDomain:NSOSStatusErrorDomain code:unimpErr userInfo:NULL];
     }
     return YES;
+}
+
+- (IBAction) onReset:(id)sender
+{
+    [_view.canvas clear];
+    
+    NSBezierPath *rectangle = [NSBezierPath bezierPath];
+    [rectangle moveToPoint:NSMakePoint(50, 50)];
+    [rectangle lineToPoint:NSMakePoint(350, 50)];
+    [rectangle lineToPoint:NSMakePoint(350, 250)];
+    [rectangle lineToPoint:NSMakePoint(50, 250)];
+    [rectangle lineToPoint:NSMakePoint(50, 50)];
+    [_view.canvas addPath:rectangle withColor:[NSColor blueColor]];
+    
+    NSBezierPath *circle = [NSBezierPath bezierPath];
+    static const CGFloat FBMagicNumber = 0.55228475;
+    CGFloat controlPointLength = 125 * FBMagicNumber;
+    [circle moveToPoint:NSMakePoint(230, 240)];
+    [circle curveToPoint:NSMakePoint(355, 365) controlPoint1:NSMakePoint(230, 240 + controlPointLength) controlPoint2:NSMakePoint(355 - controlPointLength, 365)];
+    [circle curveToPoint:NSMakePoint(480, 240) controlPoint1:NSMakePoint(355 + controlPointLength, 365) controlPoint2:NSMakePoint(480, 240 + controlPointLength)];
+    [circle curveToPoint:NSMakePoint(355, 115) controlPoint1:NSMakePoint(480, 240 - controlPointLength) controlPoint2:NSMakePoint(355 + controlPointLength, 115)];
+    [circle curveToPoint:NSMakePoint(230, 240) controlPoint1:NSMakePoint(355 - controlPointLength, 115) controlPoint2:NSMakePoint(230, 240 - controlPointLength)];
+    [_view.canvas addPath:circle withColor:[NSColor redColor]];
+
+    [_view setNeedsDisplay:YES];
+}
+
+- (IBAction) onUnion:(id)sender
+{
+    [self onReset:sender];
+    
+    NSBezierPath *result = [[_view.canvas pathAtIndex:0] fb_union:[_view.canvas pathAtIndex:1]];
+    [_view.canvas clear];
+    [_view.canvas addPath:result withColor:[NSColor blueColor]];
+}
+
+- (IBAction) onIntersect:(id)sender
+{
+    [self onReset:sender];
+    
+    NSBezierPath *result = [[_view.canvas pathAtIndex:0] fb_intersect:[_view.canvas pathAtIndex:1]];
+    [_view.canvas clear];
+    [_view.canvas addPath:result withColor:[NSColor blueColor]];
+}
+
+- (IBAction) onDifference:(id)sender // Punch
+{
+    [self onReset:sender];
+    
+    NSBezierPath *result = [[_view.canvas pathAtIndex:0] fb_difference:[_view.canvas pathAtIndex:1]];
+    [_view.canvas clear];
+    [_view.canvas addPath:result withColor:[NSColor blueColor]];
+}
+
+- (IBAction) onJoin:(id)sender // XOR
+{
+    [self onReset:sender];
+    
+    NSBezierPath *result = [[_view.canvas pathAtIndex:0] fb_xor:[_view.canvas pathAtIndex:1]];
+    [_view.canvas clear];
+    [_view.canvas addPath:result withColor:[NSColor blueColor]];
 }
 
 @end
