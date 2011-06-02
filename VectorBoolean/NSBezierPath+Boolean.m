@@ -40,10 +40,19 @@
 
 @end
 
+@interface FBShape : NSObject {
+    NSMutableArray *_polygons;
+}
+
+- (void) addPolygon:(FBPolygon *)polygon;
+- (void) enumeratePolygonsWithBlock:(void (^)(FBPolygon *polygon, BOOL *stop))block;
+
+@end
+
 @interface NSBezierPath (BooleanPrivate)
 
-- (NSArray *) fb_polygons;
-- (NSBezierPath *) fb_bezierPathFromPolygons:(NSArray *)polygons;
+- (FBShape *) fb_shape;
+- (NSBezierPath *) fb_bezierPathFromShape:(FBShape *)shape;
 
 @end
 
@@ -117,6 +126,43 @@
 
 @end
 
+@implementation FBShape
+
+- (id) init
+{
+    self = [super init];
+    
+    if ( self != nil ) {
+        _polygons = [[NSMutableArray alloc] initWithCapacity:2];
+    }
+    
+    return self;
+}
+
+- (void) dealloc
+{
+    [_polygons release];
+    
+    [super dealloc];
+}
+
+- (void) addPolygon:(FBPolygon *)polygon
+{
+    [_polygons addObject:polygon];
+}
+
+- (void) enumeratePolygonsWithBlock:(void (^)(FBPolygon *polygon, BOOL *stop))block
+{
+    BOOL stop = NO;
+    for (FBPolygon *polygon in _polygons) {
+        block(polygon, &stop);
+        if ( stop )
+            break;
+    }
+}
+
+@end
+
 @implementation NSBezierPath (Boolean)
 
 - (NSBezierPath *) fb_union:(NSBezierPath *)path
@@ -144,9 +190,10 @@
 
 @implementation NSBezierPath (BooleanPrivate)
 
-- (NSArray *) fb_polygons
+
+- (FBShape *) fb_shape
 {
-    NSMutableArray *polygons = [NSMutableArray arrayWithCapacity:2];
+    FBShape *shape = [[[FBShape alloc] init] autorelease];
     FBPolygon *polygon = nil;
     
     NSBezierPath *flatPath = [self bezierPathByFlatteningPath];
@@ -154,33 +201,35 @@
         NSBezierElement element = [flatPath fb_elementAtIndex:i];
         if ( element.kind == NSMoveToBezierPathElement ) {
             polygon = [[[FBPolygon alloc] init] autorelease];
-            [polygons addObject:polygon];
+            [shape addPolygon:polygon];
         }
         
         if ( element.kind == NSMoveToBezierPathElement || element.kind == NSLineToBezierPathElement ) 
             [polygon addPoint:[[[FBPoint alloc] initWithLocation:element.point] autorelease]];
     }
     
-    return polygons;
+    return shape;
 }
 
-- (NSBezierPath *) fb_bezierPathFromPolygons:(NSArray *)polygons
+- (NSBezierPath *) fb_bezierPathFromShape:(FBShape *)shape
 {
     NSBezierPath *path = [NSBezierPath bezierPath];
     [path fb_copyAttributesFrom:self];
     
-    for (FBPolygon *polygon in polygons) {
+    [shape enumeratePolygonsWithBlock:^(FBPolygon *polygon, BOOL *stopShapes) {
         __block BOOL firstPoint = YES;
+        NSBezierPath *polygonPath = [NSBezierPath bezierPath];
         [polygon enumeratePointsWithBlock:^(FBPoint *point, BOOL *stop) {
             if ( firstPoint ) {
-                [path moveToPoint:point.location];
+                [polygonPath moveToPoint:point.location];
                 firstPoint = NO;
             } else
-                [path lineToPoint:point.location];
+                [polygonPath lineToPoint:point.location];
         }];
-    }
+        [path appendBezierPath:[polygonPath fb_fitCurve:2]];
+    }];
     
-    return [path fb_fitCurve:2];
+    return path;
 }
 
 @end
