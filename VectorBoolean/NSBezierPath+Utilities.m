@@ -63,7 +63,7 @@
 
 - (void) fb_appendPath:(NSBezierPath *)path
 {
-    NSBezierElement previousElement = [self fb_elementAtIndex:[self elementCount] - 1];
+    NSBezierElement previousElement = [self elementCount] > 0 ? [self fb_elementAtIndex:[self elementCount] - 1] : (NSBezierElement){};
     for (NSUInteger i = 0; i < [path elementCount]; i++) {
         NSBezierElement element = [path fb_elementAtIndex:i];
         

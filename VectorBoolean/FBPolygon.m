@@ -375,8 +375,8 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
             } else
                 [polygonPath lineToPoint:point.location];
         }];
-        //[path appendBezierPath:[polygonPath fb_fitCurve:4]];
-        [path appendBezierPath:polygonPath];
+        
+        [path appendBezierPath:[polygonPath fb_fitCurve:4 cornerAngleThreshold:M_PI / 6.0]];
     }
     
     return path;

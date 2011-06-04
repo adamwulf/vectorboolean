@@ -12,5 +12,6 @@
 @interface NSBezierPath (FitCurve)
 
 - (NSBezierPath *) fb_fitCurve:(CGFloat)errorThreshold;
+- (NSBezierPath *) fb_fitCurve:(CGFloat)errorThreshold cornerAngleThreshold:(CGFloat)cornerAngleThreshold;
 
 @end

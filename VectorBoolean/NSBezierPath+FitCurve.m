@@ -134,6 +134,11 @@ static CGFloat NewtonsMethod(NSBezierPath *bezier, NSPoint point, CGFloat parame
     return parameter - (fAtParameter / fPrimeAtParameter);
 }
 
+static CGFloat AngleBetweenPoints(NSPoint points[3])
+{
+    return atan2f(points[1].y - points[0].y, points[1].x - points[0].x) - atan2f(points[2].y - points[1].y, points[2].x - points[1].x);
+}
+
 @interface NSBezierPath (FitCurvePrivate)
 
 - (NSBezierPath *) fb_fitCubicToRange:(NSRange)range leftTangent:(NSPoint)leftTangent rightTangent:(NSPoint)rightTangent errorThreshold:(CGFloat)errorThreshold;
@@ -159,6 +164,68 @@ static CGFloat NewtonsMethod(NSBezierPath *bezier, NSPoint point, CGFloat parame
     NSPoint leftTangentVector = [self fb_computeLeftTangentAtIndex:0];
     NSPoint rightTangentVector = [self fb_computeRightTangentAtIndex:[self elementCount] - 1];
     return [self fb_fitCubicToRange:NSMakeRange(0, [self elementCount]) leftTangent:leftTangentVector rightTangent:rightTangentVector errorThreshold:errorThreshold];
+}
+
+- (NSBezierPath *) fb_fitCurve:(CGFloat)errorThreshold cornerAngleThreshold:(CGFloat)cornerAngleThreshold
+{
+    NSBezierPath *result = [NSBezierPath bezierPath];
+    NSBezierPath *currentLineToSegment = [NSBezierPath bezierPath];
+    
+    for (NSUInteger i = 0; i < [self elementCount]; i++) {
+        NSBezierElement element = [self fb_elementAtIndex:i];
+        
+        switch (element.kind) {
+            case NSCurveToBezierPathElement:
+                // Flush out our line to buffer
+                [result fb_appendPath:[currentLineToSegment fb_fitCurve:errorThreshold]];
+                [currentLineToSegment removeAllPoints];
+                
+                // Add on the curve
+                [result curveToPoint:element.point controlPoint1:element.controlPoints[0] controlPoint2:element.controlPoints[1]];
+                break;
+            case NSMoveToBezierPathElement:
+                // Flush out our line to buffer
+                [result fb_appendPath:[currentLineToSegment fb_fitCurve:errorThreshold]];
+                [currentLineToSegment removeAllPoints];
+
+                // Add the move to our line to buffer
+                [currentLineToSegment moveToPoint:element.point];
+                [result moveToPoint:element.point];
+                break;
+            case NSLineToBezierPathElement:
+                // See if there's a sharp corner here first
+                if ( [currentLineToSegment elementCount] >= 2 ) { // need at least two other points to form a corner
+                    NSPoint corner[] = { [currentLineToSegment fb_pointAtIndex:[currentLineToSegment elementCount] - 2], [currentLineToSegment fb_pointAtIndex:[currentLineToSegment elementCount] - 1], element.point };
+                    
+                    if ( fabsf(AngleBetweenPoints(corner)) >= cornerAngleThreshold ) {
+                        // Flush the existing curve
+                        [result fb_appendPath:[currentLineToSegment fb_fitCurve:errorThreshold]];
+                        [currentLineToSegment removeAllPoints];
+                        
+                        // Start a new one
+                        [currentLineToSegment moveToPoint:corner[1]];
+                    }
+                }
+                
+                // Add the line to our buffer
+                [currentLineToSegment lineToPoint:element.point];
+                break;
+            case NSClosePathBezierPathElement:
+                // Flush out our line to buffer
+                [result fb_appendPath:[currentLineToSegment fb_fitCurve:errorThreshold]];
+                [currentLineToSegment removeAllPoints];
+                
+                // Add the close path
+                [result closePath];
+                break;
+        }
+    }
+
+    // Flush out the last part of our buffer
+    [result fb_appendPath:[currentLineToSegment fb_fitCurve:errorThreshold]];
+    [currentLineToSegment removeAllPoints];
+
+    return result;
 }
 
 @end
