@@ -93,6 +93,7 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
 - (void) addPointList:(FBPointList *)pointList;
 
 - (FBPoint *) firstPoint;
+- (void) appendPolygon:(FBPolygon *)polygon;
 
 @end
 
@@ -164,6 +165,28 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
     _bounds = NSUnionRect(_bounds, bounds);
 }
 
+- (void) appendPolygon:(FBPolygon *)polygon
+{
+    __block FBPointList *myPointList = nil;
+    __block FBPointList *currentPointList = nil;
+    
+    [polygon enumeratePointsWithBlock:^(FBPointList *pointList, FBPoint *point, BOOL *stop) {
+        // If this is a new point list, create a copy of it for ourselves
+        if ( pointList != currentPointList ) {
+            if ( myPointList != nil )
+                [self addPointList:myPointList];
+            myPointList = [[[FBPointList alloc] init] autorelease];
+            currentPointList = pointList;
+        }
+        
+        // Add the point
+        [myPointList addPoint:[[[FBPoint alloc] initWithLocation:point.location] autorelease]];
+    }];
+    
+    if ( myPointList != nil )
+        [self addPointList:myPointList];
+}
+
 - (FBPoint *) firstPoint
 {
     FBPointList *pointList = [_subpolygons objectAtIndex:0];
@@ -174,7 +197,24 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
 {
     BOOL hasIntersections = [self insertIntersectionPointsWith:polygon];
     if ( !hasIntersections ) {
-        // TODO: if no intersection points, what can we say?
+        // There are no intersections, which means one contains the other, or they're completely disjoint 
+        BOOL subjectContainsClip = [self containsPoint:[polygon firstPoint].location];
+        BOOL clipContainsSubject = [polygon containsPoint:[self firstPoint].location];
+        
+        // Clean up intersection points so the polygons can be reused
+        [self removeIntersectionPoints];
+        [polygon removeIntersectionPoints];
+        
+        if ( subjectContainsClip )
+            return self; // union is the subject polygon
+        if ( clipContainsSubject )
+            return polygon; // union is the clip polygon
+        
+        // Neither contains the other, which means we should just append them
+        FBPolygon *result = [[[FBPolygon alloc] init] autorelease];
+        [result appendPolygon:self];
+        [result appendPolygon:polygon];
+        return result;
     }
     
     [self markIntersectionPointsAsEntryOrExitWith:polygon markInside:NO];
