@@ -266,7 +266,28 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
 {
     BOOL hasIntersections = [self insertIntersectionPointsWith:polygon];
     if ( !hasIntersections ) {
-        // TODO: if no intersection points, what can we say?
+        // There are no intersections, which means one contains the other, or they're completely disjoint 
+        BOOL subjectContainsClip = [self containsPoint:[polygon firstPoint].location];
+        BOOL clipContainsSubject = [polygon containsPoint:[self firstPoint].location];
+        
+        // Clean up intersection points so the polygons can be reused
+        [self removeIntersectionPoints];
+        [polygon removeIntersectionPoints];
+
+        if ( subjectContainsClip ) {
+            // Clip punches a clean (non-intersecting) hole in subject
+            FBPolygon *result = [[[FBPolygon alloc] init] autorelease];
+            [result appendPolygon:self];
+            [result appendPolygon:polygon];
+            return result;
+        }
+        
+        if ( clipContainsSubject )
+            // We're subtracting out everything
+            return [[[FBPolygon alloc] init] autorelease];
+        
+        // No intersection, so nothing to subtract from subject
+        return self;
     }
     
     [self markIntersectionPointsAsEntryOrExitWith:polygon markInside:NO];
