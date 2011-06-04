@@ -23,7 +23,11 @@
 
 @property (assign) FBPoint *next;
 @property (assign) FBPoint *previous;
+@property (assign) FBPoint *neighbor;
 @property NSPoint location;
+@property (getter=isIntersection) BOOL intersection;
+@property CGFloat relativeDistance;
+@property (getter=isEntry) BOOL entry;
 
 @end
 
@@ -36,6 +40,7 @@
 }
 
 - (void) addPoint:(FBPoint *)point;
+- (void) insertPoint:(FBPoint *)point after:(FBPoint *)location;
 - (void) enumeratePointsWithBlock:(void (^)(FBPoint *point, BOOL *stop))block;
 
 @end
