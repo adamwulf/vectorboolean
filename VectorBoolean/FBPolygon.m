@@ -92,6 +92,8 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
 - (void) enumeratePointsWithBlock:(void (^)(FBPointList *pointList, FBPoint *point, BOOL *stop))block;
 - (void) addPointList:(FBPointList *)pointList;
 
+- (FBPoint *) firstPoint;
+
 @end
 
 @implementation FBPolygon
@@ -162,6 +164,12 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
     _bounds = NSUnionRect(_bounds, bounds);
 }
 
+- (FBPoint *) firstPoint
+{
+    FBPointList *pointList = [_subpolygons objectAtIndex:0];
+    return pointList.firstPoint;
+}
+
 - (FBPolygon *) unionWithPolygon:(FBPolygon *)polygon
 {
     return self; // TODO: implement
@@ -173,8 +181,21 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
 {
     BOOL hasIntersections = [self insertIntersectionPointsWith:polygon];
     if ( !hasIntersections ) {
-        // TODO: if no intersection points, what can we say?
-        // Neither touch at all, or one completely contains the other
+        // There are no intersections, which means one contains the other, or they're completely disjoint 
+        BOOL subjectContainsClip = [self containsPoint:[polygon firstPoint].location];
+        BOOL clipContainsSubject = [polygon containsPoint:[self firstPoint].location];
+        
+        // Clean up intersection points so the polygons can be reused
+        [self removeIntersectionPoints];
+        [polygon removeIntersectionPoints];
+
+        if ( subjectContainsClip )
+            return polygon; // intersection is the clip polygon
+        if ( clipContainsSubject )
+            return self; // intersection is the subject (clip doesn't do anything)
+        
+        // Neither contains the other, which means the intersection is nil
+        return [[[FBPolygon alloc] init] autorelease];
     }
     
     [self markIntersectionPointsAsEntryOrExitWith:polygon];
