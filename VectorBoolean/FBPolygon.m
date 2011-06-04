@@ -264,9 +264,21 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
 
 - (FBPolygon *) differenceWithPolygon:(FBPolygon *)polygon
 {
-    return self; // TODO: implement
-    // TODO: if no intersection points, what can we say?
-    // TODO: clean up intersection points so we can chain operations
+    BOOL hasIntersections = [self insertIntersectionPointsWith:polygon];
+    if ( !hasIntersections ) {
+        // TODO: if no intersection points, what can we say?
+    }
+    
+    [self markIntersectionPointsAsEntryOrExitWith:polygon markInside:NO];
+    [polygon markIntersectionPointsAsEntryOrExitWith:self markInside:YES];
+    
+    FBPolygon *result = [self createPolygonFromIntersections];
+    
+    // Clean up intersection points so the polygons can be reused
+    [self removeIntersectionPoints];
+    [polygon removeIntersectionPoints];
+    
+    return result;
 }
 
 - (FBPolygon *) xorWithPolygon:(FBPolygon *)polygon
