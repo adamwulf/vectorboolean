@@ -75,12 +75,16 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
     *relativeDistance1 = FBDistanceBetweenPoints(line1Start, intersectionPoint) / FBDistanceBetweenPoints(line1Start, line1End);
     *relativeDistance2 = FBDistanceBetweenPoints(line2Start, intersectionPoint) / FBDistanceBetweenPoints(line2Start, line2End);
     
+    // TODO: handle "degenerate" cases where an endpoint lies directly on the other line segment
+    
     return YES;
 }
 
 @interface FBPolygon ()
 
 - (NSMutableArray *) insertIntersectionPointsWith:(FBPolygon *)otherPolygon;
+- (void) markIntersectionPointsAsEntryOrExitWith:(FBPolygon *)otherPolygon;
+- (BOOL) containsPoint:(NSPoint)point;
 - (void) enumeratePointsWithBlock:(void (^)(FBPointList *pointList, FBPoint *point, BOOL *stop))block;
 
 @end
@@ -117,7 +121,8 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
             
             if ( element.kind == NSMoveToBezierPathElement || element.kind == NSLineToBezierPathElement ) 
                 [pointList addPoint:[[[FBPoint alloc] initWithLocation:element.point] autorelease]];
-        }        
+        }
+        _bounds = [bezier bounds];
     }
     
     return self;
@@ -134,16 +139,30 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
 - (FBPolygon *) unionWithPolygon:(FBPolygon *)polygon
 {
     return self; // TODO: implement
+    // TODO: if no intersection points, what can we say?
+    // TODO: clean up intersection points so we can chain operations
 }
 
 - (FBPolygon *) intersectWithPolygon:(FBPolygon *)polygon
 {
+    NSMutableArray *intersectionPoints = [self insertIntersectionPointsWith:polygon];
+    if ( [intersectionPoints count] == 0 ) {
+        // TODO: if no intersection points, what can we say?
+        // Neither touch at all, or one completely contains the other
+    }
+    
+    [self markIntersectionPointsAsEntryOrExitWith:polygon];
+    [polygon markIntersectionPointsAsEntryOrExitWith:self];
+
     return self; // TODO: implement
+    // TODO: clean up intersection points so we can chain operations
 }
 
 - (FBPolygon *) differenceWithPolygon:(FBPolygon *)polygon
 {
     return self; // TODO: implement
+    // TODO: if no intersection points, what can we say?
+    // TODO: clean up intersection points so we can chain operations
 }
 
 - (FBPolygon *) xorWithPolygon:(FBPolygon *)polygon
@@ -211,6 +230,44 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
     }];
         
     return intersectionPoints;
+}
+
+- (BOOL) containsPoint:(NSPoint)point
+{
+    // Create a test line from our point to somewhere outside our polygon. We'll see how many times the test
+    //  line intersects edges of the polygon. Based on the winding rule, if it's an odd number, we're inside
+    //  the polygon, if even, outside.
+    NSPoint lineEndPoint = NSMakePoint(NSMinX(_bounds) - 10 /* just move us off the bounds */, point.y);
+    __block NSUInteger intersectCount = 0;
+    [self enumeratePointsWithBlock:^(FBPointList *pointList, FBPoint *point, BOOL *stop) {
+        NSPoint intersectLocation = NSZeroPoint;
+        CGFloat distance1 = 0.0;
+        CGFloat distance2 = 0.0;
+        if ( point.next != nil && LinesIntersect(point.location, point.next.location, lineEndPoint, point.location, &intersectLocation, &distance1, &distance2) )
+            intersectCount++;
+
+    }];
+    return (intersectCount % 2) == 1;
+}
+
+- (void) markIntersectionPointsAsEntryOrExitWith:(FBPolygon *)otherPolygon
+{
+    for (FBPointList *pointList in _subpolygons) {
+        __block FBPoint *firstPoint = nil;
+        __block BOOL isEntry = NO;
+        [pointList enumeratePointsWithBlock:^(FBPoint *point, BOOL *stop) {
+            // Handle the first point special case
+            if ( firstPoint == nil ) {
+                firstPoint = point;
+                isEntry = ![otherPolygon containsPoint:firstPoint.location];
+            }
+            
+            if ( point.isIntersection ) {
+                point.entry = isEntry;
+                isEntry = !isEntry; // toggle
+            }
+        }];
+    }
 }
 
 - (NSBezierPath *) bezierPath

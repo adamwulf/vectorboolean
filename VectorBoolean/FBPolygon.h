@@ -10,6 +10,7 @@
 
 @interface FBPolygon : NSObject {
     NSMutableArray *_subpolygons;
+    NSRect _bounds;
 }
 
 - (id) initWithBezierPath:(NSBezierPath *)bezier;
