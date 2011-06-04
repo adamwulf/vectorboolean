@@ -14,10 +14,12 @@
 @synthesize next=_next;
 @synthesize previous=_previous;
 @synthesize neighbor=_neighbor;
+@synthesize container=_container;
 @synthesize location=_location;
 @synthesize relativeDistance=_relativeDistance;
 @synthesize intersection=_intersection;
 @synthesize entry=_entry;
+@synthesize visited=_visited;
 
 - (id) initWithLocation:(NSPoint)location
 {
@@ -62,6 +64,7 @@
 - (void) insertPoint:(FBPoint *)point after:(FBPoint *)location
 {
     [_points addObject:point]; // add a ref to keep it around
+    point.container = self;
     
     // Determine the true insert location for intersection points.
     if ( point.isIntersection ) {
@@ -98,6 +101,23 @@
     }
 }
 
+- (void) removePoint:(FBPoint *)point
+{
+    point.previous.next = point.next;
+    point.next.previous = point.previous;
+    if ( _head == point )
+        _head = point.next;
+    if ( _tail == point )
+        _tail = point.previous;
+    point.next = nil;
+    point.previous = nil;
+    point.neighbor = nil;
+    
+    // Remove our reference to it
+    point.container = nil;
+    [_points removeObject:point];
+}
+
 - (void) enumeratePointsWithBlock:(void (^)(FBPoint *point, BOOL *stop))block
 {
     FBPoint *current = _head;
@@ -107,6 +127,30 @@
         
         current = current.next;
     }
+}
+
+- (void) removeIntersectionPoints
+{
+    FBPoint *current = _head;
+    
+    while ( current != nil ) {
+        if ( current.isIntersection ) {
+            FBPoint *restartAtPoint = current.next;
+            [self removePoint:current];
+            current = restartAtPoint;
+        } else
+            current = current.next; // just move on
+    }
+}
+
+- (FBPoint *) firstPoint
+{
+    return _head;
+}
+
+- (FBPoint *) lastPoint
+{
+    return _tail;
 }
 
 @end

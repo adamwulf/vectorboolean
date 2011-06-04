@@ -82,10 +82,15 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
 
 @interface FBPolygon ()
 
-- (NSMutableArray *) insertIntersectionPointsWith:(FBPolygon *)otherPolygon;
+- (BOOL) insertIntersectionPointsWith:(FBPolygon *)otherPolygon;
 - (void) markIntersectionPointsAsEntryOrExitWith:(FBPolygon *)otherPolygon;
 - (BOOL) containsPoint:(NSPoint)point;
+- (FBPoint *) findFirstUnprocessedIntersection;
+- (FBPolygon *) createPolygonFromIntersections;
+- (void) removeIntersectionPoints;
+
 - (void) enumeratePointsWithBlock:(void (^)(FBPointList *pointList, FBPoint *point, BOOL *stop))block;
+- (void) addPointList:(FBPointList *)pointList;
 
 @end
 
@@ -136,6 +141,27 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
     [super dealloc];
 }
 
+- (void) addPointList:(FBPointList *)pointList
+{
+    [_subpolygons addObject:pointList];
+    
+    // Determine the bounds of the subpolygon, and union it to what we have
+    __block NSPoint topLeft  = [pointList firstPoint].location;
+    __block NSPoint bottomRight = topLeft;
+    [pointList enumeratePointsWithBlock:^(FBPoint *point, BOOL *stop) {
+        if ( point.location.x < topLeft.x )
+            topLeft.x = point.location.x;
+        if ( point.location.x > bottomRight.x )
+            bottomRight.x = point.location.x;
+        if ( point.location.y < topLeft.y )
+            topLeft.y = point.location.y;
+        if ( point.location.y > bottomRight.y )
+            bottomRight.y = point.location.y;
+    }];
+    NSRect bounds = NSMakeRect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
+    _bounds = NSUnionRect(_bounds, bounds);
+}
+
 - (FBPolygon *) unionWithPolygon:(FBPolygon *)polygon
 {
     return self; // TODO: implement
@@ -145,8 +171,8 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
 
 - (FBPolygon *) intersectWithPolygon:(FBPolygon *)polygon
 {
-    NSMutableArray *intersectionPoints = [self insertIntersectionPointsWith:polygon];
-    if ( [intersectionPoints count] == 0 ) {
+    BOOL hasIntersections = [self insertIntersectionPointsWith:polygon];
+    if ( !hasIntersections ) {
         // TODO: if no intersection points, what can we say?
         // Neither touch at all, or one completely contains the other
     }
@@ -154,8 +180,13 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
     [self markIntersectionPointsAsEntryOrExitWith:polygon];
     [polygon markIntersectionPointsAsEntryOrExitWith:self];
 
-    return self; // TODO: implement
-    // TODO: clean up intersection points so we can chain operations
+    FBPolygon *result = [self createPolygonFromIntersections];
+    
+    // Clean up intersection points so the polygons can be reused
+    [self removeIntersectionPoints];
+    [polygon removeIntersectionPoints];
+    
+    return result; // TODO: implement
 }
 
 - (FBPolygon *) differenceWithPolygon:(FBPolygon *)polygon
@@ -186,10 +217,9 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
     }
 }
 
-- (NSMutableArray *) insertIntersectionPointsWith:(FBPolygon *)clipPolygon
+- (BOOL) insertIntersectionPointsWith:(FBPolygon *)clipPolygon
 {
-    NSMutableArray *intersectionPoints = [NSMutableArray arrayWithCapacity:20];
-    
+    __block BOOL hasIntersections = NO;
     [self enumeratePointsWithBlock:^(FBPointList *subjectPointList, FBPoint *subjectPoint, BOOL *subjectStop) {
         // Skip over intersection points
         if ( subjectPoint.isIntersection )
@@ -223,27 +253,25 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
             // Insert the intersect points in their proper place (will we immediately hit them next?)
             [subjectPointList insertPoint:subjectIntersectPoint after:subjectPoint];
             [clipPointList insertPoint:clipIntersectPoint after:clipPoint];
-            
-            [intersectionPoints addObject:subjectIntersectPoint];
-            [intersectionPoints addObject:clipIntersectPoint];            
+            hasIntersections = YES;
         }];
     }];
         
-    return intersectionPoints;
+    return hasIntersections;
 }
 
-- (BOOL) containsPoint:(NSPoint)point
+- (BOOL) containsPoint:(NSPoint)testPoint
 {
     // Create a test line from our point to somewhere outside our polygon. We'll see how many times the test
     //  line intersects edges of the polygon. Based on the winding rule, if it's an odd number, we're inside
     //  the polygon, if even, outside.
-    NSPoint lineEndPoint = NSMakePoint(NSMinX(_bounds) - 10 /* just move us off the bounds */, point.y);
+    NSPoint lineEndPoint = NSMakePoint(testPoint.x > NSMinX(_bounds) ? NSMinX(_bounds) - 10 : NSMaxX(_bounds) + 10, testPoint.y); /* just move us outside the bounds of the polygon */
     __block NSUInteger intersectCount = 0;
     [self enumeratePointsWithBlock:^(FBPointList *pointList, FBPoint *point, BOOL *stop) {
         NSPoint intersectLocation = NSZeroPoint;
         CGFloat distance1 = 0.0;
         CGFloat distance2 = 0.0;
-        if ( point.next != nil && LinesIntersect(point.location, point.next.location, lineEndPoint, point.location, &intersectLocation, &distance1, &distance2) )
+        if ( point.next != nil && LinesIntersect(point.location, point.next.location, lineEndPoint, testPoint, &intersectLocation, &distance1, &distance2) )
             intersectCount++;
 
     }];
@@ -270,6 +298,69 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
     }
 }
 
+- (FBPoint *) findFirstUnprocessedIntersection
+{
+    __block FBPoint *unprocessedPoint = nil;
+    [self enumeratePointsWithBlock:^(FBPointList *pointList, FBPoint *point, BOOL *stop) {
+        if ( point.isIntersection && !point.isVisited ) {
+            unprocessedPoint = point;
+            *stop = YES;
+        }
+    }];
+    return unprocessedPoint;
+}
+
+- (FBPolygon *) createPolygonFromIntersections
+{
+    FBPolygon *polygon = [[[FBPolygon alloc] init] autorelease];
+    
+    FBPoint *firstPoint = [self findFirstUnprocessedIntersection];
+    while (firstPoint != nil) {
+        // Create a point list for this part of the polygon
+        FBPointList *pointList = [[[FBPointList alloc]  init] autorelease];
+        
+        // First point is by definition and intersection point, so add it straight up
+        FBPoint *currentPoint = firstPoint;
+        [pointList addPoint:[[[FBPoint alloc] initWithLocation:currentPoint.location] autorelease]];
+        currentPoint.visited = YES;
+        
+        do {
+            if ( currentPoint.isEntry ) {
+                do {
+                    currentPoint = currentPoint.next != nil ? currentPoint.next : currentPoint.container.firstPoint;
+                    if ( currentPoint.isVisited )
+                        break;
+                    [pointList addPoint:[[[FBPoint alloc] initWithLocation:currentPoint.location] autorelease]];
+                    currentPoint.visited = YES;
+                } while ( currentPoint != nil && !currentPoint.isIntersection );
+            } else {
+                do {
+                    currentPoint = currentPoint.previous != nil ? currentPoint.previous : currentPoint.container.lastPoint;
+                    if ( currentPoint.isVisited )
+                        break;
+                    [pointList addPoint:[[[FBPoint alloc] initWithLocation:currentPoint.location] autorelease]];
+                    currentPoint.visited = YES;
+                } while ( currentPoint != nil && !currentPoint.isIntersection );
+            }
+            currentPoint = currentPoint.neighbor;
+        } while (currentPoint != nil && !currentPoint.isVisited);
+        
+        // Add this subpolygon
+        [polygon addPointList:pointList];
+
+        // Find the next intersection
+        firstPoint = [self findFirstUnprocessedIntersection];
+    }
+    
+    return polygon;    
+}
+
+- (void) removeIntersectionPoints
+{
+    for (FBPointList *pointList in _subpolygons)
+        [pointList removeIntersectionPoints];
+}
+
 - (NSBezierPath *) bezierPath
 {
     NSBezierPath *path = [NSBezierPath bezierPath];
@@ -284,7 +375,8 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
             } else
                 [polygonPath lineToPoint:point.location];
         }];
-        [path appendBezierPath:[polygonPath fb_fitCurve:2]];
+        //[path appendBezierPath:[polygonPath fb_fitCurve:4]];
+        [path appendBezierPath:polygonPath];
     }
     
     return path;
