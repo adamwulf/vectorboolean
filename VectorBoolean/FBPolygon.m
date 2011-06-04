@@ -83,7 +83,7 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
 @interface FBPolygon ()
 
 - (BOOL) insertIntersectionPointsWith:(FBPolygon *)otherPolygon;
-- (void) markIntersectionPointsAsEntryOrExitWith:(FBPolygon *)otherPolygon;
+- (void) markIntersectionPointsAsEntryOrExitWith:(FBPolygon *)otherPolygon markInside:(BOOL)markInside;
 - (BOOL) containsPoint:(NSPoint)point;
 - (FBPoint *) findFirstUnprocessedIntersection;
 - (FBPolygon *) createPolygonFromIntersections;
@@ -172,9 +172,21 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
 
 - (FBPolygon *) unionWithPolygon:(FBPolygon *)polygon
 {
-    return self; // TODO: implement
-    // TODO: if no intersection points, what can we say?
-    // TODO: clean up intersection points so we can chain operations
+    BOOL hasIntersections = [self insertIntersectionPointsWith:polygon];
+    if ( !hasIntersections ) {
+        // TODO: if no intersection points, what can we say?
+    }
+    
+    [self markIntersectionPointsAsEntryOrExitWith:polygon markInside:NO];
+    [polygon markIntersectionPointsAsEntryOrExitWith:self markInside:NO];
+    
+    FBPolygon *result = [self createPolygonFromIntersections];
+    
+    // Clean up intersection points so the polygons can be reused
+    [self removeIntersectionPoints];
+    [polygon removeIntersectionPoints];
+    
+    return result;
 }
 
 - (FBPolygon *) intersectWithPolygon:(FBPolygon *)polygon
@@ -198,8 +210,8 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
         return [[[FBPolygon alloc] init] autorelease];
     }
     
-    [self markIntersectionPointsAsEntryOrExitWith:polygon];
-    [polygon markIntersectionPointsAsEntryOrExitWith:self];
+    [self markIntersectionPointsAsEntryOrExitWith:polygon markInside:YES];
+    [polygon markIntersectionPointsAsEntryOrExitWith:self markInside:YES];
 
     FBPolygon *result = [self createPolygonFromIntersections];
     
@@ -207,7 +219,7 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
     [self removeIntersectionPoints];
     [polygon removeIntersectionPoints];
     
-    return result; // TODO: implement
+    return result;
 }
 
 - (FBPolygon *) differenceWithPolygon:(FBPolygon *)polygon
@@ -299,7 +311,7 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
     return (intersectCount % 2) == 1;
 }
 
-- (void) markIntersectionPointsAsEntryOrExitWith:(FBPolygon *)otherPolygon
+- (void) markIntersectionPointsAsEntryOrExitWith:(FBPolygon *)otherPolygon markInside:(BOOL)markInside
 {
     for (FBPointList *pointList in _subpolygons) {
         __block FBPoint *firstPoint = nil;
@@ -308,7 +320,8 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
             // Handle the first point special case
             if ( firstPoint == nil ) {
                 firstPoint = point;
-                isEntry = ![otherPolygon containsPoint:firstPoint.location];
+                BOOL contains = [otherPolygon containsPoint:firstPoint.location];
+                isEntry = markInside ? !contains : contains;
             }
             
             if ( point.isIntersection ) {
