@@ -17,7 +17,7 @@ inline static NSPoint ComputeNormal(NSPoint lineStart, NSPoint lineEnd)
     return FBNormalizePoint(NSMakePoint(-(lineEnd.y - lineStart.y), lineEnd.x - lineStart.x));
 }
 
-inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint line2Start, NSPoint line2End, NSPoint *intersectPoint, CGFloat *relativeDistance1, CGFloat *relativeDistance2)
+inline static BOOL LinesIntersect(FBPoint *line1Start, FBPoint *line1End, FBPoint *line2Start, FBPoint *line2End, NSPoint *intersectPoint, CGFloat *relativeDistance1, CGFloat *relativeDistance2)
 {
     // Based on Cyrus-Beck line clipping algorithm described in Computer Graphics: Principles and Practice by Foley, van Dam, et al
     //  Chapter 3, pp 117-119
@@ -49,8 +49,8 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
     //  of the two lines. However, if t is outside the range [0..1] then it's not on the line
     //  segment defined by line1, so there's no intersection.
     
-    NSPoint normal = ComputeNormal(line2End, line2Start);
-    CGFloat denominator = FBDotMultiplyPoint(normal, FBSubtractPoint(line1End, line1Start));
+    NSPoint normal = ComputeNormal(line2End.location, line2Start.location);
+    CGFloat denominator = FBDotMultiplyPoint(normal, FBSubtractPoint(line1End.location, line1Start.location));
     
     // If the dot product of the normal and line1 is 0, that means they are perpendicular. We already know
     //  the normal is perpendicular to line2, so if they are both perpendicular to the normal, they are
@@ -58,25 +58,35 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
     if ( denominator == 0.0 )
         return NO;
     
-    CGFloat t = FBDotMultiplyPoint(normal, FBSubtractPoint(line1Start, line2Start)) / -denominator;
+    CGFloat t = FBDotMultiplyPoint(normal, FBSubtractPoint(line1Start.location, line2Start.location)) / -denominator;
     
     if ( t < 0.0 || t > 1.0 )
         return NO; // No intersection on the line1 segment we care about
     
-    NSPoint intersectionPoint = FBAddPoint(line1Start, FBScalePoint(FBSubtractPoint(line1End, line1Start), t));
+    NSPoint intersectionPoint = FBAddPoint(line1Start.location, FBScalePoint(FBSubtractPoint(line1End.location, line1Start.location), t));
     
     // We know the intersectionPoint lies on the line segment (line1Start, line1End) because t is in the range
     //  [0..1]. But does it lie on the line segment (line2Start, line2End)? Do a simple bounds check.
-    if ( intersectionPoint.x < MIN(line2Start.x, line2End.x) || intersectionPoint.x > MAX(line2Start.x, line2End.x) || intersectionPoint.y < MIN(line2Start.y, line2End.y) || intersectionPoint.y > MAX(line2Start.y, line2End.y) )
+    if ( intersectionPoint.x < MIN(line2Start.location.x, line2End.location.x) || intersectionPoint.x > MAX(line2Start.location.x, line2End.location.x) || intersectionPoint.y < MIN(line2Start.location.y, line2End.location.y) || intersectionPoint.y > MAX(line2Start.location.y, line2End.location.y) )
         return NO;
-    
+
+    // Handle "degenerate" cases where an endpoint lies directly on the other line segment. Just tweak
+    //  the point slightly
+    if ( NSEqualPoints(intersectionPoint, line1Start.location) )
+        line1Start.location = NSMakePoint(line1Start.location.x - 0.1, line1Start.location.y - 0.1);
+    if ( NSEqualPoints(intersectionPoint, line1End.location) )
+        line1End.location = NSMakePoint(line1End.location.x - 0.1, line1End.location.y - 0.1);
+    if ( NSEqualPoints(intersectionPoint, line2Start.location) )
+        line2Start.location = NSMakePoint(line2Start.location.x - 0.1, line2Start.location.y - 0.1);
+    if ( NSEqualPoints(intersectionPoint, line2End.location) )
+        line2End.location = NSMakePoint(line2End.location.x - 0.1, line2End.location.y - 0.1);
+
     // We have an intersection for sure now. Fill in the out parameters
     *intersectPoint = intersectionPoint;
-    *relativeDistance1 = FBDistanceBetweenPoints(line1Start, intersectionPoint) / FBDistanceBetweenPoints(line1Start, line1End);
-    *relativeDistance2 = FBDistanceBetweenPoints(line2Start, intersectionPoint) / FBDistanceBetweenPoints(line2Start, line2End);
+    *relativeDistance1 = FBDistanceBetweenPoints(line1Start.location, intersectionPoint) / FBDistanceBetweenPoints(line1Start.location, line1End.location);
+    *relativeDistance2 = FBDistanceBetweenPoints(line2Start.location, intersectionPoint) / FBDistanceBetweenPoints(line2Start.location, line2End.location);
     
-    // TODO: handle "degenerate" cases where an endpoint lies directly on the other line segment
-    
+
     return YES;
 }
 
@@ -84,7 +94,7 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
 
 - (BOOL) insertIntersectionPointsWith:(FBPolygon *)otherPolygon;
 - (void) markIntersectionPointsAsEntryOrExitWith:(FBPolygon *)otherPolygon markInside:(BOOL)markInside;
-- (BOOL) containsPoint:(NSPoint)point;
+- (BOOL) containsPoint:(FBPoint *)point;
 - (FBPoint *) findFirstUnprocessedIntersection;
 - (FBPolygon *) createPolygonFromIntersections;
 - (void) removeIntersectionPoints;
@@ -198,8 +208,8 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
     BOOL hasIntersections = [self insertIntersectionPointsWith:polygon];
     if ( !hasIntersections ) {
         // There are no intersections, which means one contains the other, or they're completely disjoint 
-        BOOL subjectContainsClip = [self containsPoint:[polygon firstPoint].location];
-        BOOL clipContainsSubject = [polygon containsPoint:[self firstPoint].location];
+        BOOL subjectContainsClip = [self containsPoint:[polygon firstPoint]];
+        BOOL clipContainsSubject = [polygon containsPoint:[self firstPoint]];
         
         // Clean up intersection points so the polygons can be reused
         [self removeIntersectionPoints];
@@ -234,8 +244,8 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
     BOOL hasIntersections = [self insertIntersectionPointsWith:polygon];
     if ( !hasIntersections ) {
         // There are no intersections, which means one contains the other, or they're completely disjoint 
-        BOOL subjectContainsClip = [self containsPoint:[polygon firstPoint].location];
-        BOOL clipContainsSubject = [polygon containsPoint:[self firstPoint].location];
+        BOOL subjectContainsClip = [self containsPoint:[polygon firstPoint]];
+        BOOL clipContainsSubject = [polygon containsPoint:[self firstPoint]];
         
         // Clean up intersection points so the polygons can be reused
         [self removeIntersectionPoints];
@@ -267,8 +277,8 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
     BOOL hasIntersections = [self insertIntersectionPointsWith:polygon];
     if ( !hasIntersections ) {
         // There are no intersections, which means one contains the other, or they're completely disjoint 
-        BOOL subjectContainsClip = [self containsPoint:[polygon firstPoint].location];
-        BOOL clipContainsSubject = [polygon containsPoint:[self firstPoint].location];
+        BOOL subjectContainsClip = [self containsPoint:[polygon firstPoint]];
+        BOOL clipContainsSubject = [polygon containsPoint:[self firstPoint]];
         
         // Clean up intersection points so the polygons can be reused
         [self removeIntersectionPoints];
@@ -340,7 +350,7 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
             CGFloat subjectDistance = 0.0;
             CGFloat clipDistance = 0.0;
             NSPoint intersectLocation = NSZeroPoint;
-            BOOL linesIntersect = subjectPoint.next != nil && clipPoint.next != nil && LinesIntersect(subjectPoint.location, subjectPoint.next.location, clipPoint.location, clipPoint.next.location, &intersectLocation, &subjectDistance, &clipDistance);
+            BOOL linesIntersect = subjectPoint.next != nil && clipPoint.next != nil && LinesIntersect(subjectPoint, subjectPoint.next, clipPoint, clipPoint.next, &intersectLocation, &subjectDistance, &clipDistance);
             
             // If the line segments don't intersect, we're done here
             if ( !linesIntersect )
@@ -366,18 +376,19 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
     return hasIntersections;
 }
 
-- (BOOL) containsPoint:(NSPoint)testPoint
+- (BOOL) containsPoint:(FBPoint *)testPoint
 {
     // Create a test line from our point to somewhere outside our polygon. We'll see how many times the test
     //  line intersects edges of the polygon. Based on the winding rule, if it's an odd number, we're inside
     //  the polygon, if even, outside.
-    NSPoint lineEndPoint = NSMakePoint(testPoint.x > NSMinX(_bounds) ? NSMinX(_bounds) - 10 : NSMaxX(_bounds) + 10, testPoint.y); /* just move us outside the bounds of the polygon */
+    NSPoint lineEndPoint = NSMakePoint(testPoint.location.x > NSMinX(_bounds) ? NSMinX(_bounds) - 10 : NSMaxX(_bounds) + 10, testPoint.location.y); /* just move us outside the bounds of the polygon */
+    FBPoint *testEndPoint = [[[FBPoint alloc] initWithLocation:lineEndPoint] autorelease];
     __block NSUInteger intersectCount = 0;
     [self enumeratePointsWithBlock:^(FBPointList *pointList, FBPoint *point, BOOL *stop) {
         NSPoint intersectLocation = NSZeroPoint;
         CGFloat distance1 = 0.0;
         CGFloat distance2 = 0.0;
-        if ( point.next != nil && LinesIntersect(point.location, point.next.location, lineEndPoint, testPoint, &intersectLocation, &distance1, &distance2) )
+        if ( point.next != nil && LinesIntersect(point, point.next, testEndPoint, testPoint, &intersectLocation, &distance1, &distance2) )
             intersectCount++;
 
     }];
@@ -393,7 +404,7 @@ inline static BOOL LinesIntersect(NSPoint line1Start, NSPoint line1End, NSPoint 
             // Handle the first point special case
             if ( firstPoint == nil ) {
                 firstPoint = point;
-                BOOL contains = [otherPolygon containsPoint:firstPoint.location];
+                BOOL contains = [otherPolygon containsPoint:firstPoint];
                 isEntry = markInside ? !contains : contains;
             }
             
