@@ -10,7 +10,8 @@
 
 
 @interface Canvas : NSObject {
-    NSMutableArray *_paths;    
+    NSMutableArray *_paths;
+    BOOL _showPoints;
 }
 
 - (void) addPath:(NSBezierPath *)path withColor:(NSColor *)color;

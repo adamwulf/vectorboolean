@@ -7,7 +7,12 @@
 //
 
 #import "Canvas.h"
+#import "NSBezierPath+Utilities.h"
 
+static NSRect BoxFrame(NSPoint point)
+{
+    return NSMakeRect(floorf(point.x - 2) - 0.5, floorf(point.y - 2) - 0.5, 5, 5);
+}
 
 @implementation Canvas
 
@@ -16,6 +21,7 @@
     self = [super init];
     if (self) {
         _paths = [[NSMutableArray alloc] initWithCapacity:3];
+        _showPoints = YES;
     }
     
     return self;
@@ -63,6 +69,27 @@
         [color set];
         [path fill];
     }    
+    
+    if ( _showPoints ) {
+        for (NSDictionary *object in _paths) {
+            NSBezierPath *path = [object objectForKey:@"path"];
+            [NSBezierPath setDefaultLineWidth:1.0];
+            [NSBezierPath setDefaultLineCapStyle:NSButtLineCapStyle];
+            [NSBezierPath setDefaultLineJoinStyle:NSMiterLineJoinStyle];
+            
+            for (NSInteger i = 0; i < [path elementCount]; i++) {
+                NSBezierElement element = [path fb_elementAtIndex:i];
+                [[NSColor orangeColor] set];
+                [NSBezierPath strokeRect:BoxFrame(element.point)];
+                if ( element.kind == NSCurveToBezierPathElement ) {
+                    [[NSColor blackColor] set];
+                    [NSBezierPath strokeRect:BoxFrame(element.controlPoints[0])];                    
+                    [NSBezierPath strokeRect:BoxFrame(element.controlPoints[1])];                    
+                }
+            }
+        }
+    }
+
 }
 
 @end
