@@ -11,6 +11,23 @@
 #import "Canvas.h"
 #import "NSBezierPath+Boolean.h"
 
+@interface MyDocument ()
+
+- (void) addSomeOverlap;
+- (void) addCircleInRectangle;
+- (void) addRectangleInCircle;
+- (void) addCircleOnRectangle;
+- (void) addHoleyRectangleWithRectangle;
+- (void) addCircleOnTwoRectangles;
+
+- (void) addRectangle:(NSRect)rect;
+- (void) addCircleAtPoint:(NSPoint)center withRadius:(CGFloat)radius;
+
+- (void) addRectangle:(NSRect)rect toPath:(NSBezierPath *)rectangle;
+- (void) addCircleAtPoint:(NSPoint)center withRadius:(CGFloat)radius toPath:(NSBezierPath *)circle;
+
+@end
+
 @implementation MyDocument
 
 - (id)init
@@ -64,25 +81,94 @@
 {
     [_view.canvas clear];
     
-    NSBezierPath *rectangle = [NSBezierPath bezierPath];
-    [rectangle moveToPoint:NSMakePoint(50, 50)];
-    [rectangle lineToPoint:NSMakePoint(350, 50)];
-    [rectangle lineToPoint:NSMakePoint(350, 250)];
-    [rectangle lineToPoint:NSMakePoint(50, 250)];
-    [rectangle lineToPoint:NSMakePoint(50, 50)];
-    [_view.canvas addPath:rectangle withColor:[NSColor blueColor]];
+    //[self addSomeOverlap];
+    //[self addCircleInRectangle];
+    //[self addRectangleInCircle];
+    //[self addCircleOnRectangle];
+    //[self addHoleyRectangleWithRectangle];
+    [self addCircleOnTwoRectangles];
     
-    NSBezierPath *circle = [NSBezierPath bezierPath];
-    static const CGFloat FBMagicNumber = 0.55228475;
-    CGFloat controlPointLength = 125 * FBMagicNumber;
-    [circle moveToPoint:NSMakePoint(230, 240)];
-    [circle curveToPoint:NSMakePoint(355, 365) controlPoint1:NSMakePoint(230, 240 + controlPointLength) controlPoint2:NSMakePoint(355 - controlPointLength, 365)];
-    [circle curveToPoint:NSMakePoint(480, 240) controlPoint1:NSMakePoint(355 + controlPointLength, 365) controlPoint2:NSMakePoint(480, 240 + controlPointLength)];
-    [circle curveToPoint:NSMakePoint(355, 115) controlPoint1:NSMakePoint(480, 240 - controlPointLength) controlPoint2:NSMakePoint(355 + controlPointLength, 115)];
-    [circle curveToPoint:NSMakePoint(230, 240) controlPoint1:NSMakePoint(355 - controlPointLength, 115) controlPoint2:NSMakePoint(230, 240 - controlPointLength)];
-    [_view.canvas addPath:circle withColor:[NSColor redColor]];
-
     [_view setNeedsDisplay:YES];
+}
+
+- (void) addSomeOverlap
+{
+    [self addRectangle:NSMakeRect(50, 50, 300, 200)];
+    [self addCircleAtPoint:NSMakePoint(355, 240) withRadius:125];
+}
+
+- (void) addCircleInRectangle
+{
+    [self addRectangle:NSMakeRect(50, 50, 350, 300)];
+    [self addCircleAtPoint:NSMakePoint(210, 200) withRadius:125];    
+}
+
+- (void) addRectangleInCircle
+{
+    [self addRectangle:NSMakeRect(150, 150, 150, 150)];
+    [self addCircleAtPoint:NSMakePoint(200, 200) withRadius:185];    
+}
+
+- (void) addCircleOnRectangle
+{
+    [self addRectangle:NSMakeRect(15, 15, 370, 370)];
+    [self addCircleAtPoint:NSMakePoint(200, 200) withRadius:185];    
+}
+
+- (void) addHoleyRectangleWithRectangle
+{
+    NSBezierPath *holeyRectangle = [NSBezierPath bezierPath];
+    [self addRectangle:NSMakeRect(50, 50, 350, 300) toPath:holeyRectangle];
+    [self addCircleAtPoint:NSMakePoint(210, 200) withRadius:125 toPath:holeyRectangle];    
+    [_view.canvas addPath:holeyRectangle withColor:[NSColor blueColor]];
+
+    NSBezierPath *rectangle = [NSBezierPath bezierPath];
+    [self addRectangle:NSMakeRect(180, 5, 100, 400) toPath:rectangle];
+    [_view.canvas addPath:rectangle withColor:[NSColor redColor]];
+}
+
+- (void) addCircleOnTwoRectangles
+{
+    NSBezierPath *rectangles = [NSBezierPath bezierPath];
+    [self addRectangle:NSMakeRect(50, 5, 100, 400) toPath:rectangles];
+    [self addRectangle:NSMakeRect(350, 5, 100, 400) toPath:rectangles];
+    [_view.canvas addPath:rectangles withColor:[NSColor blueColor]];
+
+    [self addCircleAtPoint:NSMakePoint(200, 200) withRadius:185];    
+}
+
+- (void) addRectangle:(NSRect)rect
+{
+    NSBezierPath *rectangle = [NSBezierPath bezierPath];
+    [self addRectangle:rect toPath:rectangle];
+    [_view.canvas addPath:rectangle withColor:[NSColor blueColor]];
+}
+
+- (void) addCircleAtPoint:(NSPoint)center withRadius:(CGFloat)radius
+{
+    NSBezierPath *circle = [NSBezierPath bezierPath];
+    [self addCircleAtPoint:center withRadius:radius toPath:circle];
+    [_view.canvas addPath:circle withColor:[NSColor redColor]];
+}
+
+- (void) addRectangle:(NSRect)rect toPath:(NSBezierPath *)rectangle
+{
+    [rectangle moveToPoint:NSMakePoint(NSMinX(rect), NSMinY(rect))];
+    [rectangle lineToPoint:NSMakePoint(NSMaxX(rect), NSMinY(rect))];
+    [rectangle lineToPoint:NSMakePoint(NSMaxX(rect), NSMaxY(rect))];
+    [rectangle lineToPoint:NSMakePoint(NSMinX(rect), NSMaxY(rect))];
+    [rectangle lineToPoint:NSMakePoint(NSMinX(rect), NSMinY(rect))];
+}
+
+- (void) addCircleAtPoint:(NSPoint)center withRadius:(CGFloat)radius toPath:(NSBezierPath *)circle
+{
+    static const CGFloat FBMagicNumber = 0.55228475;
+    CGFloat controlPointLength = radius * FBMagicNumber;
+    [circle moveToPoint:NSMakePoint(center.x - radius, center.y)];
+    [circle curveToPoint:NSMakePoint(center.x, center.y + radius) controlPoint1:NSMakePoint(center.x - radius, center.y + controlPointLength) controlPoint2:NSMakePoint(center.x - controlPointLength, center.y + radius)];
+    [circle curveToPoint:NSMakePoint(center.x + radius, center.y) controlPoint1:NSMakePoint(center.x + controlPointLength, center.y + radius) controlPoint2:NSMakePoint(center.x + radius, center.y + controlPointLength)];
+    [circle curveToPoint:NSMakePoint(center.x, center.y - radius) controlPoint1:NSMakePoint(center.x + radius, center.y - controlPointLength) controlPoint2:NSMakePoint(center.x + controlPointLength, center.y - radius)];
+    [circle curveToPoint:NSMakePoint(center.x - radius, center.y) controlPoint1:NSMakePoint(center.x - controlPointLength, center.y - radius) controlPoint2:NSMakePoint(center.x - radius, center.y - controlPointLength)];
 }
 
 - (IBAction) onUnion:(id)sender
