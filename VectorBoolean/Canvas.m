@@ -22,6 +22,7 @@ static NSRect BoxFrame(NSPoint point)
     if (self) {
         _paths = [[NSMutableArray alloc] initWithCapacity:3];
         _showPoints = YES;
+        _showIntersections = YES;
     }
     
     return self;
@@ -90,6 +91,9 @@ static NSRect BoxFrame(NSPoint point)
         }
     }
 
+    if ( _showIntersections ) {
+        
+    }
 }
 
 @end

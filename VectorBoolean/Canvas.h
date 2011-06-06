@@ -12,6 +12,7 @@
 @interface Canvas : NSObject {
     NSMutableArray *_paths;
     BOOL _showPoints;
+    BOOL _showIntersections;
 }
 
 - (void) addPath:(NSBezierPath *)path withColor:(NSColor *)color;

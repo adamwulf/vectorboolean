@@ -7,45 +7,27 @@
 //
 
 #import "NSBezierPath+Boolean.h"
-#import "FBPolygon.h"
-#import "NSBezierPath+Utilities.h"
 
 @implementation NSBezierPath (Boolean)
 
 - (NSBezierPath *) fb_union:(NSBezierPath *)path
 {
-    FBPolygon *thisPolygon = [[[FBPolygon alloc] initWithBezierPath:self] autorelease];
-    FBPolygon *otherPolygon = [[[FBPolygon alloc] initWithBezierPath:path] autorelease];
-    NSBezierPath *result = [[thisPolygon unionWithPolygon:otherPolygon] bezierPath];
-    [result fb_copyAttributesFrom:self];
-    return result;
+    return self; // TODO: implement
 }
 
 - (NSBezierPath *) fb_intersect:(NSBezierPath *)path
 {
-    FBPolygon *thisPolygon = [[[FBPolygon alloc] initWithBezierPath:self] autorelease];
-    FBPolygon *otherPolygon = [[[FBPolygon alloc] initWithBezierPath:path] autorelease];
-    NSBezierPath *result = [[thisPolygon intersectWithPolygon:otherPolygon] bezierPath];
-    [result fb_copyAttributesFrom:self];
-    return result;
+    return self; // TODO: implement
 }
 
 - (NSBezierPath *) fb_difference:(NSBezierPath *)path
 {
-    FBPolygon *thisPolygon = [[[FBPolygon alloc] initWithBezierPath:self] autorelease];
-    FBPolygon *otherPolygon = [[[FBPolygon alloc] initWithBezierPath:path] autorelease];
-    NSBezierPath *result = [[thisPolygon differenceWithPolygon:otherPolygon] bezierPath];
-    [result fb_copyAttributesFrom:self];
-    return result;
+    return self; // TODO: implement
 }
 
 - (NSBezierPath *) fb_xor:(NSBezierPath *)path
 {
-    FBPolygon *thisPolygon = [[[FBPolygon alloc] initWithBezierPath:self] autorelease];
-    FBPolygon *otherPolygon = [[[FBPolygon alloc] initWithBezierPath:path] autorelease];
-    NSBezierPath *result = [[thisPolygon xorWithPolygon:otherPolygon] bezierPath];
-    [result fb_copyAttributesFrom:self];
-    return result;
+    return self; // TODO: implement
 }
 
 @end
