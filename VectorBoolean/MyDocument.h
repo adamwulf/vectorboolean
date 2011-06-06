@@ -12,6 +12,7 @@
 
 @interface MyDocument : NSDocument {
     IBOutlet CanvasView *_view;
+    SEL _resetAction;
 }
 
 - (IBAction) onReset:(id)sender;
@@ -19,5 +20,12 @@
 - (IBAction) onIntersect:(id)sender;
 - (IBAction) onDifference:(id)sender; // Punch
 - (IBAction) onJoin:(id)sender; // XOR
+
+- (IBAction) onCircleOverlappingRectangle:(id)sender;
+- (IBAction) onCircleInRectangle:(id)sender;
+- (IBAction) onRectangleInCircle:(id)sender;
+- (IBAction) onCircleOnRectangle:(id)sender;
+- (IBAction) onRectangleWithHoleOverlappingRectangle:(id)sender;
+- (IBAction) onTwoRectanglesOverlappingCircle:(id)sender;
 
 @end

@@ -34,8 +34,7 @@
 {
     self = [super init];
     if (self) {
-        // Add your subclass-specific initialization here.
-        // If an error occurs here, send a [self release] message and return nil.
+        _resetAction = @selector(addSomeOverlap);
     }
     return self;
 }
@@ -81,12 +80,7 @@
 {
     [_view.canvas clear];
     
-    //[self addSomeOverlap];
-    //[self addCircleInRectangle];
-    //[self addRectangleInCircle];
-    //[self addCircleOnRectangle];
-    //[self addHoleyRectangleWithRectangle];
-    [self addCircleOnTwoRectangles];
+    [self performSelector:_resetAction];
     
     [_view setNeedsDisplay:YES];
 }
@@ -205,6 +199,62 @@
     NSBezierPath *result = [[_view.canvas pathAtIndex:0] fb_xor:[_view.canvas pathAtIndex:1]];
     [_view.canvas clear];
     [_view.canvas addPath:result withColor:[NSColor blueColor]];
+}
+
+- (IBAction) onCircleOverlappingRectangle:(id)sender
+{
+    _resetAction = @selector(addSomeOverlap);
+    [self onReset:sender];
+}
+
+- (IBAction) onCircleInRectangle:(id)sender
+{
+    _resetAction = @selector(addCircleInRectangle);
+    [self onReset:sender];
+}
+
+- (IBAction) onRectangleInCircle:(id)sender
+{
+    _resetAction = @selector(addRectangleInCircle);
+    [self onReset:sender];
+}
+
+- (IBAction) onCircleOnRectangle:(id)sender
+{
+    _resetAction = @selector(addCircleOnRectangle);
+    [self onReset:sender];
+}
+
+- (IBAction) onRectangleWithHoleOverlappingRectangle:(id)sender
+{
+    _resetAction = @selector(addHoleyRectangleWithRectangle);
+    [self onReset:sender];
+}
+
+- (IBAction) onTwoRectanglesOverlappingCircle:(id)sender
+{
+    _resetAction = @selector(addCircleOnTwoRectangles);
+    [self onReset:sender];
+}
+
+- (BOOL)validateUserInterfaceItem:(id < NSValidatedUserInterfaceItem >)anItem
+{
+    NSMenuItem *menuItem = (NSMenuItem *)anItem;
+    if ( [anItem action] == @selector(onCircleOverlappingRectangle:) ) {
+        [menuItem setState:_resetAction == @selector(addSomeOverlap) ? NSOnState : NSOffState];
+    } else if ( [anItem action] == @selector(onCircleInRectangle:) ) {
+        [menuItem setState:_resetAction == @selector(addCircleInRectangle) ? NSOnState : NSOffState];
+    } else if ( [anItem action] == @selector(onRectangleInCircle:) ) {
+        [menuItem setState:_resetAction == @selector(addRectangleInCircle) ? NSOnState : NSOffState];
+    } else if ( [anItem action] == @selector(onCircleOnRectangle:) ) {
+        [menuItem setState:_resetAction == @selector(addCircleOnRectangle) ? NSOnState : NSOffState];
+    } else if ( [anItem action] == @selector(onRectangleWithHoleOverlappingRectangle:) ) {
+        [menuItem setState:_resetAction == @selector(addHoleyRectangleWithRectangle) ? NSOnState : NSOffState];
+    } else if ( [anItem action] == @selector(onTwoRectanglesOverlappingCircle:) ) {
+        [menuItem setState:_resetAction == @selector(addCircleOnTwoRectangles) ? NSOnState : NSOffState];
+    }
+    
+    return YES;
 }
 
 @end
