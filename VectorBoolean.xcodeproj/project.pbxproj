@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		A11131E513960B9D00C9395C /* NSBezierPath+Boolean.m in Sources */ = {isa = PBXBuildFile; fileRef = A11131E413960B9D00C9395C /* NSBezierPath+Boolean.m */; };
+		A192AB53139D843C00AF40BA /* FBBezierCurve.m in Sources */ = {isa = PBXBuildFile; fileRef = A192AB52139D843B00AF40BA /* FBBezierCurve.m */; };
+		A192AB56139D863A00AF40BA /* FBBezierIntersection.m in Sources */ = {isa = PBXBuildFile; fileRef = A192AB55139D863900AF40BA /* FBBezierIntersection.m */; };
+		A192AB59139D8D6000AF40BA /* Geometry.m in Sources */ = {isa = PBXBuildFile; fileRef = A192AB58139D8D6000AF40BA /* Geometry.m */; };
 		A1C48B381395FA380043E2C7 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1C48B371395FA380043E2C7 /* Cocoa.framework */; };
 		A1C48B421395FA390043E2C7 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1C48B401395FA390043E2C7 /* InfoPlist.strings */; };
 		A1C48B451395FA390043E2C7 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = A1C48B441395FA390043E2C7 /* main.m */; };
@@ -23,6 +26,12 @@
 /* Begin PBXFileReference section */
 		A11131E313960B9D00C9395C /* NSBezierPath+Boolean.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSBezierPath+Boolean.h"; sourceTree = "<group>"; };
 		A11131E413960B9D00C9395C /* NSBezierPath+Boolean.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSBezierPath+Boolean.m"; sourceTree = "<group>"; };
+		A192AB51139D843B00AF40BA /* FBBezierCurve.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBBezierCurve.h; sourceTree = "<group>"; };
+		A192AB52139D843B00AF40BA /* FBBezierCurve.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBBezierCurve.m; sourceTree = "<group>"; };
+		A192AB54139D863900AF40BA /* FBBezierIntersection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBBezierIntersection.h; sourceTree = "<group>"; };
+		A192AB55139D863900AF40BA /* FBBezierIntersection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBBezierIntersection.m; sourceTree = "<group>"; };
+		A192AB57139D8D5F00AF40BA /* Geometry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Geometry.h; sourceTree = "<group>"; };
+		A192AB58139D8D6000AF40BA /* Geometry.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Geometry.m; sourceTree = "<group>"; };
 		A1C48B331395FA380043E2C7 /* VectorBoolean.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VectorBoolean.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1C48B371395FA380043E2C7 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		A1C48B3A1395FA390043E2C7 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -102,10 +111,16 @@
 				A1C48B64139602480043E2C7 /* CanvasView.m */,
 				A1C48B66139602800043E2C7 /* Canvas.h */,
 				A1C48B67139602810043E2C7 /* Canvas.m */,
+				A192AB57139D8D5F00AF40BA /* Geometry.h */,
+				A192AB58139D8D6000AF40BA /* Geometry.m */,
 				A11131E313960B9D00C9395C /* NSBezierPath+Boolean.h */,
 				A11131E413960B9D00C9395C /* NSBezierPath+Boolean.m */,
 				A1C48B5D1395FAE10043E2C7 /* NSBezierPath+Utilities.h */,
 				A1C48B5E1395FAE20043E2C7 /* NSBezierPath+Utilities.m */,
+				A192AB51139D843B00AF40BA /* FBBezierCurve.h */,
+				A192AB52139D843B00AF40BA /* FBBezierCurve.m */,
+				A192AB54139D863900AF40BA /* FBBezierIntersection.h */,
+				A192AB55139D863900AF40BA /* FBBezierIntersection.m */,
 				A1C48B4C1395FA390043E2C7 /* MyDocument.xib */,
 				A1C48B4F1395FA390043E2C7 /* MainMenu.xib */,
 				A1C48B3E1395FA390043E2C7 /* Supporting Files */,
@@ -195,6 +210,9 @@
 				A1C48B65139602480043E2C7 /* CanvasView.m in Sources */,
 				A1C48B68139602820043E2C7 /* Canvas.m in Sources */,
 				A11131E513960B9D00C9395C /* NSBezierPath+Boolean.m in Sources */,
+				A192AB53139D843C00AF40BA /* FBBezierCurve.m in Sources */,
+				A192AB56139D863A00AF40BA /* FBBezierIntersection.m in Sources */,
+				A192AB59139D8D6000AF40BA /* Geometry.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

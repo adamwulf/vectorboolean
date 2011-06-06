@@ -8,6 +8,8 @@
 
 #import "Canvas.h"
 #import "NSBezierPath+Utilities.h"
+#import "FBBezierCurve.h"
+#import "FBBezierIntersection.h"
 
 static NSRect BoxFrame(NSPoint point)
 {
@@ -21,7 +23,7 @@ static NSRect BoxFrame(NSPoint point)
     self = [super init];
     if (self) {
         _paths = [[NSMutableArray alloc] initWithCapacity:3];
-        _showPoints = YES;
+        _showPoints = NO;
         _showIntersections = YES;
     }
     
@@ -91,8 +93,21 @@ static NSRect BoxFrame(NSPoint point)
         }
     }
 
-    if ( _showIntersections ) {
+    if ( _showIntersections && [_paths count] == 2 ) {
+        [[NSColor yellowColor] set];
+
+        NSBezierPath *path1 = [[_paths objectAtIndex:0] objectForKey:@"path"];
+        NSBezierPath *path2 = [[_paths objectAtIndex:1] objectForKey:@"path"];
+        NSArray *curves1 = [FBBezierCurve bezierCurvesFromBezierPath:path1];
+        NSArray *curves2 = [FBBezierCurve bezierCurvesFromBezierPath:path2];
         
+        for (FBBezierCurve *curve1 in curves1) {
+            for (FBBezierCurve *curve2 in curves2) {
+                NSArray *intersections = [curve1 intersectionsWithBezierCurve:curve2];
+                for (FBBezierIntersection *intersection in intersections)
+                    [NSBezierPath strokeRect:BoxFrame(intersection.location)];
+            }
+        }
     }
 }
 
