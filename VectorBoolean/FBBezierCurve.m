@@ -79,10 +79,21 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 - (FBBezierCurve *) subcurveWithRange:(FBRange)range;
 - (NSArray *) splitCurveAtParameter:(CGFloat)t;
 - (NSArray *) convexHull;
+- (FBBezierCurve *) bezierClipWithBezierCurve:(FBBezierCurve *)curve rangeOfOriginal:(FBRange *)originalRange;
+
+@property NSPoint endPoint1;
+@property NSPoint controlPoint1;
+@property NSPoint controlPoint2;
+@property NSPoint endPoint2;
 
 @end
 
 @implementation FBBezierCurve
+
+@synthesize endPoint1=_endPoint1;
+@synthesize controlPoint1=_controlPoint1;
+@synthesize controlPoint2=_controlPoint2;
+@synthesize endPoint2=_endPoint2;
 
 + (NSArray *) bezierCurvesFromBezierPath:(NSBezierPath *)path
 {
@@ -151,6 +162,15 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 
 - (NSArray *) intersectionsWithBezierCurve:(FBBezierCurve *)curve
 {
+    FBBezierCurve *us = self;
+    FBBezierCurve *them = curve;
+    FBRange usRange = FBRangeMake(0, 1);
+    FBRange themRange = FBRangeMake(0, 1);
+    
+    for (NSUInteger i = 0; i < 3; i++) {
+        us = [us bezierClipWithBezierCurve:them rangeOfOriginal:&usRange];
+        them = [them bezierClipWithBezierCurve:us rangeOfOriginal:&themRange];
+    }
     
     // Iterate 3 times
         // Eliminate range of self that doesn't intersect with curve
@@ -162,6 +182,21 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
     
     
     return [NSArray array];
+}
+
+- (FBBezierCurve *) bezierClipWithBezierCurve:(FBBezierCurve *)curve rangeOfOriginal:(FBRange *)originalRange
+{
+    // Clip self with fat line from curve
+    FBNormalizedLine fatLine = [curve fatLine];
+    FBRange fatLineBounds = [curve boundsOfFatLine:fatLine];
+    FBRange clippedRange = [self clipWithFatLine:fatLine bounds:fatLineBounds];
+    
+    // Map the newly clipped range onto the original range
+    FBRange newRange = FBRangeMake((originalRange->maximum - originalRange->minimum) * clippedRange.minimum + originalRange->minimum, (originalRange->maximum - originalRange->minimum) * clippedRange.maximum + originalRange->minimum);
+    *originalRange = newRange;
+    
+    // Actually divide the curve
+    return [self subcurveWithRange:clippedRange];
 }
 
 - (FBNormalizedLine) fatLine
@@ -213,11 +248,12 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 - (FBBezierCurve *) subcurveWithRange:(FBRange)range
 {
     NSArray *curves1 = [self splitCurveAtParameter:range.minimum];
-    FBBezierCurve *upperCurve = [curves1 objectAtIndex:1];
-    // Scale the max range to fit in the upperCurve's [0..1] range
-    CGFloat scaledMaximum = (range.maximum - range.minimum) / (1.0 - range.minimum);
-    NSArray *curves2 = [upperCurve splitCurveAtParameter:scaledMaximum];
-    return [curves2 objectAtIndex:0]; // want the lower curve
+    NSArray *curves2 = [self splitCurveAtParameter:range.maximum];
+    
+    FBBezierCurve *rightCurve = [curves1 objectAtIndex:1];
+    FBBezierCurve *leftCurve = [curves2 objectAtIndex:0];
+    
+    return [FBBezierCurve bezierCurveWithEndPoint1:rightCurve.endPoint1 controlPoint1:rightCurve.controlPoint1 controlPoint2:leftCurve.controlPoint2 endPoint2:leftCurve.endPoint2];
 }
 
 - (NSArray *) splitCurveAtParameter:(CGFloat)parameter
