@@ -54,10 +54,28 @@ static CGFloat CounterClockwiseTurn(NSPoint point1, NSPoint point2, NSPoint poin
     return (point2.x - point1.x) * (point3.y - point1.y) - (point2.y - point1.y) * (point3.x - point1.x);
 }
 
+static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, CGFloat y, NSPoint *intersectPoint)
+{
+    // Do a quick test to see if y even falls on the startPoint,endPoint line
+    if ( y < MIN(startPoint.y, endPoint.y) || y > MAX(startPoint.y, endPoint.y) )
+        return NO;
+    
+    // There's an intersection here somewhere
+    if ( startPoint.x == endPoint.x )
+        *intersectPoint = NSMakePoint(startPoint.x, y);
+    else {
+        CGFloat slope = (endPoint.y - startPoint.y) / (endPoint.x - startPoint.x);
+        *intersectPoint = NSMakePoint((y - startPoint.y) / slope + startPoint.x, y);
+    }
+    
+    return YES;
+}
+
 @interface FBBezierCurve ()
 
 - (FBNormalizedLine) fatLine;
 - (FBRange) boundsOfFatLine:(FBNormalizedLine)line;
+- (NSArray *) convexHull;
 
 @end
 
@@ -157,6 +175,36 @@ static CGFloat CounterClockwiseTurn(NSPoint point1, NSPoint point2, NSPoint poin
         return FBRangeMake(3.0 * MIN(0.0, MIN(controlPoint1Distance, controlPoint2Distance)) / 4.0, 3.0 * MAX(0, MAX(controlPoint1Distance, controlPoint2Distance)) / 4.0);
     
     return FBRangeMake(4.0 * MIN(0.0, MIN(controlPoint1Distance, controlPoint2Distance)) / 9.0, 4.0 * MAX(0, MAX(controlPoint1Distance, controlPoint2Distance)) / 9.0);    
+}
+
+- (FBRange) clipWithFatLine:(FBNormalizedLine)fatLine bounds:(FBRange)bounds
+{
+    // First calculate bezier curve points distance from the fat line that's clipping us
+    FBBezierCurve *distanceBezier = [FBBezierCurve bezierCurveWithEndPoint1:NSMakePoint(0, FBNormalizedLineDistanceFromPoint(fatLine, _endPoint1)) controlPoint1:NSMakePoint(1.0/3.0, FBNormalizedLineDistanceFromPoint(fatLine, _controlPoint1)) controlPoint2:NSMakePoint(2.0/3.0, FBNormalizedLineDistanceFromPoint(fatLine, _controlPoint2)) endPoint2:NSMakePoint(1.0, FBNormalizedLineDistanceFromPoint(fatLine, _endPoint2))];
+    NSArray *convexHull = [distanceBezier convexHull];
+    
+    // Find intersections of convex hull with bounds
+    FBRange range = FBRangeMake(1.0, 0.0);
+    for (NSUInteger i = 0; i < [convexHull count]; i++) {
+        NSUInteger indexOfNext = i < ([convexHull count] - 1) ? i + 1 : 0;
+        NSPoint startPoint = [[convexHull objectAtIndex:i] pointValue];
+        NSPoint endPoint = [[convexHull objectAtIndex:indexOfNext] pointValue];
+        NSPoint intersectionPoint = NSZeroPoint;
+        
+        if ( LineIntersectsHorizontalLine(startPoint, endPoint, bounds.minimum, &intersectionPoint) ) {
+            if ( intersectionPoint.x < range.minimum )
+                range.minimum = intersectionPoint.x;
+            if ( intersectionPoint.x > range.maximum )
+                range.maximum = intersectionPoint.x;
+        }
+        if ( LineIntersectsHorizontalLine(startPoint, endPoint, bounds.maximum, &intersectionPoint) ) {
+            if ( intersectionPoint.x < range.minimum )
+                range.minimum = intersectionPoint.x;
+            if ( intersectionPoint.x > range.maximum )
+                range.maximum = intersectionPoint.x;
+        }
+    }
+    return range;
 }
 
 - (NSArray *) convexHull
