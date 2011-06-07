@@ -75,6 +75,9 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 
 - (FBNormalizedLine) fatLine;
 - (FBRange) boundsOfFatLine:(FBNormalizedLine)line;
+- (FBRange) clipWithFatLine:(FBNormalizedLine)fatLine bounds:(FBRange)bounds;
+- (FBBezierCurve *) subcurveWithRange:(FBRange)range;
+- (NSArray *) splitCurveAtParameter:(CGFloat)t;
 - (NSArray *) convexHull;
 
 @end
@@ -205,6 +208,52 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
         }
     }
     return range;
+}
+
+- (FBBezierCurve *) subcurveWithRange:(FBRange)range
+{
+    NSArray *curves1 = [self splitCurveAtParameter:range.minimum];
+    FBBezierCurve *upperCurve = [curves1 objectAtIndex:1];
+    // Scale the max range to fit in the upperCurve's [0..1] range
+    CGFloat scaledMaximum = (range.maximum - range.minimum) / (1.0 - range.minimum);
+    NSArray *curves2 = [upperCurve splitCurveAtParameter:scaledMaximum];
+    return [curves2 objectAtIndex:0]; // want the lower curve
+}
+
+- (NSArray *) splitCurveAtParameter:(CGFloat)parameter
+{
+    // Calculate a point on the bezier curve passed in, specifically the point at parameter.
+    //  We could just plug parameter into the Q(t) formula shown in the fb_fitBezierInRange: comments.
+    //  However, that method isn't numerically stable, meaning it amplifies any errors, which is bad
+    //  seeing we're using floating point numbers with limited precision. Instead we'll use
+    //  De Casteljau's algorithm.
+    //
+    // See: http://www.cs.mtu.edu/~shene/COURSES/cs3621/NOTES/spline/Bezier/de-casteljau.html
+    //  for an explaination of De Casteljau's algorithm.
+    
+    // With this algorithm we start out with the points in the bezier path. 
+    NSUInteger degree = 3; // We're a cubic bezier
+    NSPoint points[4] = { _endPoint1, _controlPoint1, _controlPoint2, _endPoint2 };
+    NSPoint tangents[2] = {};
+    
+    for (NSUInteger k = 1; k <= degree; k++) {
+        for (NSUInteger i = 0; i <= (degree - k); i++) {
+            points[i].x = (1.0 - parameter) * points[i].x + parameter * points[i + 1].x;
+            points[i].y = (1.0 - parameter) * points[i].y + parameter * points[i + 1].y;            
+        }
+        
+        // Save off the tangents
+        if ( k == (degree - 1) ) {
+            tangents[0] = points[0];
+            tangents[1] = points[1];
+        }
+    }
+    
+    // The point in the curve at parameter ends up in points[0]
+    
+    FBBezierCurve *leftCurve = [FBBezierCurve bezierCurveWithEndPoint1:_endPoint1 controlPoint1:_controlPoint1 controlPoint2:tangents[0] endPoint2:points[0]];
+    FBBezierCurve *rightCurve = [FBBezierCurve bezierCurveWithEndPoint1:points[0] controlPoint1:tangents[1] controlPoint2:_controlPoint2 endPoint2:_endPoint2];
+    return [NSArray arrayWithObjects:leftCurve, rightCurve, nil];
 }
 
 - (NSArray *) convexHull
