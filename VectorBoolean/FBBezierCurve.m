@@ -47,6 +47,14 @@ static FBRange FBRangeMake(CGFloat minimum, CGFloat maximum)
     return range;
 }
 
+static BOOL FBRangeHasConverged(FBRange range, NSUInteger places)
+{
+    CGFloat factor = powf(10.0, places);
+    NSInteger minimum = (NSInteger)(range.minimum * factor);
+    NSInteger maxiumum = (NSInteger)(range.maximum * factor);
+    return minimum == maxiumum;
+}
+
 // The three points are a counter-clockwise turn if the return value is greater than 0,
 //  clockwise if less than 0, or colinear if 0.
 static CGFloat CounterClockwiseTurn(NSPoint point1, NSPoint point2, NSPoint point3)
@@ -162,24 +170,24 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 
 - (NSArray *) intersectionsWithBezierCurve:(FBBezierCurve *)curve
 {
+    static const NSUInteger places = 6; // want precision to 6 decimal places
+    static const NSUInteger maxIterations = 100;
+
     FBBezierCurve *us = self;
     FBBezierCurve *them = curve;
     FBRange usRange = FBRangeMake(0, 1);
     FBRange themRange = FBRangeMake(0, 1);
     
-    for (NSUInteger i = 0; i < 3; i++) {
+    NSUInteger iterations = 0;
+    while ( iterations < maxIterations && !FBRangeHasConverged(usRange, places) && !FBRangeHasConverged(themRange, places) ) {
         us = [us bezierClipWithBezierCurve:them rangeOfOriginal:&usRange];
         them = [them bezierClipWithBezierCurve:us rangeOfOriginal:&themRange];
+        
+        // TODO: see if either of curves ranges is reduced by less than 20%. If so, divide and conquer
+        //  because it's likely we have multiple intersections
+        
+        iterations++;
     }
-    
-    // Iterate 3 times
-        // Eliminate range of self that doesn't intersect with curve
-            // Calculate normal fat line
-            
-        // If didn't eliminate at least 20%, split the large curve in two, and try again
-    
-        // Eliminate range of curve that doesn't intersect with self
-    
     
     return [NSArray array];
 }
