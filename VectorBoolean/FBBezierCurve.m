@@ -202,7 +202,11 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
         FBRange previousThemRange = *themRange;
         
         us = [us bezierClipWithBezierCurve:them rangeOfOriginal:usRange];
+        if ( usRange->minimum == 1.0 && usRange->maximum == 0.0 )
+            return [NSArray array]; // sentinel value showing that the curves do not intersect
         them = [them bezierClipWithBezierCurve:us rangeOfOriginal:themRange];
+        if ( themRange->minimum == 1.0 && themRange->maximum == 0.0 )
+            return [NSArray array]; // sentinel value showing that the curves do not intersect
         
         // See if either of curves ranges is reduced by less than 20%.
         CGFloat percentChangeInUs = (FBRangeGetSize(previousUsRange) - FBRangeGetSize(*usRange)) / FBRangeGetSize(previousUsRange);
@@ -289,6 +293,16 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
                 range.minimum = intersectionPoint.x;
             if ( intersectionPoint.x > range.maximum )
                 range.maximum = intersectionPoint.x;
+        }
+        
+        // We want to be able to refine t even if the convex hull lies completely instead bounds. This
+        //  also allows us to be able to use range of [1..0] as a sentinel value meaning the convex hull
+        //  lies entirely outside of bounds, and the curves don't intersect.
+        if ( startPoint.y < bounds.maximum && startPoint.y > bounds.minimum ) {
+            if ( startPoint.x < range.minimum )
+                range.minimum = startPoint.x;
+            if ( startPoint.x > range.maximum )
+                range.maximum = startPoint.x;
         }
     }
     return range;
