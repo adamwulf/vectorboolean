@@ -23,7 +23,7 @@ static NSRect BoxFrame(NSPoint point)
     self = [super init];
     if (self) {
         _paths = [[NSMutableArray alloc] initWithCapacity:3];
-        _showPoints = NO;
+        _showPoints = YES;
         _showIntersections = YES;
     }
     
@@ -94,7 +94,7 @@ static NSRect BoxFrame(NSPoint point)
     }
 
     if ( _showIntersections && [_paths count] == 2 ) {
-        [[NSColor yellowColor] set];
+        [[NSColor greenColor] set];
 
         NSBezierPath *path1 = [[_paths objectAtIndex:0] objectForKey:@"path"];
         NSBezierPath *path2 = [[_paths objectAtIndex:1] objectForKey:@"path"];
@@ -104,8 +104,10 @@ static NSRect BoxFrame(NSPoint point)
         for (FBBezierCurve *curve1 in curves1) {
             for (FBBezierCurve *curve2 in curves2) {
                 NSArray *intersections = [curve1 intersectionsWithBezierCurve:curve2];
-                for (FBBezierIntersection *intersection in intersections)
-                    [NSBezierPath strokeRect:BoxFrame(intersection.location)];
+                for (FBBezierIntersection *intersection in intersections) {
+                    NSBezierPath *circle = [NSBezierPath bezierPathWithOvalInRect:BoxFrame(intersection.location)];
+                    [circle stroke];
+                }
             }
         }
     }
