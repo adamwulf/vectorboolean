@@ -189,15 +189,15 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 
 - (NSArray *) intersectionsWithBezierCurve:(FBBezierCurve *)curve usRange:(FBRange *)usRange themRange:(FBRange *)themRange originalUs:(FBBezierCurve *)originalUs originalThem:(FBBezierCurve *)originalThem
 {
-    static const NSUInteger places = 6; // want precision to 6 decimal places
-    static const NSUInteger maxIterations = 100;
+    static const NSUInteger places = 9;
+    static const NSUInteger maxIterations = 500;
     static const CGFloat minimumChangeNeeded = 0.20;
     
     FBBezierCurve *us = self;
     FBBezierCurve *them = curve;
     
     NSUInteger iterations = 0;
-    while ( iterations < maxIterations && !FBRangeHasConverged(*usRange, places) && !FBRangeHasConverged(*themRange, places) ) {
+    while ( iterations < maxIterations && (!FBRangeHasConverged(*usRange, places) || !FBRangeHasConverged(*themRange, places)) ) {
         FBRange previousUsRange = *usRange;
         FBRange previousThemRange = *themRange;
         
@@ -396,33 +396,36 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
         // We want to sort by the angle, so that the angles increase as we go along in the array.
         //  However, the cosine is cheaper to calculate, although it decreases in value as the angle
         //  increases (in the domain we care about). 
-        CGFloat cosine1 = (point1.x - lowestValue.x) / FBDistanceBetweenPoints(point1, lowestValue);
-        CGFloat cosine2 = (point2.x - lowestValue.x) / FBDistanceBetweenPoints(point2, lowestValue);
+        CGFloat distance1 = FBDistanceBetweenPoints(point1, lowestValue);
+        CGFloat cosine1 = (point1.x - lowestValue.x) / distance1;
+        CGFloat distance2 = FBDistanceBetweenPoints(point2, lowestValue);
+        CGFloat cosine2 = (point2.x - lowestValue.x) / distance2;
         if ( cosine1 < cosine2 )
             return NSOrderedDescending;
         else if ( cosine1 > cosine2 )
             return NSOrderedAscending;
+        if ( distance1 < distance2 )
+            return NSOrderedAscending;
+        else if ( distance1 > distance2 )
+            return NSOrderedDescending;
         return NSOrderedSame;
     }];
     
-    // Insert a sentinel point 
-    [points insertObject:[points objectAtIndex:[points count] - 1] atIndex:0];
-
     NSUInteger numberOfConvexHullPoints = 2;
-    for (NSUInteger i = 3; i < [points count]; i++) {
-        CGFloat area = CounterClockwiseTurn([[points objectAtIndex:numberOfConvexHullPoints - 1] pointValue], [[points objectAtIndex:numberOfConvexHullPoints] pointValue], [[points objectAtIndex:i] pointValue]);
+    for (NSUInteger i = 2; i < [points count]; i++) {
+        CGFloat area = CounterClockwiseTurn([[points objectAtIndex:numberOfConvexHullPoints - 2] pointValue], [[points objectAtIndex:numberOfConvexHullPoints - 1] pointValue], [[points objectAtIndex:i] pointValue]);
         
         if ( area == 0.0 )
-            numberOfConvexHullPoints--;
-        else if ( area > 0.0 ) {
-            while (area >= 0.0 && numberOfConvexHullPoints > 2) {
+            numberOfConvexHullPoints--; // colinear is bad
+        else if ( area < 0.0 ) {
+            while (area <= 0.0 && numberOfConvexHullPoints > 2) {
                 numberOfConvexHullPoints--;
-                area = CounterClockwiseTurn([[points objectAtIndex:numberOfConvexHullPoints - 1] pointValue], [[points objectAtIndex:numberOfConvexHullPoints] pointValue], [[points objectAtIndex:i] pointValue]);
+                area = CounterClockwiseTurn([[points objectAtIndex:numberOfConvexHullPoints - 2] pointValue], [[points objectAtIndex:numberOfConvexHullPoints - 1] pointValue], [[points objectAtIndex:i] pointValue]);
             }
         }
                 
-        numberOfConvexHullPoints++;
         [points exchangeObjectAtIndex:numberOfConvexHullPoints withObjectAtIndex:i];
+        numberOfConvexHullPoints++;
     }
     
     return [points subarrayWithRange:NSMakeRange(0, numberOfConvexHullPoints)];
