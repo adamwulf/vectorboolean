@@ -21,16 +21,22 @@
     NSPoint _curve2ControlPoint1;
     NSPoint _curve2ControlPoint2;
     BOOL _tangent;
+    BOOL _needToComputeCurve1;
+    BOOL _needToComputeCurve2;
 }
 
-+ (id) intersectionWithLocation:(NSPoint)location curve1:(FBBezierCurve *)curve1 parameter1:(CGFloat)parameter1 curve1ControlPoint1:(NSPoint)curve1ControlPoint1 curve1ControlPoint2:(NSPoint)curve1ControlPoint2 curve2:(FBBezierCurve *)curve2 parameter2:(CGFloat)parameter2 curve2ControlPoint1:(NSPoint)curve2ControlPoint1 curve2ControlPoint2:(NSPoint)curve2ControlPoint2;
-- (id) initWithLocation:(NSPoint)location curve1:(FBBezierCurve *)curve1 parameter1:(CGFloat)parameter1 curve1ControlPoint1:(NSPoint)curve1ControlPoint1 curve1ControlPoint2:(NSPoint)curve1ControlPoint2 curve2:(FBBezierCurve *)curve2 parameter2:(CGFloat)parameter2 curve2ControlPoint1:(NSPoint)curve2ControlPoint1 curve2ControlPoint2:(NSPoint)curve2ControlPoint2;
++ (id) intersectionWithCurve1:(FBBezierCurve *)curve1 parameter1:(CGFloat)parameter1 curve2:(FBBezierCurve *)curve2 parameter2:(CGFloat)parameter2;
+- (id) initWithCurve1:(FBBezierCurve *)curve1 parameter1:(CGFloat)parameter1 curve2:(FBBezierCurve *)curve2 parameter2:(CGFloat)parameter2;
 
-@property NSPoint location;
-@property (retain) FBBezierCurve *curve1;
-@property CGFloat parameter1;
-@property (retain) FBBezierCurve *curve2;
-@property CGFloat parameter2;
-@property (getter = isTangent) BOOL tangent;
+@property (readonly) NSPoint location;
+@property (readonly, retain) FBBezierCurve *curve1;
+@property (readonly) CGFloat parameter1;
+@property (readonly, retain) FBBezierCurve *curve2;
+@property (readonly) CGFloat parameter2;
+@property (readonly, getter = isTangent) BOOL tangent;
+@property (readonly) NSPoint curve1ControlPoint1;
+@property (readonly) NSPoint curve1ControlPoint2;
+@property (readonly) NSPoint curve2ControlPoint1;
+@property (readonly) NSPoint curve2ControlPoint2;
 
 @end
