@@ -357,7 +357,7 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
     
     // Find point with lowest y value. If tied, the one with lowest x. Then swap the lowest value
     //  to the first index
-    NSUInteger lowestIndex = NSNotFound;
+    NSUInteger lowestIndex = 0;
     NSPoint lowestValue = [[points objectAtIndex:0] pointValue];
     for (NSUInteger i = 0; i < [points count]; i++) {
         NSPoint point = [[points objectAtIndex:i] pointValue];
@@ -396,14 +396,17 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 
     NSUInteger numberOfConvexHullPoints = 2;
     for (NSUInteger i = 3; i < [points count]; i++) {
-        while ( CounterClockwiseTurn([[points objectAtIndex:numberOfConvexHullPoints - 1] pointValue], [[points objectAtIndex:numberOfConvexHullPoints] pointValue], [[points objectAtIndex:i] pointValue]) <= 0 ) {
-            if ( numberOfConvexHullPoints == 2 ) {
-                [points exchangeObjectAtIndex:numberOfConvexHullPoints withObjectAtIndex:i];
-                i++;
-            } else
-                numberOfConvexHullPoints--;
-        }
+        CGFloat area = CounterClockwiseTurn([[points objectAtIndex:numberOfConvexHullPoints - 1] pointValue], [[points objectAtIndex:numberOfConvexHullPoints] pointValue], [[points objectAtIndex:i] pointValue]);
         
+        if ( area == 0.0 )
+            numberOfConvexHullPoints--;
+        else if ( area > 0.0 ) {
+            while (area >= 0.0 && numberOfConvexHullPoints > 2) {
+                numberOfConvexHullPoints--;
+                area = CounterClockwiseTurn([[points objectAtIndex:numberOfConvexHullPoints - 1] pointValue], [[points objectAtIndex:numberOfConvexHullPoints] pointValue], [[points objectAtIndex:i] pointValue]);
+            }
+        }
+                
         numberOfConvexHullPoints++;
         [points exchangeObjectAtIndex:numberOfConvexHullPoints withObjectAtIndex:i];
     }
