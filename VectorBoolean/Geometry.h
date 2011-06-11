@@ -11,6 +11,8 @@
 
 CGFloat FBDistanceBetweenPoints(NSPoint point1, NSPoint point2);
 CGFloat FBDistancePointToLine(NSPoint point, NSPoint lineStartPoint, NSPoint lineEndPoint);
+NSPoint FBLineNormal(NSPoint lineStart, NSPoint lineEnd);
+NSPoint FBLineMidpoint(NSPoint lineStart, NSPoint lineEnd);
 
 NSPoint FBAddPoint(NSPoint point1, NSPoint point2);
 NSPoint FBScalePoint(NSPoint point, CGFloat scale);

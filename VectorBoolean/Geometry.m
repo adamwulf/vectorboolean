@@ -82,3 +82,15 @@ NSPoint FBNegatePoint(NSPoint point)
 {
     return NSMakePoint(-point.x, -point.y);
 }
+
+NSPoint FBLineNormal(NSPoint lineStart, NSPoint lineEnd)
+{
+    return FBNormalizePoint(NSMakePoint(-(lineEnd.y - lineStart.y), lineEnd.x - lineStart.x));
+}
+
+NSPoint FBLineMidpoint(NSPoint lineStart, NSPoint lineEnd)
+{
+    CGFloat distance = FBDistanceBetweenPoints(lineStart, lineEnd);
+    NSPoint tangent = FBNormalizePoint(FBSubtractPoint(lineEnd, lineStart));
+    return FBAddPoint(lineStart, FBUnitScalePoint(tangent, distance / 2.0));
+}

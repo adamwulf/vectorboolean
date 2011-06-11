@@ -21,6 +21,11 @@
 + (id) bezierCurveWithEndPoint1:(NSPoint)endPoint1 controlPoint1:(NSPoint)controlPoint1 controlPoint2:(NSPoint)controlPoint2 endPoint2:(NSPoint)endPoint2;
 - (id) initWithEndPoint1:(NSPoint)endPoint1 controlPoint1:(NSPoint)controlPoint1 controlPoint2:(NSPoint)controlPoint2 endPoint2:(NSPoint)endPoint2;
 
+@property NSPoint endPoint1;
+@property NSPoint controlPoint1;
+@property NSPoint controlPoint2;
+@property NSPoint endPoint2;
+
 - (NSArray *) intersectionsWithBezierCurve:(FBBezierCurve *)curve;
 
 - (NSPoint) pointAtParameter:(CGFloat)parameter controlPoint1:(NSPoint *)controlPoint1 controlPoint2:(NSPoint *)controlPoint2;

@@ -92,19 +92,19 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 
 @interface FBBezierCurve ()
 
-- (FBNormalizedLine) fatLine;
-- (FBRange) boundsOfFatLine:(FBNormalizedLine)line;
+- (FBNormalizedLine) regularFatLineBounds:(FBRange *)range;
+- (FBNormalizedLine) perpendicularFatLineBounds:(FBRange *)range;
+
 - (FBRange) clipWithFatLine:(FBNormalizedLine)fatLine bounds:(FBRange)bounds;
 - (FBBezierCurve *) subcurveWithRange:(FBRange)range;
 - (NSArray *) splitCurveAtParameter:(CGFloat)t;
 - (NSArray *) convexHull;
-- (FBBezierCurve *) bezierClipWithBezierCurve:(FBBezierCurve *)curve rangeOfOriginal:(FBRange *)originalRange;
+- (FBBezierCurve *) bezierClipWithBezierCurve:(FBBezierCurve *)curve original:(FBBezierCurve *)originalCurve rangeOfOriginal:(FBRange *)originalRange intersects:(BOOL *)intersects;
 - (NSArray *) intersectionsWithBezierCurve:(FBBezierCurve *)curve usRange:(FBRange *)usRange themRange:(FBRange *)themRange originalUs:(FBBezierCurve *)originalUs originalThem:(FBBezierCurve *)originalThem;
 
-@property NSPoint endPoint1;
-@property NSPoint controlPoint1;
-@property NSPoint controlPoint2;
-@property NSPoint endPoint2;
+- (void) normalizeLine;
+
+@property (readonly, getter = isLine) BOOL line;
 
 @end
 
@@ -130,7 +130,7 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
                 
             case NSLineToBezierPathElement: {
                 // Convert lines to bezier curves as well. Just set control point to be in the line formed
-                //  by the end points, 1/3 of the distance away from the end point.
+                //  by the end points
                 CGFloat distance = FBDistanceBetweenPoints(lastPoint, element.point);
                 NSPoint leftTangent = FBNormalizePoint(FBSubtractPoint(element.point, lastPoint));
                 NSPoint controlPoint1 = FBAddPoint(lastPoint, FBUnitScalePoint(leftTangent, distance / 3.0));
@@ -189,44 +189,59 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 
 - (NSArray *) intersectionsWithBezierCurve:(FBBezierCurve *)curve usRange:(FBRange *)usRange themRange:(FBRange *)themRange originalUs:(FBBezierCurve *)originalUs originalThem:(FBBezierCurve *)originalThem
 {
-    static const NSUInteger places = 9;
+    static const NSUInteger places = 6;
     static const NSUInteger maxIterations = 500;
     static const CGFloat minimumChangeNeeded = 0.20;
     
     FBBezierCurve *us = self;
     FBBezierCurve *them = curve;
     
+    // Don't check for convergence until we actually see if we intersect or not. i.e. Make sure we go through at least once, otherwise the results
+    //  don't mean anything
     NSUInteger iterations = 0;
-    while ( iterations < maxIterations && (!FBRangeHasConverged(*usRange, places) || !FBRangeHasConverged(*themRange, places)) ) {
+    while ( iterations < maxIterations && ((iterations == 0) || (!FBRangeHasConverged(*usRange, places) || !FBRangeHasConverged(*themRange, places))) ) {
         FBRange previousUsRange = *usRange;
         FBRange previousThemRange = *themRange;
         
-        us = [us bezierClipWithBezierCurve:them rangeOfOriginal:usRange];
-        if ( usRange->minimum == 1.0 && usRange->maximum == 0.0 )
-            return [NSArray array]; // sentinel value showing that the curves do not intersect
-        them = [them bezierClipWithBezierCurve:us rangeOfOriginal:themRange];
-        if ( themRange->minimum == 1.0 && themRange->maximum == 0.0 )
-            return [NSArray array]; // sentinel value showing that the curves do not intersect
+        BOOL intersects = NO;
+        us = [us bezierClipWithBezierCurve:them original:originalUs rangeOfOriginal:usRange intersects:&intersects];
+        if ( !intersects )
+            return [NSArray array];
+        them = [them bezierClipWithBezierCurve:us original:originalThem rangeOfOriginal:themRange intersects:&intersects];
+        if ( !intersects )
+            return [NSArray array];
         
         // See if either of curves ranges is reduced by less than 20%.
         CGFloat percentChangeInUs = (FBRangeGetSize(previousUsRange) - FBRangeGetSize(*usRange)) / FBRangeGetSize(previousUsRange);
         CGFloat percentChangeInThem = (FBRangeGetSize(previousThemRange) - FBRangeGetSize(*themRange)) / FBRangeGetSize(previousThemRange);
-        if ( percentChangeInUs < minimumChangeNeeded || percentChangeInThem < minimumChangeNeeded ) {
+        if ( percentChangeInUs < minimumChangeNeeded && percentChangeInThem < minimumChangeNeeded ) {
             // We're not converging fast enough, likely because there are multiple intersections here. So
             //  divide and conquer. Divide the longer curve in half, and recurse
             if ( FBRangeGetSize(*usRange) > FBRangeGetSize(*themRange) ) {
-                NSArray *splitCurves = [us splitCurveAtParameter:0.5]; // just split it in two
-                FBRange usRange1 = FBRangeMake(usRange->minimum, usRange->minimum + FBRangeGetSize(*usRange) / 2.0);
-                FBRange usRange2 = FBRangeMake(usRange->minimum + FBRangeGetSize(*usRange) / 2.0, usRange->maximum);
-                NSArray *intersections1 = [[splitCurves objectAtIndex:0] intersectionsWithBezierCurve:them usRange:&usRange1 themRange:themRange originalUs:originalUs originalThem:originalThem];
-                NSArray *intersections2 = [[splitCurves objectAtIndex:0] intersectionsWithBezierCurve:them usRange:&usRange2 themRange:themRange originalUs:originalUs originalThem:originalThem];
+                FBRange usRange1 = FBRangeMake(usRange->minimum, (usRange->minimum + usRange->maximum) / 2.0);
+                FBBezierCurve *us1 = [originalUs subcurveWithRange:usRange1];
+                FBRange themRangeCopy1 = *themRange;
+
+                FBRange usRange2 = FBRangeMake((usRange->minimum + usRange->maximum) / 2.0, usRange->maximum);
+                FBBezierCurve *us2 = [originalUs subcurveWithRange:usRange2];
+                FBRange themRangeCopy2 = *themRange;
+                
+                NSArray *intersections1 = [us1 intersectionsWithBezierCurve:them usRange:&usRange1 themRange:&themRangeCopy1 originalUs:originalUs originalThem:originalThem];
+                NSArray *intersections2 = [us2 intersectionsWithBezierCurve:them usRange:&usRange2 themRange:&themRangeCopy2 originalUs:originalUs originalThem:originalThem];
+                
                 return [intersections1 arrayByAddingObjectsFromArray:intersections2];
             } else {
-                NSArray *splitCurves = [them splitCurveAtParameter:0.5];
-                FBRange themRange1 = FBRangeMake(themRange->minimum, themRange->minimum + FBRangeGetSize(*themRange) / 2.0);
-                FBRange themRange2 = FBRangeMake(themRange->minimum + FBRangeGetSize(*themRange) / 2.0, themRange->maximum);
-                NSArray *intersections1 = [us intersectionsWithBezierCurve:[splitCurves objectAtIndex:0] usRange:usRange themRange:&themRange1 originalUs:originalUs originalThem:originalThem];
-                NSArray *intersections2 = [us intersectionsWithBezierCurve:[splitCurves objectAtIndex:1] usRange:usRange themRange:&themRange2 originalUs:originalUs originalThem:originalThem];
+                FBRange themRange1 = FBRangeMake(themRange->minimum, (themRange->minimum + themRange->maximum) / 2.0);
+                FBBezierCurve *them1 = [originalThem subcurveWithRange:themRange1];
+                FBRange usRangeCopy1 = *usRange;
+
+                FBRange themRange2 = FBRangeMake((themRange->minimum + themRange->maximum) / 2.0, themRange->maximum);
+                FBBezierCurve *them2 = [originalThem subcurveWithRange:themRange2];
+                FBRange usRangeCopy2 = *usRange;
+
+                NSArray *intersections1 = [us intersectionsWithBezierCurve:them1 usRange:&usRangeCopy1 themRange:&themRange1 originalUs:originalUs originalThem:originalThem];
+                NSArray *intersections2 = [us intersectionsWithBezierCurve:them2 usRange:&usRangeCopy2 themRange:&themRange2 originalUs:originalUs originalThem:originalThem];
+                
                 return [intersections1 arrayByAddingObjectsFromArray:intersections2];
             }
         }
@@ -237,35 +252,71 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
     return [NSArray arrayWithObject:[FBBezierIntersection intersectionWithCurve1:originalUs parameter1:usRange->minimum curve2:originalThem parameter2:themRange->minimum]];
 }
 
-- (FBBezierCurve *) bezierClipWithBezierCurve:(FBBezierCurve *)curve rangeOfOriginal:(FBRange *)originalRange
+- (FBBezierCurve *) bezierClipWithBezierCurve:(FBBezierCurve *)curve original:(FBBezierCurve *)originalCurve rangeOfOriginal:(FBRange *)originalRange intersects:(BOOL *)intersects
 {
     // Clip self with fat line from curve
-    FBNormalizedLine fatLine = [curve fatLine];
-    FBRange fatLineBounds = [curve boundsOfFatLine:fatLine];
-    FBRange clippedRange = [self clipWithFatLine:fatLine bounds:fatLineBounds];
+    FBRange fatLineBounds = {};
+    FBNormalizedLine fatLine = [curve regularFatLineBounds:&fatLineBounds];
+    FBRange regularClippedRange = [self clipWithFatLine:fatLine bounds:fatLineBounds];
+    if ( regularClippedRange.minimum == 1.0 && regularClippedRange.maximum == 0.0 ) {
+        *intersects = NO;
+        return self;
+    }
+    
+    // Just in case the regular fat line isn't good enough, try the perpendicular one
+    FBRange perpendicularLineBounds = {};
+    FBNormalizedLine perpendicularLine = [curve perpendicularFatLineBounds:&perpendicularLineBounds];
+    FBRange perpendicularClippedRange = [self clipWithFatLine:perpendicularLine bounds:perpendicularLineBounds];
+    if ( perpendicularClippedRange.minimum == 1.0 && perpendicularClippedRange.maximum == 0.0 ) {
+        *intersects = NO;
+        return self;
+    }
+    
+    // Combine to form Voltron
+    FBRange clippedRange = FBRangeMake(MAX(regularClippedRange.minimum, perpendicularClippedRange.minimum), MIN(regularClippedRange.maximum, perpendicularClippedRange.maximum));
     
     // Map the newly clipped range onto the original range
     FBRange newRange = FBRangeMake(FBRangeScaleNormalizedValue(*originalRange, clippedRange.minimum), FBRangeScaleNormalizedValue(*originalRange, clippedRange.maximum));
     *originalRange = newRange;
+    *intersects = YES;
     
     // Actually divide the curve
-    return [self subcurveWithRange:clippedRange];
+    return [originalCurve subcurveWithRange:*originalRange];
 }
 
-- (FBNormalizedLine) fatLine
+- (FBNormalizedLine) regularFatLineBounds:(FBRange *)range
 {
-    return FBNormalizedLineMake(_endPoint1, _endPoint2);
-}
-
-- (FBRange) boundsOfFatLine:(FBNormalizedLine)line
-{
+    FBNormalizedLine line = FBNormalizedLineMake(_endPoint1, _endPoint2);
+    
     CGFloat controlPoint1Distance = FBNormalizedLineDistanceFromPoint(line, _controlPoint1);
     CGFloat controlPoint2Distance = FBNormalizedLineDistanceFromPoint(line, _controlPoint2);
     
     if ( controlPoint1Distance * controlPoint2Distance > 0 )
-        return FBRangeMake(3.0 * MIN(0.0, MIN(controlPoint1Distance, controlPoint2Distance)) / 4.0, 3.0 * MAX(0, MAX(controlPoint1Distance, controlPoint2Distance)) / 4.0);
+        *range = FBRangeMake(3.0 * MIN(0.0, MIN(controlPoint1Distance, controlPoint2Distance)) / 4.0, 3.0 * MAX(0, MAX(controlPoint1Distance, controlPoint2Distance)) / 4.0);
+    else
+        *range = FBRangeMake(4.0 * MIN(0.0, MIN(controlPoint1Distance, controlPoint2Distance)) / 9.0, 4.0 * MAX(0, MAX(controlPoint1Distance, controlPoint2Distance)) / 9.0);    
+
+    return line;
+}
+
+- (FBNormalizedLine) perpendicularFatLineBounds:(FBRange *)range
+{
+    NSPoint normal = FBLineNormal(_endPoint1, _endPoint2);
+    NSPoint startPoint = FBLineMidpoint(_endPoint1, _endPoint2);
+    NSPoint endPoint = FBAddPoint(startPoint, normal);
+    FBNormalizedLine line = FBNormalizedLineMake(startPoint, endPoint);
     
-    return FBRangeMake(4.0 * MIN(0.0, MIN(controlPoint1Distance, controlPoint2Distance)) / 9.0, 4.0 * MAX(0, MAX(controlPoint1Distance, controlPoint2Distance)) / 9.0);    
+    CGFloat controlPoint1Distance = FBNormalizedLineDistanceFromPoint(line, _controlPoint1);
+    CGFloat controlPoint2Distance = FBNormalizedLineDistanceFromPoint(line, _controlPoint2);
+    CGFloat point1Distance = FBNormalizedLineDistanceFromPoint(line, _endPoint1);
+    CGFloat point2Distance = FBNormalizedLineDistanceFromPoint(line, _endPoint2);
+
+    CGFloat min = MIN(controlPoint1Distance, MIN(controlPoint2Distance, MIN(point1Distance, point2Distance)));
+    CGFloat max = MAX(controlPoint1Distance, MAX(controlPoint2Distance, MAX(point1Distance, point2Distance)));
+    
+    *range = FBRangeMake(min, max);
+    
+    return line;
 }
 
 - (FBRange) clipWithFatLine:(FBNormalizedLine)fatLine bounds:(FBRange)bounds
@@ -295,7 +346,7 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
                 range.maximum = intersectionPoint.x;
         }
         
-        // We want to be able to refine t even if the convex hull lies completely instead bounds. This
+        // We want to be able to refine t even if the convex hull lies completely inside the bounds. This
         //  also allows us to be able to use range of [1..0] as a sentinel value meaning the convex hull
         //  lies entirely outside of bounds, and the curves don't intersect.
         if ( startPoint.y < bounds.maximum && startPoint.y > bounds.minimum ) {
@@ -310,6 +361,13 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 
 - (FBBezierCurve *) subcurveWithRange:(FBRange)range
 {
+#if 1
+    NSArray *curves1 = [self splitCurveAtParameter:range.minimum];
+    FBBezierCurve *upperCurve = [curves1 objectAtIndex:1];
+    CGFloat adjustedMaximum = (range.maximum - range.minimum) / (1.0 - range.minimum);
+    NSArray *curves2 = [upperCurve splitCurveAtParameter:adjustedMaximum];
+    return [curves2 objectAtIndex:0];
+#else
     NSArray *curves1 = [self splitCurveAtParameter:range.minimum];
     NSArray *curves2 = [self splitCurveAtParameter:range.maximum];
     
@@ -317,10 +375,25 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
     FBBezierCurve *leftCurve = [curves2 objectAtIndex:0];
     
     return [FBBezierCurve bezierCurveWithEndPoint1:rightCurve.endPoint1 controlPoint1:rightCurve.controlPoint1 controlPoint2:leftCurve.controlPoint2 endPoint2:leftCurve.endPoint2];
+#endif
 }
 
 - (NSPoint) pointAtParameter:(CGFloat)parameter controlPoint1:(NSPoint *)controlPoint1 controlPoint2:(NSPoint *)controlPoint2
 {
+    if ( self.isLine ) {
+        // Special case if it's a line to maintain precision
+        CGFloat distance = FBDistanceBetweenPoints(_endPoint1, _endPoint2);
+        NSPoint tangent = FBNormalizePoint(FBSubtractPoint(_endPoint2, _endPoint1));
+        NSPoint point = FBAddPoint(_endPoint1, FBUnitScalePoint(tangent, parameter * distance));
+        
+        CGFloat segment1Distance = FBDistanceBetweenPoints(_endPoint1, point);
+        *controlPoint1 = FBAddPoint(_endPoint1, FBUnitScalePoint(tangent, 2.0 * segment1Distance / 3.0));
+        CGFloat segment2Distance = FBDistanceBetweenPoints(_endPoint2, point);
+        *controlPoint2 = FBAddPoint(point, FBUnitScalePoint(tangent, segment2Distance / 3.0));
+
+        return point;
+    }
+    
     // Calculate a point on the bezier curve passed in, specifically the point at parameter.
     //  We could just plug parameter into the Q(t) formula shown in the fb_fitBezierInRange: comments.
     //  However, that method isn't numerically stable, meaning it amplifies any errors, which is bad
@@ -360,8 +433,28 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
     NSPoint controlPoint2 = NSZeroPoint;
     NSPoint intersectionPoint = [self pointAtParameter:parameter controlPoint1:&controlPoint1 controlPoint2:&controlPoint2];
     FBBezierCurve *leftCurve = [FBBezierCurve bezierCurveWithEndPoint1:_endPoint1 controlPoint1:_controlPoint1 controlPoint2:controlPoint1 endPoint2:intersectionPoint];
+    [leftCurve normalizeLine];
     FBBezierCurve *rightCurve = [FBBezierCurve bezierCurveWithEndPoint1:intersectionPoint controlPoint1:controlPoint2 controlPoint2:_controlPoint2 endPoint2:_endPoint2];
+    [rightCurve normalizeLine];
     return [NSArray arrayWithObjects:leftCurve, rightCurve, nil];
+}
+
+- (void) normalizeLine
+{
+    if ( !self.isLine )
+        return;
+    
+    CGFloat distance = FBDistanceBetweenPoints(_endPoint1, _endPoint2);
+    NSPoint leftTangent = FBNormalizePoint(FBSubtractPoint(_endPoint2, _endPoint1));
+    _controlPoint1 = FBAddPoint(_endPoint1, FBUnitScalePoint(leftTangent, distance / 3.0));
+    _controlPoint2 = FBAddPoint(_endPoint1, FBUnitScalePoint(leftTangent, 2.0 * distance / 3.0));
+}
+
+- (BOOL) isLine
+{
+    CGFloat colinear1 = CounterClockwiseTurn(_endPoint1, _endPoint2, _controlPoint1);
+    CGFloat colinear2 = CounterClockwiseTurn(_endPoint1, _endPoint2, _controlPoint2);
+    return colinear1 == 0.0 && colinear2 == 0.0;
 }
 
 - (NSArray *) convexHull
