@@ -101,24 +101,6 @@ static NSRect BoxFrame(NSPoint point)
         NSArray *curves1 = [FBBezierCurve bezierCurvesFromBezierPath:path1]; // rectangle
         NSArray *curves2 = [FBBezierCurve bezierCurvesFromBezierPath:path2]; // circle
         
-#if 0
-        FBBezierCurve *line = [curves1 objectAtIndex:2];
-        FBBezierCurve *arc = [curves2 objectAtIndex:0];
-        NSArray *intersections = [line intersectionsWithBezierCurve:arc];
-        FBBezierIntersection *intersection = [intersections objectAtIndex:0];
-        
-        NSPoint curve1Intersection = [intersection.curve1 pointAtParameter:intersection.parameter1 leftBezierCurve:nil rightBezierCurve:nil];
-        NSPoint curve2Intersection = [intersection.curve2 pointAtParameter:intersection.parameter2 leftBezierCurve:nil rightBezierCurve:nil];
-
-        NSPoint calculatedIntersection = NSMakePoint(line.endPoint1.x + (line.endPoint2.x - line.endPoint1.x) * intersection.parameter1, line.endPoint1.y);
-        CGFloat correctedParameter = (curve2Intersection.x - line.endPoint1.x) / (line.endPoint2.x - line.endPoint1.x);
-        
-        NSLog(@"intersections: %@, curve1 %f, %f, curve2 %f, %f, calculated %f, %f; t %f, corrected t: %f", intersections, 
-              curve1Intersection.x, curve1Intersection.y,
-              curve2Intersection.x, curve2Intersection.y,
-              calculatedIntersection.x, calculatedIntersection.y,
-              intersection.parameter1, correctedParameter);
-#else
         for (FBBezierCurve *curve1 in curves1) {
             for (FBBezierCurve *curve2 in curves2) {
                 NSArray *intersections = [curve1 intersectionsWithBezierCurve:curve2];
@@ -128,7 +110,6 @@ static NSRect BoxFrame(NSPoint point)
                 }
             }
         }
-#endif
     }
 }
 

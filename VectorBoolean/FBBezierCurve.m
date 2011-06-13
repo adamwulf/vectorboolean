@@ -359,21 +359,11 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 
 - (FBBezierCurve *) subcurveWithRange:(FBRange)range
 {
-#if 1
     NSArray *curves1 = [self splitCurveAtParameter:range.minimum];
     FBBezierCurve *upperCurve = [curves1 objectAtIndex:1];
     CGFloat adjustedMaximum = (range.maximum - range.minimum) / (1.0 - range.minimum);
     NSArray *curves2 = [upperCurve splitCurveAtParameter:adjustedMaximum];
     return [curves2 objectAtIndex:0];
-#else
-    NSArray *curves1 = [self splitCurveAtParameter:range.minimum];
-    NSArray *curves2 = [self splitCurveAtParameter:range.maximum];
-    
-    FBBezierCurve *rightCurve = [curves1 objectAtIndex:1];
-    FBBezierCurve *leftCurve = [curves2 objectAtIndex:0];
-    
-    return [FBBezierCurve bezierCurveWithEndPoint1:rightCurve.endPoint1 controlPoint1:rightCurve.controlPoint1 controlPoint2:leftCurve.controlPoint2 endPoint2:leftCurve.endPoint2];
-#endif
 }
 
 - (NSPoint) pointAtParameter:(CGFloat)parameter leftBezierCurve:(FBBezierCurve **)leftBezierCurve rightBezierCurve:(FBBezierCurve **)rightBezierCurve
