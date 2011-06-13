@@ -102,8 +102,6 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 - (FBBezierCurve *) bezierClipWithBezierCurve:(FBBezierCurve *)curve original:(FBBezierCurve *)originalCurve rangeOfOriginal:(FBRange *)originalRange intersects:(BOOL *)intersects;
 - (NSArray *) intersectionsWithBezierCurve:(FBBezierCurve *)curve usRange:(FBRange *)usRange themRange:(FBRange *)themRange originalUs:(FBBezierCurve *)originalUs originalThem:(FBBezierCurve *)originalThem;
 
-@property (readonly, getter = isLine) BOOL line;
-
 @end
 
 @implementation FBBezierCurve
@@ -367,24 +365,7 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 }
 
 - (NSPoint) pointAtParameter:(CGFloat)parameter leftBezierCurve:(FBBezierCurve **)leftBezierCurve rightBezierCurve:(FBBezierCurve **)rightBezierCurve
-{
-    if ( self.isLine ) {
-        // Special case if it's a line to maintain precision
-        CGFloat distance = FBDistanceBetweenPoints(_endPoint1, _endPoint2);
-        NSPoint tangent = FBNormalizePoint(FBSubtractPoint(_endPoint2, _endPoint1));
-        NSPoint point = FBAddPoint(_endPoint1, FBUnitScalePoint(tangent, parameter * distance));
-        
-        if ( leftBezierCurve != nil ) {
-            CGFloat segment1Distance = FBDistanceBetweenPoints(_endPoint1, point);
-            *leftBezierCurve = [FBBezierCurve bezierCurveWithEndPoint1:_endPoint1 controlPoint1:FBAddPoint(_endPoint1, FBUnitScalePoint(tangent, segment1Distance / 3.0)) controlPoint2:FBAddPoint(_endPoint1, FBUnitScalePoint(tangent, 2.0 * segment1Distance / 3.0)) endPoint2:point];
-        }
-        if ( rightBezierCurve != nil ) {
-            CGFloat segment2Distance = FBDistanceBetweenPoints(_endPoint2, point);
-            *rightBezierCurve = [FBBezierCurve bezierCurveWithEndPoint1:point controlPoint1:FBAddPoint(point, FBUnitScalePoint(tangent, segment2Distance / 3.0)) controlPoint2:FBAddPoint(point, FBUnitScalePoint(tangent, 2.0 * segment2Distance / 3.0)) endPoint2:_endPoint2];
-        }
-        return point;
-    }
-    
+{    
     // Calculate a point on the bezier curve passed in, specifically the point at parameter.
     //  However, that method isn't numerically stable, meaning it amplifies any errors, which is bad
     //  seeing we're using floating point numbers with limited precision. Instead we'll use
@@ -423,13 +404,6 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
     FBBezierCurve *rightCurve = nil;
     [self pointAtParameter:parameter leftBezierCurve:&leftCurve rightBezierCurve:&rightCurve];
     return [NSArray arrayWithObjects:leftCurve, rightCurve, nil];
-}
-
-- (BOOL) isLine
-{
-    CGFloat colinear1 = CounterClockwiseTurn(_endPoint1, _endPoint2, _controlPoint1);
-    CGFloat colinear2 = CounterClockwiseTurn(_endPoint1, _endPoint2, _controlPoint2);
-    return colinear1 == 0.0 && colinear2 == 0.0;
 }
 
 - (NSArray *) convexHull
