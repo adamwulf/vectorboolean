@@ -28,6 +28,6 @@
 
 - (NSArray *) intersectionsWithBezierCurve:(FBBezierCurve *)curve;
 
-- (NSPoint) pointAtParameter:(CGFloat)parameter controlPoint1:(NSPoint *)controlPoint1 controlPoint2:(NSPoint *)controlPoint2;
+- (NSPoint) pointAtParameter:(CGFloat)parameter leftBezierCurve:(FBBezierCurve **)leftBezierCurve rightBezierCurve:(FBBezierCurve **)rightBezierCurve;
 
 @end

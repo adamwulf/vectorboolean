@@ -102,8 +102,6 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 - (FBBezierCurve *) bezierClipWithBezierCurve:(FBBezierCurve *)curve original:(FBBezierCurve *)originalCurve rangeOfOriginal:(FBRange *)originalRange intersects:(BOOL *)intersects;
 - (NSArray *) intersectionsWithBezierCurve:(FBBezierCurve *)curve usRange:(FBRange *)usRange themRange:(FBRange *)themRange originalUs:(FBBezierCurve *)originalUs originalThem:(FBBezierCurve *)originalThem;
 
-- (void) normalizeLine;
-
 @property (readonly, getter = isLine) BOOL line;
 
 @end
@@ -378,7 +376,7 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 #endif
 }
 
-- (NSPoint) pointAtParameter:(CGFloat)parameter controlPoint1:(NSPoint *)controlPoint1 controlPoint2:(NSPoint *)controlPoint2
+- (NSPoint) pointAtParameter:(CGFloat)parameter leftBezierCurve:(FBBezierCurve **)leftBezierCurve rightBezierCurve:(FBBezierCurve **)rightBezierCurve
 {
     if ( self.isLine ) {
         // Special case if it's a line to maintain precision
@@ -386,16 +384,18 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
         NSPoint tangent = FBNormalizePoint(FBSubtractPoint(_endPoint2, _endPoint1));
         NSPoint point = FBAddPoint(_endPoint1, FBUnitScalePoint(tangent, parameter * distance));
         
-        CGFloat segment1Distance = FBDistanceBetweenPoints(_endPoint1, point);
-        *controlPoint1 = FBAddPoint(_endPoint1, FBUnitScalePoint(tangent, 2.0 * segment1Distance / 3.0));
-        CGFloat segment2Distance = FBDistanceBetweenPoints(_endPoint2, point);
-        *controlPoint2 = FBAddPoint(point, FBUnitScalePoint(tangent, segment2Distance / 3.0));
-
+        if ( leftBezierCurve != nil ) {
+            CGFloat segment1Distance = FBDistanceBetweenPoints(_endPoint1, point);
+            *leftBezierCurve = [FBBezierCurve bezierCurveWithEndPoint1:_endPoint1 controlPoint1:FBAddPoint(_endPoint1, FBUnitScalePoint(tangent, segment1Distance / 3.0)) controlPoint2:FBAddPoint(_endPoint1, FBUnitScalePoint(tangent, 2.0 * segment1Distance / 3.0)) endPoint2:point];
+        }
+        if ( rightBezierCurve != nil ) {
+            CGFloat segment2Distance = FBDistanceBetweenPoints(_endPoint2, point);
+            *rightBezierCurve = [FBBezierCurve bezierCurveWithEndPoint1:point controlPoint1:FBAddPoint(point, FBUnitScalePoint(tangent, segment2Distance / 3.0)) controlPoint2:FBAddPoint(point, FBUnitScalePoint(tangent, 2.0 * segment2Distance / 3.0)) endPoint2:_endPoint2];
+        }
         return point;
     }
     
     // Calculate a point on the bezier curve passed in, specifically the point at parameter.
-    //  We could just plug parameter into the Q(t) formula shown in the fb_fitBezierInRange: comments.
     //  However, that method isn't numerically stable, meaning it amplifies any errors, which is bad
     //  seeing we're using floating point numbers with limited precision. Instead we'll use
     //  De Casteljau's algorithm.
@@ -406,7 +406,8 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
     // With this algorithm we start out with the points in the bezier path. 
     NSUInteger degree = 3; // We're a cubic bezier
     NSPoint points[4] = { _endPoint1, _controlPoint1, _controlPoint2, _endPoint2 };
-    NSPoint tangents[2] = {};
+    NSPoint leftCurve[4] = { _endPoint1, NSZeroPoint, NSZeroPoint, NSZeroPoint };
+    NSPoint rightCurve[4] = { NSZeroPoint, NSZeroPoint, NSZeroPoint, _endPoint2 };
     
     for (NSUInteger k = 1; k <= degree; k++) {
         for (NSUInteger i = 0; i <= (degree - k); i++) {
@@ -414,40 +415,24 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
             points[i].y = (1.0 - parameter) * points[i].y + parameter * points[i + 1].y;            
         }
         
-        // Save off the tangents
-        if ( k == (degree - 1) ) {
-            tangents[0] = points[0];
-            tangents[1] = points[1];
-        }
+        leftCurve[k] = points[0];
+        rightCurve[degree - k] = points[degree - k];
     }
     
     // The point in the curve at parameter ends up in points[0]
-    *controlPoint1 = tangents[0];
-    *controlPoint2 = tangents[1];
+    if ( leftBezierCurve != nil )
+        *leftBezierCurve = [FBBezierCurve bezierCurveWithEndPoint1:leftCurve[0] controlPoint1:leftCurve[1] controlPoint2:leftCurve[2] endPoint2:leftCurve[3]];
+    if ( rightBezierCurve != nil )
+        *rightBezierCurve = [FBBezierCurve bezierCurveWithEndPoint1:rightCurve[0] controlPoint1:rightCurve[1] controlPoint2:rightCurve[2] endPoint2:rightCurve[3]];
     return points[0];
 }
 
 - (NSArray *) splitCurveAtParameter:(CGFloat)parameter
 {
-    NSPoint controlPoint1 = NSZeroPoint;
-    NSPoint controlPoint2 = NSZeroPoint;
-    NSPoint intersectionPoint = [self pointAtParameter:parameter controlPoint1:&controlPoint1 controlPoint2:&controlPoint2];
-    FBBezierCurve *leftCurve = [FBBezierCurve bezierCurveWithEndPoint1:_endPoint1 controlPoint1:_controlPoint1 controlPoint2:controlPoint1 endPoint2:intersectionPoint];
-    [leftCurve normalizeLine];
-    FBBezierCurve *rightCurve = [FBBezierCurve bezierCurveWithEndPoint1:intersectionPoint controlPoint1:controlPoint2 controlPoint2:_controlPoint2 endPoint2:_endPoint2];
-    [rightCurve normalizeLine];
+    FBBezierCurve *leftCurve = nil;
+    FBBezierCurve *rightCurve = nil;
+    [self pointAtParameter:parameter leftBezierCurve:&leftCurve rightBezierCurve:&rightCurve];
     return [NSArray arrayWithObjects:leftCurve, rightCurve, nil];
-}
-
-- (void) normalizeLine
-{
-    if ( !self.isLine )
-        return;
-    
-    CGFloat distance = FBDistanceBetweenPoints(_endPoint1, _endPoint2);
-    NSPoint leftTangent = FBNormalizePoint(FBSubtractPoint(_endPoint2, _endPoint1));
-    _controlPoint1 = FBAddPoint(_endPoint1, FBUnitScalePoint(leftTangent, distance / 3.0));
-    _controlPoint2 = FBAddPoint(_endPoint1, FBUnitScalePoint(leftTangent, 2.0 * distance / 3.0));
 }
 
 - (BOOL) isLine
