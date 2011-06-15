@@ -66,6 +66,14 @@ static CGFloat FBRangeScaleNormalizedValue(FBRange range, CGFloat value)
     return (range.maximum - range.minimum) * value + range.minimum;
 }
 
+static BOOL AreValuesClose(CGFloat value1, CGFloat value2)
+{
+    static const CGFloat FBPointClosenessThreshold = 1e-10;
+    
+    CGFloat delta = value1 - value2;    
+    return (delta <= FBPointClosenessThreshold) && (delta >= -FBPointClosenessThreshold);
+}
+
 // The three points are a counter-clockwise turn if the return value is greater than 0,
 //  clockwise if less than 0, or colinear if 0.
 static CGFloat CounterClockwiseTurn(NSPoint point1, NSPoint point2, NSPoint point3)
@@ -101,6 +109,8 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 - (NSArray *) convexHull;
 - (FBBezierCurve *) bezierClipWithBezierCurve:(FBBezierCurve *)curve original:(FBBezierCurve *)originalCurve rangeOfOriginal:(FBRange *)originalRange intersects:(BOOL *)intersects;
 - (NSArray *) intersectionsWithBezierCurve:(FBBezierCurve *)curve usRange:(FBRange *)usRange themRange:(FBRange *)themRange originalUs:(FBBezierCurve *)originalUs originalThem:(FBBezierCurve *)originalThem;
+
+@property (readonly, getter = isPoint) BOOL point;
 
 @end
 
@@ -191,21 +201,26 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
     
     FBBezierCurve *us = self;
     FBBezierCurve *them = curve;
+    FBBezierCurve *previousUs = us;
+    FBBezierCurve *previousThem = them;
     
     // Don't check for convergence until we actually see if we intersect or not. i.e. Make sure we go through at least once, otherwise the results
     //  don't mean anything
     NSUInteger iterations = 0;
-    while ( iterations < maxIterations && ((iterations == 0) || (!FBRangeHasConverged(*usRange, places) || !FBRangeHasConverged(*themRange, places))) ) {
+    while ( iterations < maxIterations && ((iterations == 0) || (!FBRangeHasConverged(*usRange, places) && !FBRangeHasConverged(*themRange, places))) ) {
         FBRange previousUsRange = *usRange;
         FBRange previousThemRange = *themRange;
         
         BOOL intersects = NO;
-        us = [us bezierClipWithBezierCurve:them original:originalUs rangeOfOriginal:usRange intersects:&intersects];
+        us = [us bezierClipWithBezierCurve:them.isPoint ? previousThem : them original:originalUs rangeOfOriginal:usRange intersects:&intersects];
         if ( !intersects )
             return [NSArray array];
-        them = [them bezierClipWithBezierCurve:us original:originalThem rangeOfOriginal:themRange intersects:&intersects];
+        them = [them bezierClipWithBezierCurve:us.isPoint ? previousUs : us original:originalThem rangeOfOriginal:themRange intersects:&intersects];
         if ( !intersects )
             return [NSArray array];
+        
+        if ( us.isPoint || them.isPoint )
+            break;
         
         // See if either of curves ranges is reduced by less than 20%.
         CGFloat percentChangeInUs = (FBRangeGetSize(previousUsRange) - FBRangeGetSize(*usRange)) / FBRangeGetSize(previousUsRange);
@@ -243,6 +258,8 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
         }
         
         iterations++;
+        previousUs = us;
+        previousThem = them;
     }
         
     return [NSArray arrayWithObject:[FBBezierIntersection intersectionWithCurve1:originalUs parameter1:usRange->minimum curve2:originalThem parameter2:themRange->minimum]];
@@ -269,7 +286,7 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
     }
     
     // Combine to form Voltron
-    FBRange clippedRange = FBRangeMake(MAX(regularClippedRange.minimum, perpendicularClippedRange.minimum), MIN(regularClippedRange.maximum, perpendicularClippedRange.maximum));
+    FBRange clippedRange = FBRangeMake(MAX(regularClippedRange.minimum, perpendicularClippedRange.minimum), MIN(regularClippedRange.maximum, perpendicularClippedRange.maximum));    
     
     // Map the newly clipped range onto the original range
     FBRange newRange = FBRangeMake(FBRangeScaleNormalizedValue(*originalRange, clippedRange.minimum), FBRangeScaleNormalizedValue(*originalRange, clippedRange.maximum));
@@ -280,10 +297,44 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
     return [originalCurve subcurveWithRange:*originalRange];
 }
 
+static CGFloat CubicCurveDistance(CGFloat parameter, CGFloat distance1, CGFloat distance2)
+{
+    return 3.0 * parameter * (1.0 - parameter) * ((1.0 - parameter) * distance1 + parameter * distance2);
+}
+
 - (FBNormalizedLine) regularFatLineBounds:(FBRange *)range
 {
     FBNormalizedLine line = FBNormalizedLineMake(_endPoint1, _endPoint2);
     
+#if 1 // TEST_POINT_3 losing all interior intersections on rectangle with hole, etc. curve and line intersections lost.
+    
+#if 1
+    CGFloat controlPoint1Distance = FBNormalizedLineDistanceFromPoint(line, _controlPoint1);
+    CGFloat controlPoint2Distance = FBNormalizedLineDistanceFromPoint(line, _controlPoint2);    
+    CGFloat min = MIN(controlPoint1Distance, MIN(controlPoint2Distance, 0.0));
+    CGFloat max = MAX(controlPoint1Distance, MAX(controlPoint2Distance, 0.0));
+        
+    *range = FBRangeMake(min, max);
+#else
+    CGFloat controlPoint1Distance = FBNormalizedLineDistanceFromPoint(line, _controlPoint1);
+    CGFloat controlPoint2Distance = FBNormalizedLineDistanceFromPoint(line, _controlPoint2);
+    
+    if ( controlPoint1Distance * controlPoint2Distance > 0 ) {
+        CGFloat parameter1 = controlPoint1Distance / (2.0 * controlPoint1Distance - controlPoint2Distance + sqrtf(controlPoint1Distance * controlPoint1Distance - controlPoint1Distance * controlPoint2Distance + controlPoint2Distance * controlPoint2Distance));
+        CGFloat distance = CubicCurveDistance(parameter1, controlPoint1Distance, controlPoint2Distance);
+        *range = FBRangeMake(MIN(0.0, distance), MAX(0.0, distance));
+    } else {
+        CGFloat parameter1 = (2.0 * controlPoint1Distance - controlPoint2Distance + sqrtf(controlPoint1Distance * controlPoint1Distance + controlPoint2Distance * controlPoint2Distance - controlPoint1Distance * controlPoint2Distance)) / (3.0 * (controlPoint1Distance - controlPoint2Distance));
+        CGFloat parameter2 = (2.0 * controlPoint1Distance - controlPoint2Distance - sqrtf(controlPoint1Distance * controlPoint1Distance + controlPoint2Distance * controlPoint2Distance - controlPoint1Distance * controlPoint2Distance)) / (3.0 * (controlPoint1Distance - controlPoint2Distance));
+        CGFloat distance1 = CubicCurveDistance(parameter1, controlPoint1Distance, controlPoint2Distance);
+        CGFloat distance2 = CubicCurveDistance(parameter2, controlPoint1Distance, controlPoint2Distance);
+
+        *range = FBRangeMake(MIN(distance1, distance2), MAX(distance1, distance2));
+    }
+    
+#endif
+    
+#else
     CGFloat controlPoint1Distance = FBNormalizedLineDistanceFromPoint(line, _controlPoint1);
     CGFloat controlPoint2Distance = FBNormalizedLineDistanceFromPoint(line, _controlPoint2);
     
@@ -291,7 +342,8 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
         *range = FBRangeMake(3.0 * MIN(0.0, MIN(controlPoint1Distance, controlPoint2Distance)) / 4.0, 3.0 * MAX(0, MAX(controlPoint1Distance, controlPoint2Distance)) / 4.0);
     else
         *range = FBRangeMake(4.0 * MIN(0.0, MIN(controlPoint1Distance, controlPoint2Distance)) / 9.0, 4.0 * MAX(0, MAX(controlPoint1Distance, controlPoint2Distance)) / 9.0);    
-
+#endif
+    
     return line;
 }
 
@@ -442,14 +494,17 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
         CGFloat cosine1 = (point1.x - lowestValue.x) / distance1;
         CGFloat distance2 = FBDistanceBetweenPoints(point2, lowestValue);
         CGFloat cosine2 = (point2.x - lowestValue.x) / distance2;
+        if ( AreValuesClose(cosine1, cosine2) ) {
+            if ( distance1 < distance2 )
+                return NSOrderedAscending;
+            else if ( distance1 > distance2 )
+                return NSOrderedDescending;
+            return NSOrderedSame;
+        }
         if ( cosine1 < cosine2 )
             return NSOrderedDescending;
         else if ( cosine1 > cosine2 )
             return NSOrderedAscending;
-        if ( distance1 < distance2 )
-            return NSOrderedAscending;
-        else if ( distance1 > distance2 )
-            return NSOrderedDescending;
         return NSOrderedSame;
     }];
     
@@ -471,6 +526,11 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
     }
     
     return [points subarrayWithRange:NSMakeRange(0, numberOfConvexHullPoints)];
+}
+
+- (BOOL) isPoint
+{
+    return AreValuesClose(_endPoint1.x, _endPoint2.x) && AreValuesClose(_endPoint1.y, _endPoint2.y);
 }
 
 @end

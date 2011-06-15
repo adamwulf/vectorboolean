@@ -34,7 +34,7 @@
 {
     self = [super init];
     if (self) {
-        _resetAction = @selector(addSomeOverlap);
+        _resetAction = @selector(addHoleyRectangleWithRectangle);
     }
     return self;
 }
