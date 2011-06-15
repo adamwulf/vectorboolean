@@ -27,5 +27,6 @@
 - (IBAction) onCircleOnRectangle:(id)sender;
 - (IBAction) onRectangleWithHoleOverlappingRectangle:(id)sender;
 - (IBAction) onTwoRectanglesOverlappingCircle:(id)sender;
+- (IBAction) onCircleOverlappingCircle:(id)sender;
 
 @end

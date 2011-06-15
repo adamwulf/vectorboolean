@@ -375,6 +375,14 @@
 									<reference key="NSOnImage" ref="1033313550"/>
 									<reference key="NSMixedImage" ref="310636482"/>
 								</object>
+								<object class="NSMenuItem" id="977728388">
+									<reference key="NSMenu" ref="930598111"/>
+									<string key="NSTitle">Circle overlapping Circle</string>
+									<string key="NSKeyEquiv"/>
+									<int key="NSMnemonicLoc">2147483647</int>
+									<reference key="NSOnImage" ref="1033313550"/>
+									<reference key="NSMixedImage" ref="310636482"/>
+								</object>
 							</object>
 						</object>
 					</object>
@@ -766,6 +774,14 @@
 					</object>
 					<int key="connectionID">554</int>
 				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">onCircleOverlappingCircle:</string>
+						<reference key="source" ref="1014"/>
+						<reference key="destination" ref="977728388"/>
+					</object>
+					<int key="connectionID">556</int>
+				</object>
 			</object>
 			<object class="IBMutableOrderedSet" key="objectRecords">
 				<object class="NSArray" key="orderedObjects">
@@ -1143,6 +1159,7 @@
 							<reference ref="454810109"/>
 							<reference ref="233552625"/>
 							<reference ref="94302509"/>
+							<reference ref="977728388"/>
 						</object>
 						<reference key="parent" ref="40719474"/>
 					</object>
@@ -1174,6 +1191,11 @@
 					<object class="IBObjectRecord">
 						<int key="objectID">548</int>
 						<reference key="object" ref="94302509"/>
+						<reference key="parent" ref="930598111"/>
+					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">555</int>
+						<reference key="object" ref="977728388"/>
 						<reference key="parent" ref="930598111"/>
 					</object>
 				</object>
@@ -1259,6 +1281,7 @@
 					<string>546.IBPluginDependency</string>
 					<string>547.IBPluginDependency</string>
 					<string>548.IBPluginDependency</string>
+					<string>555.IBPluginDependency</string>
 					<string>56.IBPluginDependency</string>
 					<string>56.ImportedFromIB2</string>
 					<string>57.IBEditorWindowLastContentRect</string>
@@ -1374,6 +1397,7 @@
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
+					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
 					<string>{{416, 203}, {275, 183}}</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -1421,7 +1445,7 @@
 				<reference key="dict.values" ref="0"/>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">554</int>
+			<int key="maxID">556</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -1442,6 +1466,7 @@
 							<bool key="EncodedWithXMLCoder">YES</bool>
 							<string>onCircleInRectangle:</string>
 							<string>onCircleOnRectangle:</string>
+							<string>onCircleOverlappingCircle:</string>
 							<string>onCircleOverlappingRectangle:</string>
 							<string>onDifference:</string>
 							<string>onIntersect:</string>
@@ -1454,6 +1479,7 @@
 						</object>
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>id</string>
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
@@ -1473,6 +1499,7 @@
 							<bool key="EncodedWithXMLCoder">YES</bool>
 							<string>onCircleInRectangle:</string>
 							<string>onCircleOnRectangle:</string>
+							<string>onCircleOverlappingCircle:</string>
 							<string>onCircleOverlappingRectangle:</string>
 							<string>onDifference:</string>
 							<string>onIntersect:</string>
@@ -1491,6 +1518,10 @@
 							</object>
 							<object class="IBActionInfo">
 								<string key="name">onCircleOnRectangle:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">onCircleOverlappingCircle:</string>
 								<string key="candidateClassName">id</string>
 							</object>
 							<object class="IBActionInfo">
@@ -1545,6 +1576,7 @@
 							<bool key="EncodedWithXMLCoder">YES</bool>
 							<string>onCircleInRectangle:</string>
 							<string>onCircleOnRectangle:</string>
+							<string>onCircleOverlappingCircle:</string>
 							<string>onCircleOverlappingRectangle:</string>
 							<string>onDifference:</string>
 							<string>onIntersect:</string>
@@ -1557,6 +1589,7 @@
 						</object>
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>id</string>
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
@@ -1576,6 +1609,7 @@
 							<bool key="EncodedWithXMLCoder">YES</bool>
 							<string>onCircleInRectangle:</string>
 							<string>onCircleOnRectangle:</string>
+							<string>onCircleOverlappingCircle:</string>
 							<string>onCircleOverlappingRectangle:</string>
 							<string>onDifference:</string>
 							<string>onIntersect:</string>
@@ -1594,6 +1628,10 @@
 							</object>
 							<object class="IBActionInfo">
 								<string key="name">onCircleOnRectangle:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">onCircleOverlappingCircle:</string>
 								<string key="candidateClassName">id</string>
 							</object>
 							<object class="IBActionInfo">

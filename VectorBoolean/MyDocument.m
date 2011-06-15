@@ -19,6 +19,7 @@
 - (void) addCircleOnRectangle;
 - (void) addHoleyRectangleWithRectangle;
 - (void) addCircleOnTwoRectangles;
+- (void) addCircleOverlappingCircle;
 
 - (void) addRectangle:(NSRect)rect;
 - (void) addCircleAtPoint:(NSPoint)center withRadius:(CGFloat)radius;
@@ -131,6 +132,15 @@
     [self addCircleAtPoint:NSMakePoint(200, 200) withRadius:185];    
 }
 
+- (void) addCircleOverlappingCircle
+{
+    NSBezierPath *circle = [NSBezierPath bezierPath];
+    [self addCircleAtPoint:NSMakePoint(210, 110) withRadius:100 toPath:circle];
+    [_view.canvas addPath:circle withColor:[NSColor blueColor]];
+    
+    [self addCircleAtPoint:NSMakePoint(355, 240) withRadius:125];
+}
+
 - (void) addRectangle:(NSRect)rect
 {
     NSBezierPath *rectangle = [NSBezierPath bezierPath];
@@ -235,6 +245,12 @@
 {
     _resetAction = @selector(addCircleOnTwoRectangles);
     [self onReset:sender];
+}
+
+- (IBAction) onCircleOverlappingCircle:(id)sender
+{
+    _resetAction = @selector(addCircleOverlappingCircle);
+    [self onReset:sender];    
 }
 
 - (BOOL)validateUserInterfaceItem:(id < NSValidatedUserInterfaceItem >)anItem
