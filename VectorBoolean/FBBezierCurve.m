@@ -297,11 +297,6 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
     return [originalCurve subcurveWithRange:*originalRange];
 }
 
-static CGFloat CubicCurveDistance(CGFloat parameter, CGFloat distance1, CGFloat distance2)
-{
-    return 3.0 * parameter * (1.0 - parameter) * ((1.0 - parameter) * distance1 + parameter * distance2);
-}
-
 - (FBNormalizedLine) regularFatLineBounds:(FBRange *)range
 {
     FBNormalizedLine line = FBNormalizedLineMake(_endPoint1, _endPoint2);

@@ -35,7 +35,7 @@
 {
     self = [super init];
     if (self) {
-        _resetAction = @selector(addHoleyRectangleWithRectangle);
+        _resetAction = @selector(addCircleOnRectangle);
     }
     return self;
 }
