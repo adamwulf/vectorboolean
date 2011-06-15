@@ -61,6 +61,11 @@ static CGFloat FBRangeGetSize(FBRange range)
     return range.maximum - range.minimum;
 }
 
+static CGFloat FBRangeAverage(FBRange range)
+{
+    return (range.minimum + range.maximum) / 2.0;
+}
+
 static CGFloat FBRangeScaleNormalizedValue(FBRange range, CGFloat value)
 {
     return (range.maximum - range.minimum) * value + range.minimum;
@@ -98,6 +103,42 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
     return YES;
 }
 
+static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloat parameter, NSPoint *leftCurve, NSPoint *rightCurve)
+{
+    // Calculate a point on the bezier curve passed in, specifically the point at parameter.
+    //  However, that method isn't numerically stable, meaning it amplifies any errors, which is bad
+    //  seeing we're using floating point numbers with limited precision. Instead we'll use
+    //  De Casteljau's algorithm.
+    //
+    // See: http://www.cs.mtu.edu/~shene/COURSES/cs3621/NOTES/spline/Bezier/de-casteljau.html
+    //  for an explaination of De Casteljau's algorithm.
+    
+    // With this algorithm we start out with the points in the bezier path. 
+    NSPoint points[4] = {};
+    for (NSUInteger i = 0; i <= degree; i++)
+        points[i] = bezierPoints[i];
+    
+    if ( leftCurve != nil )
+        leftCurve[0] = points[0];
+    if ( rightCurve != nil )
+        rightCurve[degree] = points[degree];
+        
+    for (NSUInteger k = 1; k <= degree; k++) {
+        for (NSUInteger i = 0; i <= (degree - k); i++) {
+            points[i].x = (1.0 - parameter) * points[i].x + parameter * points[i + 1].x;
+            points[i].y = (1.0 - parameter) * points[i].y + parameter * points[i + 1].y;            
+        }
+        
+        if ( leftCurve != nil )
+            leftCurve[k] = points[0];
+        if ( rightCurve != nil )
+            rightCurve[degree - k] = points[degree - k];
+    }
+    
+    // The point in the curve at parameter ends up in points[0]
+    return points[0];
+}
+
 @interface FBBezierCurve ()
 
 - (FBNormalizedLine) regularFatLineBounds:(FBRange *)range;
@@ -109,6 +150,7 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 - (NSArray *) convexHull;
 - (FBBezierCurve *) bezierClipWithBezierCurve:(FBBezierCurve *)curve original:(FBBezierCurve *)originalCurve rangeOfOriginal:(FBRange *)originalRange intersects:(BOOL *)intersects;
 - (NSArray *) intersectionsWithBezierCurve:(FBBezierCurve *)curve usRange:(FBRange *)usRange themRange:(FBRange *)themRange originalUs:(FBBezierCurve *)originalUs originalThem:(FBBezierCurve *)originalThem;
+- (CGFloat) refineParameter:(CGFloat)parameter forPoint:(NSPoint)point;
 
 @property (readonly, getter = isPoint) BOOL point;
 
@@ -261,7 +303,24 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
         previousUs = us;
         previousThem = them;
     }
-        
+    
+    if ( FBRangeHasConverged(*usRange, places) && !FBRangeHasConverged(*themRange, places) ) {
+        // Refine the them range
+        NSPoint intersectionPoint = [originalUs pointAtParameter:usRange->minimum leftBezierCurve:nil rightBezierCurve:nil];
+        CGFloat refinedParameter = FBRangeAverage(*themRange);
+        for (NSUInteger i = 0; i < 3; i++)
+            refinedParameter = [originalThem refineParameter:refinedParameter forPoint:intersectionPoint];
+        themRange->minimum = refinedParameter;
+        themRange->maximum = refinedParameter;
+    } else if ( !FBRangeHasConverged(*usRange, places) && FBRangeHasConverged(*themRange, places) ) {
+        NSPoint intersectionPoint = [originalThem pointAtParameter:themRange->minimum leftBezierCurve:nil rightBezierCurve:nil];
+        CGFloat refinedParameter = FBRangeAverage(*usRange);
+        for (NSUInteger i = 0; i < 3; i++)
+            refinedParameter = [originalUs refineParameter:refinedParameter forPoint:intersectionPoint];
+        usRange->minimum = refinedParameter;
+        usRange->maximum = refinedParameter;        
+    }
+    
     return [NSArray arrayWithObject:[FBBezierIntersection intersectionWithCurve1:originalUs parameter1:usRange->minimum curve2:originalThem parameter2:themRange->minimum]];
 }
 
@@ -382,36 +441,64 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
 
 - (NSPoint) pointAtParameter:(CGFloat)parameter leftBezierCurve:(FBBezierCurve **)leftBezierCurve rightBezierCurve:(FBBezierCurve **)rightBezierCurve
 {    
-    // Calculate a point on the bezier curve passed in, specifically the point at parameter.
-    //  However, that method isn't numerically stable, meaning it amplifies any errors, which is bad
-    //  seeing we're using floating point numbers with limited precision. Instead we'll use
-    //  De Casteljau's algorithm.
-    //
-    // See: http://www.cs.mtu.edu/~shene/COURSES/cs3621/NOTES/spline/Bezier/de-casteljau.html
-    //  for an explaination of De Casteljau's algorithm.
-    
-    // With this algorithm we start out with the points in the bezier path. 
-    NSUInteger degree = 3; // We're a cubic bezier
     NSPoint points[4] = { _endPoint1, _controlPoint1, _controlPoint2, _endPoint2 };
-    NSPoint leftCurve[4] = { _endPoint1, NSZeroPoint, NSZeroPoint, NSZeroPoint };
-    NSPoint rightCurve[4] = { NSZeroPoint, NSZeroPoint, NSZeroPoint, _endPoint2 };
+    NSPoint leftCurve[4] = {};
+    NSPoint rightCurve[4] = {};
+
+    NSPoint point = BezierWithPoints(3, points, parameter, leftCurve, rightCurve);
     
-    for (NSUInteger k = 1; k <= degree; k++) {
-        for (NSUInteger i = 0; i <= (degree - k); i++) {
-            points[i].x = (1.0 - parameter) * points[i].x + parameter * points[i + 1].x;
-            points[i].y = (1.0 - parameter) * points[i].y + parameter * points[i + 1].y;            
-        }
-        
-        leftCurve[k] = points[0];
-        rightCurve[degree - k] = points[degree - k];
-    }
-    
-    // The point in the curve at parameter ends up in points[0]
     if ( leftBezierCurve != nil )
         *leftBezierCurve = [FBBezierCurve bezierCurveWithEndPoint1:leftCurve[0] controlPoint1:leftCurve[1] controlPoint2:leftCurve[2] endPoint2:leftCurve[3]];
     if ( rightBezierCurve != nil )
         *rightBezierCurve = [FBBezierCurve bezierCurveWithEndPoint1:rightCurve[0] controlPoint1:rightCurve[1] controlPoint2:rightCurve[2] endPoint2:rightCurve[3]];
-    return points[0];
+    return point;
+}
+
+- (CGFloat) refineParameter:(CGFloat)parameter forPoint:(NSPoint)point
+{
+    // Use Newton's Method to refine our parameter. In general, that formula is:
+    //
+    //  parameter = parameter - f(parameter) / f'(parameter)
+    //
+    // In our case:
+    //
+    //  f(parameter) = (Q(parameter) - point) * Q'(parameter) = 0
+    //
+    // Where Q'(parameter) is tangent to the curve at Q(parameter) and orthogonal to [Q(parameter) - P]
+    //
+    // Taking the derivative gives us:
+    //
+    //  f'(parameter) = (Q(parameter) - point) * Q''(parameter) + Q'(parameter) * Q'(parameter)
+    //
+    
+    NSPoint bezierPoints[4] = {_endPoint1, _controlPoint1, _controlPoint2, _endPoint2};
+    
+    // Compute Q(parameter)
+    NSPoint qAtParameter = BezierWithPoints(3, bezierPoints, parameter, nil, nil);
+    
+    // Compute Q'(parameter)
+    NSPoint qPrimePoints[3] = {};
+    for (NSUInteger i = 0; i < 3; i++) {
+        qPrimePoints[i].x = (bezierPoints[i + 1].x - bezierPoints[i].x) * 3.0;
+        qPrimePoints[i].y = (bezierPoints[i + 1].y - bezierPoints[i].y) * 3.0;
+    }
+    NSPoint qPrimeAtParameter = BezierWithPoints(2, qPrimePoints, parameter, nil, nil);
+    
+    // Compute Q''(parameter)
+    NSPoint qPrimePrimePoints[2] = {};
+    for (NSUInteger i = 0; i < 2; i++) {
+        qPrimePrimePoints[i].x = (qPrimePoints[i + 1].x - qPrimePoints[i].x) * 2.0;
+        qPrimePrimePoints[i].y = (qPrimePoints[i + 1].y - qPrimePoints[i].y) * 2.0;        
+    }
+    NSPoint qPrimePrimeAtParameter = BezierWithPoints(1, qPrimePrimePoints, parameter, nil, nil);
+    
+    // Compute f(parameter) and f'(parameter)
+    NSPoint qMinusPoint = FBSubtractPoint(qAtParameter, point);
+    CGFloat fAtParameter = FBDotMultiplyPoint(qMinusPoint, qPrimeAtParameter);
+    CGFloat fPrimeAtParameter = FBDotMultiplyPoint(qMinusPoint, qPrimePrimeAtParameter) + FBDotMultiplyPoint(qPrimeAtParameter, qPrimeAtParameter);
+    
+    // Newton's method!
+    return parameter - (fAtParameter / fPrimeAtParameter);
 }
 
 - (NSArray *) splitCurveAtParameter:(CGFloat)parameter
