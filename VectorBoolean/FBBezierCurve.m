@@ -306,43 +306,12 @@ static CGFloat CubicCurveDistance(CGFloat parameter, CGFloat distance1, CGFloat 
 {
     FBNormalizedLine line = FBNormalizedLineMake(_endPoint1, _endPoint2);
     
-#if 1 // TEST_POINT_3 losing all interior intersections on rectangle with hole, etc. curve and line intersections lost.
-    
-#if 1
     CGFloat controlPoint1Distance = FBNormalizedLineDistanceFromPoint(line, _controlPoint1);
     CGFloat controlPoint2Distance = FBNormalizedLineDistanceFromPoint(line, _controlPoint2);    
     CGFloat min = MIN(controlPoint1Distance, MIN(controlPoint2Distance, 0.0));
     CGFloat max = MAX(controlPoint1Distance, MAX(controlPoint2Distance, 0.0));
         
     *range = FBRangeMake(min, max);
-#else
-    CGFloat controlPoint1Distance = FBNormalizedLineDistanceFromPoint(line, _controlPoint1);
-    CGFloat controlPoint2Distance = FBNormalizedLineDistanceFromPoint(line, _controlPoint2);
-    
-    if ( controlPoint1Distance * controlPoint2Distance > 0 ) {
-        CGFloat parameter1 = controlPoint1Distance / (2.0 * controlPoint1Distance - controlPoint2Distance + sqrtf(controlPoint1Distance * controlPoint1Distance - controlPoint1Distance * controlPoint2Distance + controlPoint2Distance * controlPoint2Distance));
-        CGFloat distance = CubicCurveDistance(parameter1, controlPoint1Distance, controlPoint2Distance);
-        *range = FBRangeMake(MIN(0.0, distance), MAX(0.0, distance));
-    } else {
-        CGFloat parameter1 = (2.0 * controlPoint1Distance - controlPoint2Distance + sqrtf(controlPoint1Distance * controlPoint1Distance + controlPoint2Distance * controlPoint2Distance - controlPoint1Distance * controlPoint2Distance)) / (3.0 * (controlPoint1Distance - controlPoint2Distance));
-        CGFloat parameter2 = (2.0 * controlPoint1Distance - controlPoint2Distance - sqrtf(controlPoint1Distance * controlPoint1Distance + controlPoint2Distance * controlPoint2Distance - controlPoint1Distance * controlPoint2Distance)) / (3.0 * (controlPoint1Distance - controlPoint2Distance));
-        CGFloat distance1 = CubicCurveDistance(parameter1, controlPoint1Distance, controlPoint2Distance);
-        CGFloat distance2 = CubicCurveDistance(parameter2, controlPoint1Distance, controlPoint2Distance);
-
-        *range = FBRangeMake(MIN(distance1, distance2), MAX(distance1, distance2));
-    }
-    
-#endif
-    
-#else
-    CGFloat controlPoint1Distance = FBNormalizedLineDistanceFromPoint(line, _controlPoint1);
-    CGFloat controlPoint2Distance = FBNormalizedLineDistanceFromPoint(line, _controlPoint2);
-    
-    if ( controlPoint1Distance * controlPoint2Distance > 0 )
-        *range = FBRangeMake(3.0 * MIN(0.0, MIN(controlPoint1Distance, controlPoint2Distance)) / 4.0, 3.0 * MAX(0, MAX(controlPoint1Distance, controlPoint2Distance)) / 4.0);
-    else
-        *range = FBRangeMake(4.0 * MIN(0.0, MIN(controlPoint1Distance, controlPoint2Distance)) / 9.0, 4.0 * MAX(0, MAX(controlPoint1Distance, controlPoint2Distance)) / 9.0);    
-#endif
     
     return line;
 }
