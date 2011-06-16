@@ -112,7 +112,38 @@
 
 - (FBBezierGraph *) unionWithBezierGraph:(FBBezierGraph *)graph
 {
-    return self; // TODO: implement
+    BOOL hasCrossings = [self insertCrossingsWithBezierGraph:graph];
+    if ( !hasCrossings ) {
+        // There are no crossings, which means one contains the other, or they're completely disjoint 
+        BOOL subjectContainsClip = [self containsPoint:graph.firstPoint];
+        BOOL clipContainsSubject = [graph containsPoint:self.firstPoint];
+        
+        // Clean up crossings so the graphs can be reused
+        [self removeCrossings];
+        [graph removeCrossings];
+        
+        if ( subjectContainsClip )
+            return self; // union is the subject graph
+        if ( clipContainsSubject )
+            return graph; // union is the clip graph
+        
+        // Neither contains the other, which means we should just append them
+        FBBezierGraph *result = [FBBezierGraph bezierGraph];
+        [result addBezierGraph:self];
+        [result addBezierGraph:graph];
+        return result;
+    }
+    
+    [self markCrossingsAsEntryOrExitWithBezierGraph:graph markInside:NO];
+    [graph markCrossingsAsEntryOrExitWithBezierGraph:self markInside:NO];
+    
+    FBBezierGraph *result = [self bezierGraphFromIntersections];
+    
+    // Clean up crossings so the graphs can be reused
+    [self removeCrossings];
+    [graph removeCrossings];
+    
+    return result;
 }
 
 - (FBBezierGraph *) intersectWithBezierGraph:(FBBezierGraph *)graph
