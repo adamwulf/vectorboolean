@@ -21,6 +21,7 @@
 - (id) initWithBezierCurve:(FBBezierCurve *)curve contour:(FBBezierContour *)contour;
 
 @property (readonly) FBBezierCurve *curve;
+@property (readonly) NSArray *crossings;
 
 - (void) addCrossing:(FBEdgeCrossing *)crossing;
 

@@ -11,6 +11,7 @@
 
 @interface FBBezierGraph : NSObject {
     NSMutableArray *_contours;
+    NSRect _bounds;
 }
 
 + (id) bezierGraphWithBezierPath:(NSBezierPath *)path;

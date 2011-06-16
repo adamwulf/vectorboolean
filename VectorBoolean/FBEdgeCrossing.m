@@ -15,6 +15,7 @@
 
 @synthesize edge=_edge;
 @synthesize counterpart=_counterpart;
+@synthesize entry=_entry;
 
 + (id) crossingWithIntersection:(FBBezierIntersection *)intersection
 {

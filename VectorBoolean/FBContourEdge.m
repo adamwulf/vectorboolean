@@ -12,6 +12,7 @@
 @implementation FBContourEdge
 
 @synthesize curve=_curve;
+@synthesize crossings=_crossings;
 
 - (id) initWithBezierCurve:(FBBezierCurve *)curve contour:(FBBezierContour *)contour
 {

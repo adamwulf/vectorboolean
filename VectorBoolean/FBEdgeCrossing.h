@@ -15,6 +15,7 @@
     FBBezierIntersection *_intersection;
     FBContourEdge *_edge;
     FBEdgeCrossing *_counterpart;
+    BOOL _entry;
 }
 
 + (id) crossingWithIntersection:(FBBezierIntersection *)intersection;
@@ -23,5 +24,6 @@
 @property (assign) FBContourEdge *edge;
 @property (assign) FBEdgeCrossing *counterpart;
 @property (readonly) CGFloat order;
+@property (getter = isEntry) BOOL entry;
 
 @end

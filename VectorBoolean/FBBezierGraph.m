@@ -17,8 +17,10 @@
 @interface FBBezierGraph ()
 
 - (BOOL) insertCrossingsWithBezierGraph:(FBBezierGraph *)other;
+- (BOOL) containsPoint:(NSPoint)point;
 
 @property (readonly) NSArray *contours;
+@property (readonly) NSRect bounds;
 
 @end
 
@@ -155,6 +157,64 @@
     }
  
     return hasIntersection;
+}
+
+- (NSRect) bounds
+{
+    if ( !NSEqualRects(_bounds, NSZeroRect) )
+        return _bounds;
+    if ( [_contours count] == 0 )
+        return NSZeroRect;
+    
+    for (FBBezierContour *contour in _contours)
+        _bounds = NSUnionRect(_bounds, contour.bounds);
+    
+    return _bounds;
+}
+
+- (BOOL) containsPoint:(NSPoint)testPoint
+{
+    // Create a test line from our point to somewhere outside our graph. We'll see how many times the test
+    //  line intersects edges of the graph. Based on the winding rule, if it's an odd number, we're inside
+    //  the graph, if even, outside.
+    NSPoint lineEndPoint = NSMakePoint(testPoint.x > NSMinX(self.bounds) ? NSMinX(self.bounds) - 10 : NSMaxX(self.bounds) + 10, testPoint.y); /* just move us outside the bounds of the graph */
+    FBBezierCurve *testCurve = [FBBezierCurve bezierCurveWithLineStartPoint:testPoint endPoint:lineEndPoint];
+    
+    NSUInteger intersectCount = 0;
+    for (FBBezierContour *contour in self.contours) {
+        for (FBContourEdge *edge in contour.edges) {
+            NSArray *intersections = [testCurve intersectionsWithBezierCurve:edge.curve];
+            for (FBBezierIntersection *intersection in intersections) {
+                if ( intersection.isTangent )
+                    continue;
+                intersectCount++;
+            }
+        }
+    }
+    
+    return (intersectCount % 2) == 1;
+}
+
+- (void) markCrossingsAsEntryOrExitWithBezierGraph:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside
+{
+    for (FBBezierContour *contour in _contours) {
+        __block FBContourEdge *firstEdge = nil;
+        __block BOOL isEntry = NO;
+        for (FBContourEdge *edge in contour.edges) {
+            // Handle the first edge special case
+            if ( firstEdge == nil ) {
+                firstEdge = edge;
+                BOOL contains = [otherGraph containsPoint:firstEdge.curve.endPoint1];
+                isEntry = markInside ? !contains : contains;
+            }
+            
+            // Mark all the crossings on this edge
+            for (FBEdgeCrossing *crossing in edge.crossings) {
+                crossing.entry = isEntry;
+                isEntry = !isEntry; // toggle
+            }
+        }
+    }
 }
 
 @end

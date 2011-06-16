@@ -12,10 +12,12 @@
 
 @interface FBBezierContour : NSObject {
     NSMutableArray *_edges;
+    NSRect _bounds;
 }
 
 - (void) addCurve:(FBBezierCurve *)curve;
 
 @property (readonly) NSArray *edges;
+@property (readonly) NSRect bounds;
 
 @end
