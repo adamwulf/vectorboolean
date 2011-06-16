@@ -8,6 +8,16 @@
 
 #import <Cocoa/Cocoa.h>
 
+typedef struct FBRange {
+    CGFloat minimum;
+    CGFloat maximum;
+} FBRange;
+
+extern FBRange FBRangeMake(CGFloat minimum, CGFloat maximum);
+extern BOOL FBRangeHasConverged(FBRange range, NSUInteger places);
+extern CGFloat FBRangeGetSize(FBRange range);
+extern CGFloat FBRangeAverage(FBRange range);
+extern CGFloat FBRangeScaleNormalizedValue(FBRange range, CGFloat value);
 
 @interface FBBezierCurve : NSObject {
     NSPoint _endPoint1;
@@ -32,5 +42,6 @@
 - (NSArray *) intersectionsWithBezierCurve:(FBBezierCurve *)curve;
 
 - (NSPoint) pointAtParameter:(CGFloat)parameter leftBezierCurve:(FBBezierCurve **)leftBezierCurve rightBezierCurve:(FBBezierCurve **)rightBezierCurve;
+- (FBBezierCurve *) subcurveWithRange:(FBRange)range;
 
 @end

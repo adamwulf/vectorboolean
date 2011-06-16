@@ -34,5 +34,9 @@
 @property (readonly, retain) FBBezierCurve *curve2;
 @property (readonly) CGFloat parameter2;
 @property (readonly, getter = isTangent) BOOL tangent;
+@property (readonly) FBBezierCurve *curve1LeftBezier;
+@property (readonly) FBBezierCurve *curve1RightBezier;
+@property (readonly) FBBezierCurve *curve2LeftBezier;
+@property (readonly) FBBezierCurve *curve2RightBezier;    
 
 @end

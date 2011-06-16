@@ -37,18 +37,14 @@ static CGFloat FBNormalizedLineDistanceFromPoint(FBNormalizedLine line, NSPoint 
 }
 
 
-typedef struct FBRange {
-    CGFloat minimum;
-    CGFloat maximum;
-} FBRange;
 
-static FBRange FBRangeMake(CGFloat minimum, CGFloat maximum)
+FBRange FBRangeMake(CGFloat minimum, CGFloat maximum)
 {
     FBRange range = { minimum, maximum };
     return range;
 }
 
-static BOOL FBRangeHasConverged(FBRange range, NSUInteger places)
+BOOL FBRangeHasConverged(FBRange range, NSUInteger places)
 {
     CGFloat factor = powf(10.0, places);
     NSInteger minimum = (NSInteger)(range.minimum * factor);
@@ -56,17 +52,17 @@ static BOOL FBRangeHasConverged(FBRange range, NSUInteger places)
     return minimum == maxiumum;
 }
 
-static CGFloat FBRangeGetSize(FBRange range)
+CGFloat FBRangeGetSize(FBRange range)
 {
     return range.maximum - range.minimum;
 }
 
-static CGFloat FBRangeAverage(FBRange range)
+CGFloat FBRangeAverage(FBRange range)
 {
     return (range.minimum + range.maximum) / 2.0;
 }
 
-static CGFloat FBRangeScaleNormalizedValue(FBRange range, CGFloat value)
+CGFloat FBRangeScaleNormalizedValue(FBRange range, CGFloat value)
 {
     return (range.maximum - range.minimum) * value + range.minimum;
 }
@@ -137,7 +133,6 @@ static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloa
 - (FBNormalizedLine) perpendicularFatLineBounds:(FBRange *)range;
 
 - (FBRange) clipWithFatLine:(FBNormalizedLine)fatLine bounds:(FBRange)bounds;
-- (FBBezierCurve *) subcurveWithRange:(FBRange)range;
 - (NSArray *) splitCurveAtParameter:(CGFloat)t;
 - (NSArray *) convexHull;
 - (FBBezierCurve *) bezierClipWithBezierCurve:(FBBezierCurve *)curve original:(FBBezierCurve *)originalCurve rangeOfOriginal:(FBRange *)originalRange intersects:(BOOL *)intersects;

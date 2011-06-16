@@ -78,6 +78,30 @@
     return FBArePointsCloseWithOptions(curve1LeftTangent, curve2LeftTangent, FBPointCloseThreshold) || FBArePointsCloseWithOptions(curve1LeftTangent, curve2RightTangent, FBPointCloseThreshold) || FBArePointsCloseWithOptions(curve1RightTangent, curve2LeftTangent, FBPointCloseThreshold) || FBArePointsCloseWithOptions(curve1RightTangent, curve2RightTangent, FBPointCloseThreshold);
 }
 
+- (FBBezierCurve *) curve1LeftBezier
+{
+    [self computeCurve1];
+    return _curve1LeftBezier;
+}
+
+- (FBBezierCurve *) curve1RightBezier
+{
+    [self computeCurve1];
+    return _curve1RightBezier;
+}
+
+- (FBBezierCurve *) curve2LeftBezier
+{
+    [self computeCurve2];
+    return _curve2LeftBezier;
+}
+
+- (FBBezierCurve *) curve2RightBezier
+{
+    [self computeCurve2];
+    return _curve2RightBezier;
+}
+
 - (void) computeCurve1
 {
     if ( !_needToComputeCurve1 )

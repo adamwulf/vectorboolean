@@ -14,6 +14,7 @@
     NSRect _bounds;
 }
 
++ (id) bezierGraph;
 + (id) bezierGraphWithBezierPath:(NSBezierPath *)path;
 - (id) initWithBezierPath:(NSBezierPath *)path;
 

@@ -16,12 +16,19 @@
     FBBezierCurve *_curve;
     NSMutableArray *_crossings;
     FBBezierContour *_contour;
+    NSUInteger _index;
 }
 
 - (id) initWithBezierCurve:(FBBezierCurve *)curve contour:(FBBezierContour *)contour;
 
 @property (readonly) FBBezierCurve *curve;
 @property (readonly) NSArray *crossings;
+@property (readonly, assign) FBBezierContour *contour;
+@property NSUInteger index;
+@property (readonly) FBContourEdge *next;
+@property (readonly) FBContourEdge *previous;
+@property (readonly) FBEdgeCrossing *firstCrossing;
+@property (readonly) FBEdgeCrossing *lastCrossing;
 
 - (void) addCrossing:(FBEdgeCrossing *)crossing;
 

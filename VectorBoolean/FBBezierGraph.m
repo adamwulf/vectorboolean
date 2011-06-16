@@ -18,6 +18,10 @@
 
 - (BOOL) insertCrossingsWithBezierGraph:(FBBezierGraph *)other;
 - (BOOL) containsPoint:(NSPoint)point;
+- (FBEdgeCrossing *) firstUnprocessedCrossing;
+- (void) markCrossingsAsEntryOrExitWithBezierGraph:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside;
+
+- (void) addContour:(FBBezierContour *)contour;
 
 @property (readonly) NSArray *contours;
 @property (readonly) NSRect bounds;
@@ -31,6 +35,11 @@
 + (id) bezierGraphWithBezierPath:(NSBezierPath *)path
 {
     return [[[FBBezierGraph alloc] initWithBezierPath:path] autorelease];
+}
+
++ (id) bezierGraph
+{
+    return [[[FBBezierGraph alloc] init] autorelease];
 }
 
 - (id) initWithBezierPath:(NSBezierPath *)path
@@ -49,7 +58,7 @@
                 case NSMoveToBezierPathElement:
                     // Start a new contour
                     contour = [[[FBBezierContour alloc] init] autorelease];
-                    [_contours addObject:contour];
+                    [self addContour:contour];
                     
                     lastPoint = element.point;
                     break;
@@ -74,6 +83,17 @@
                     break;
             }
         }
+    }
+    
+    return self;
+}
+
+- (id) init
+{
+    self = [super init];
+    
+    if ( self != nil ) {
+        _contours = [[NSMutableArray alloc] initWithCapacity:2];
     }
     
     return self;
@@ -198,8 +218,8 @@
 - (void) markCrossingsAsEntryOrExitWithBezierGraph:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside
 {
     for (FBBezierContour *contour in _contours) {
-        __block FBContourEdge *firstEdge = nil;
-        __block BOOL isEntry = NO;
+        FBContourEdge *firstEdge = nil;
+        BOOL isEntry = NO;
         for (FBContourEdge *edge in contour.edges) {
             // Handle the first edge special case
             if ( firstEdge == nil ) {
@@ -215,6 +235,86 @@
             }
         }
     }
+}
+
+- (FBEdgeCrossing *) firstUnprocessedCrossing
+{
+    for (FBBezierContour *contour in _contours) {
+        for (FBContourEdge *edge in contour.edges) {
+            for (FBEdgeCrossing *crossing in edge.crossings) {
+               if ( !crossing.isProcessed )
+                   return crossing;
+            }
+        }
+    }
+    return nil;
+}
+
+- (FBBezierGraph *) bezierGraphFromIntersections
+{
+    FBBezierGraph *result = [FBBezierGraph bezierGraph];
+    
+    FBEdgeCrossing *crossing = [self firstUnprocessedCrossing];
+    while ( crossing != nil ) {
+        
+        // This is the start of a contour
+        FBBezierContour *contour = [[[FBBezierContour alloc] init] autorelease];
+        [result addContour:contour];
+        
+        // keep going until run into processed crossing
+        while ( !crossing.isProcessed ) {
+            crossing.processed = YES;
+            
+            if ( crossing.isEntry ) {
+                // Keep going to next until meet a crossing
+                [contour addCurveFrom:crossing to:crossing.next];
+                if ( crossing.next == nil ) {
+                    // we hit the end of the edge without finding another crossing, so go find the next crossing
+                    FBContourEdge *edge = crossing.edge.next;
+                    while ( [edge.crossings count] == 0 ) {
+                        // output this edge whole
+                        [contour addCurve:edge.curve];
+                        
+                        edge = edge.next;
+                    }
+                    // We have an edge that has at least one intersection
+                    crossing = edge.firstCrossing;
+                    [contour addCurveFrom:nil to:crossing];
+                } else
+                    crossing = crossing.next;
+            } else {
+                // Keep going to previous until meet a crossing
+                [contour addReverseCurveFrom:crossing.previous to:crossing];
+                if ( crossing.previous == nil ) {
+                    // we hit the end of the edge without finding another crossing, so go find the previous crossing
+                    FBContourEdge *edge = crossing.edge.previous;
+                    while ( [edge.crossings count] == 0 ) {
+                        // output this edge whole
+                        [contour addReverseCurve:edge.curve];
+                        
+                        edge = edge.previous;
+                    }
+                    // We have an edge that has at least one intersection
+                    crossing = edge.lastCrossing;
+                    [contour addReverseCurveFrom:crossing to:nil];
+                } else
+                    crossing = crossing.previous;
+            }
+            
+            // Switch over to counterpart
+            crossing = crossing.counterpart;
+        }
+        
+        // See if there's another contour
+        crossing = [self firstUnprocessedCrossing];
+    }
+    
+    return result;
+}
+
+- (void) addContour:(FBBezierContour *)contour
+{
+    [_contours addObject:contour];
 }
 
 @end

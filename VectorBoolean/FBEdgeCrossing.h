@@ -10,12 +10,15 @@
 
 @class FBBezierIntersection;
 @class FBContourEdge;
+@class FBBezierCurve;
 
 @interface FBEdgeCrossing : NSObject {
     FBBezierIntersection *_intersection;
     FBContourEdge *_edge;
     FBEdgeCrossing *_counterpart;
     BOOL _entry;
+    BOOL _processed;
+    NSUInteger _index;
 }
 
 + (id) crossingWithIntersection:(FBBezierIntersection *)intersection;
@@ -25,5 +28,14 @@
 @property (assign) FBEdgeCrossing *counterpart;
 @property (readonly) CGFloat order;
 @property (getter = isEntry) BOOL entry;
+@property (getter = isProcessed) BOOL processed;
+@property NSUInteger index;
+@property (readonly) FBEdgeCrossing *next;
+@property (readonly) FBEdgeCrossing *previous;
+
+@property (readonly) CGFloat parameter;
+@property (readonly) FBBezierCurve *curve;
+@property (readonly) FBBezierCurve *leftCurve;
+@property (readonly) FBBezierCurve *rightCurve;
 
 @end
