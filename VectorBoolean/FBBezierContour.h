@@ -23,5 +23,6 @@
 
 @property (readonly) NSArray *edges;
 @property (readonly) NSRect bounds;
+@property (readonly) NSPoint firstPoint;
 
 @end

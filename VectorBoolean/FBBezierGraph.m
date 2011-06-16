@@ -27,6 +27,7 @@
 
 @property (readonly) NSArray *contours;
 @property (readonly) NSRect bounds;
+@property (readonly) NSPoint firstPoint;
 
 @end
 
@@ -326,4 +327,11 @@
     [_contours addObject:contour];
 }
 
+- (NSPoint) firstPoint
+{
+    if ( [_contours count] == 0 )
+        return NSZeroPoint;
+    FBBezierContour *contour = [_contours objectAtIndex:0];
+    return contour.firstPoint;
+}
 @end

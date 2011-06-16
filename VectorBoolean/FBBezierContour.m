@@ -111,4 +111,12 @@
     return _bounds;
 }
 
+- (NSPoint) firstPoint
+{
+    if ( [_edges count] == 0 )
+        return NSZeroPoint;
+    FBContourEdge *edge = [_edges objectAtIndex:0];
+    return edge.curve.endPoint1;
+}
+
 @end
