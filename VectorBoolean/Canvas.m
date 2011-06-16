@@ -94,30 +94,25 @@ static NSRect BoxFrame(NSPoint point)
     }
 
     if ( _showIntersections ) {
-        [[NSColor greenColor] set];
 
         NSBezierPath *path1 = [[_paths objectAtIndex:0] objectForKey:@"path"];
         NSBezierPath *path2 = [[_paths objectAtIndex:1] objectForKey:@"path"];
         NSArray *curves1 = [FBBezierCurve bezierCurvesFromBezierPath:path1]; // rectangle
         NSArray *curves2 = [FBBezierCurve bezierCurvesFromBezierPath:path2]; // circle
         
-#if 0
-        FBBezierCurve *curve1 = [curves1 objectAtIndex:1]; // vertical line
-        FBBezierCurve *curve2 = [curves2 objectAtIndex:2]; // curve
-        NSArray *intersections = [curve1 intersectionsWithBezierCurve:curve2];
-        for (FBBezierIntersection *intersection in intersections)
-            NSLog(@"intersection %f, %f", intersection.location.x, intersection.location.y);
-#else        
         for (FBBezierCurve *curve1 in curves1) {
             for (FBBezierCurve *curve2 in curves2) {
                 NSArray *intersections = [curve1 intersectionsWithBezierCurve:curve2];
                 for (FBBezierIntersection *intersection in intersections) {
+                    if ( intersection.isTangent )
+                        [[NSColor purpleColor] set];
+                    else
+                        [[NSColor greenColor] set];
                     NSBezierPath *circle = [NSBezierPath bezierPathWithOvalInRect:BoxFrame(intersection.location)];
                     [circle stroke];
                 }
             }
         }
-#endif
     }
 }
 

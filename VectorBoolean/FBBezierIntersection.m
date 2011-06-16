@@ -8,6 +8,7 @@
 
 #import "FBBezierIntersection.h"
 #import "FBBezierCurve.h"
+#import "Geometry.h"
 
 @interface FBBezierIntersection ()
 
@@ -48,6 +49,10 @@
 {
     [_curve1 release];
     [_curve2 release];
+    [_curve1LeftBezier release];
+    [_curve1RightBezier release];
+    [_curve2LeftBezier release];
+    [_curve2RightBezier release];
     
     [super dealloc];
 }
@@ -60,8 +65,17 @@
 
 - (BOOL) isTangent
 {
-    // TODO: compute if it's tangent
-    return NO;
+    [self computeCurve1];
+    [self computeCurve2];
+
+    static const CGFloat FBPointCloseThreshold = 1e-7;
+    
+    NSPoint curve1LeftTangent = FBNormalizePoint(FBSubtractPoint(_curve1LeftBezier.controlPoint2, _curve1LeftBezier.endPoint2));
+    NSPoint curve1RightTangent = FBNormalizePoint(FBSubtractPoint(_curve1RightBezier.controlPoint1, _curve1RightBezier.endPoint1));
+    NSPoint curve2LeftTangent = FBNormalizePoint(FBSubtractPoint(_curve2LeftBezier.controlPoint2, _curve2LeftBezier.endPoint2));
+    NSPoint curve2RightTangent = FBNormalizePoint(FBSubtractPoint(_curve2RightBezier.controlPoint1, _curve2RightBezier.endPoint1));
+        
+    return FBArePointsCloseWithOptions(curve1LeftTangent, curve2LeftTangent, FBPointCloseThreshold) || FBArePointsCloseWithOptions(curve1LeftTangent, curve2RightTangent, FBPointCloseThreshold) || FBArePointsCloseWithOptions(curve1RightTangent, curve2LeftTangent, FBPointCloseThreshold) || FBArePointsCloseWithOptions(curve1RightTangent, curve2RightTangent, FBPointCloseThreshold);
 }
 
 - (void) computeCurve1
@@ -69,7 +83,9 @@
     if ( !_needToComputeCurve1 )
         return;
     
-    _location = [_curve1 pointAtParameter:_parameter1 leftBezierCurve:nil rightBezierCurve:nil];
+    _location = [_curve1 pointAtParameter:_parameter1 leftBezierCurve:&_curve1LeftBezier rightBezierCurve:&_curve1RightBezier];
+    [_curve1LeftBezier retain];
+    [_curve1RightBezier retain];
     
     _needToComputeCurve1 = NO;
 }
@@ -79,7 +95,9 @@
     if ( !_needToComputeCurve2 )
         return;
     
-    [_curve2 pointAtParameter:_parameter2 leftBezierCurve:nil rightBezierCurve:nil];
+    [_curve2 pointAtParameter:_parameter2 leftBezierCurve:&_curve2LeftBezier rightBezierCurve:&_curve2RightBezier];
+    [_curve2LeftBezier retain];
+    [_curve2RightBezier retain];
     
     _needToComputeCurve2 = NO;
 }

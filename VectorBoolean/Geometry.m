@@ -8,6 +8,8 @@
 
 #import "Geometry.h"
 
+static const CGFloat FBPointClosenessThreshold = 1e-10;
+
 
 CGFloat FBDistanceBetweenPoints(NSPoint point1, NSPoint point2)
 {
@@ -93,4 +95,25 @@ NSPoint FBLineMidpoint(NSPoint lineStart, NSPoint lineEnd)
     CGFloat distance = FBDistanceBetweenPoints(lineStart, lineEnd);
     NSPoint tangent = FBNormalizePoint(FBSubtractPoint(lineEnd, lineStart));
     return FBAddPoint(lineStart, FBUnitScalePoint(tangent, distance / 2.0));
+}
+
+BOOL FBArePointsClose(NSPoint point1, NSPoint point2)
+{
+    return FBArePointsCloseWithOptions(point1, point2, FBPointClosenessThreshold);
+}
+
+BOOL FBArePointsCloseWithOptions(NSPoint point1, NSPoint point2, CGFloat threshold)
+{
+    return FBAreValuesCloseWithOptions(point1.x, point2.x, threshold) && FBAreValuesCloseWithOptions(point1.y, point2.y, threshold);
+}
+
+BOOL FBAreValuesClose(CGFloat value1, CGFloat value2)
+{
+    return FBAreValuesCloseWithOptions(value1, value2, FBPointClosenessThreshold);
+}
+
+BOOL FBAreValuesCloseWithOptions(CGFloat value1, CGFloat value2, CGFloat threshold)
+{
+    CGFloat delta = value1 - value2;    
+    return (delta <= threshold) && (delta >= -threshold);
 }

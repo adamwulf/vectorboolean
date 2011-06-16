@@ -71,14 +71,6 @@ static CGFloat FBRangeScaleNormalizedValue(FBRange range, CGFloat value)
     return (range.maximum - range.minimum) * value + range.minimum;
 }
 
-static BOOL AreValuesClose(CGFloat value1, CGFloat value2)
-{
-    static const CGFloat FBPointClosenessThreshold = 1e-10;
-    
-    CGFloat delta = value1 - value2;    
-    return (delta <= FBPointClosenessThreshold) && (delta >= -FBPointClosenessThreshold);
-}
-
 // The three points are a counter-clockwise turn if the return value is greater than 0,
 //  clockwise if less than 0, or colinear if 0.
 static CGFloat CounterClockwiseTurn(NSPoint point1, NSPoint point2, NSPoint point3)
@@ -582,7 +574,7 @@ static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloa
 
 - (BOOL) isPoint
 {
-    return AreValuesClose(_endPoint1.x, _endPoint2.x) && AreValuesClose(_endPoint1.y, _endPoint2.y);
+    return FBArePointsClose(_endPoint1, _endPoint2);
 }
 
 @end

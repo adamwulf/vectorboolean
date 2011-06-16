@@ -23,3 +23,8 @@ CGFloat FBPointLength(NSPoint point);
 CGFloat FBPointSquaredLength(NSPoint point);
 NSPoint FBNormalizePoint(NSPoint point);
 NSPoint FBNegatePoint(NSPoint point);
+
+BOOL FBArePointsClose(NSPoint point1, NSPoint point2);
+BOOL FBArePointsCloseWithOptions(NSPoint point1, NSPoint point2, CGFloat threshold);
+BOOL FBAreValuesClose(CGFloat value1, CGFloat value2);
+BOOL FBAreValuesCloseWithOptions(CGFloat value1, CGFloat value2, CGFloat threshold);

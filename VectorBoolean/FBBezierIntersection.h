@@ -14,8 +14,12 @@
     NSPoint _location;
     FBBezierCurve *_curve1;
     CGFloat _parameter1;
+    FBBezierCurve *_curve1LeftBezier;
+    FBBezierCurve *_curve1RightBezier;
     FBBezierCurve *_curve2;
     CGFloat _parameter2;
+    FBBezierCurve *_curve2LeftBezier;
+    FBBezierCurve *_curve2RightBezier;    
     BOOL _tangent;
     BOOL _needToComputeCurve1;
     BOOL _needToComputeCurve2;
