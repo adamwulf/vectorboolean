@@ -133,6 +133,10 @@
                 for (FBContourEdge *theirEdge in theirContour.edges) {
                     NSArray *intersections = [ourEdge.curve intersectionsWithBezierCurve:theirEdge.curve];
                     for (FBBezierIntersection *intersection in intersections) {
+                        // Don't insert tangents since we don't want to split on them
+                        if ( intersection.isTangent )
+                            continue;
+                        
                         FBEdgeCrossing *ourCrossing = [FBEdgeCrossing crossingWithIntersection:intersection];
                         FBEdgeCrossing *theirCrossing = [FBEdgeCrossing crossingWithIntersection:intersection];
 
