@@ -11,7 +11,7 @@
 @class FBBezierCurve;
 @class FBEdgeCrossing;
 
-@interface FBBezierContour : NSObject {
+@interface FBBezierContour : NSObject<NSCopying> {
     NSMutableArray *_edges;
     NSRect _bounds;
 }

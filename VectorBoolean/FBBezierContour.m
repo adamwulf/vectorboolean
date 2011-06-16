@@ -119,4 +119,12 @@
     return edge.curve.endPoint1;
 }
 
+- (id)copyWithZone:(NSZone *)zone
+{
+    FBBezierContour *copy = [[FBBezierContour allocWithZone:zone] init];
+    for (FBContourEdge *edge in _edges)
+        [copy addCurve:edge.curve];
+    return copy;
+}
+
 @end

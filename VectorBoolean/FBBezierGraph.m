@@ -24,6 +24,7 @@
 - (void) removeCrossings;
 
 - (void) addContour:(FBBezierContour *)contour;
+- (void) addBezierGraph:(FBBezierGraph *)graph;
 
 @property (readonly) NSArray *contours;
 @property (readonly) NSRect bounds;
@@ -354,6 +355,13 @@
 - (void) addContour:(FBBezierContour *)contour
 {
     [_contours addObject:contour];
+    _bounds = NSZeroRect;
+}
+
+- (void) addBezierGraph:(FBBezierGraph *)graph
+{
+    for (FBBezierContour *contour in graph.contours)
+        [self addContour:[[contour copy] autorelease]];
 }
 
 - (NSPoint) firstPoint
