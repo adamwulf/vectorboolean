@@ -20,6 +20,8 @@
 - (BOOL) containsPoint:(NSPoint)point;
 - (FBEdgeCrossing *) firstUnprocessedCrossing;
 - (void) markCrossingsAsEntryOrExitWithBezierGraph:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside;
+- (FBBezierGraph *) bezierGraphFromIntersections;
+- (void) removeCrossings;
 
 - (void) addContour:(FBBezierContour *)contour;
 
@@ -310,6 +312,13 @@
     }
     
     return result;
+}
+
+- (void) removeCrossings
+{
+    for (FBBezierContour *contour in _contours)
+        for (FBContourEdge *edge in contour.edges)
+            [edge removeAllCrossings];
 }
 
 - (void) addContour:(FBBezierContour *)contour

@@ -56,6 +56,11 @@
         crossing.index = index++;
 }
 
+- (void) removeAllCrossings
+{
+    [_crossings removeAllObjects];
+}
+
 - (FBContourEdge *)next
 {
     if ( _index >= ([self.contour.edges count] - 1) )

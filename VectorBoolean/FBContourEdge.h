@@ -31,5 +31,6 @@
 @property (readonly) FBEdgeCrossing *lastCrossing;
 
 - (void) addCrossing:(FBEdgeCrossing *)crossing;
+- (void) removeAllCrossings;
 
 @end
