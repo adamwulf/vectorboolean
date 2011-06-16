@@ -545,7 +545,8 @@ static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloa
         CGFloat cosine1 = (point1.x - lowestValue.x) / distance1;
         CGFloat distance2 = FBDistanceBetweenPoints(point2, lowestValue);
         CGFloat cosine2 = (point2.x - lowestValue.x) / distance2;
-        if ( AreValuesClose(cosine1, cosine2) ) {
+        if ( CounterClockwiseTurn(lowestValue, point1, point2) == 0.0 ) {
+            // The three points are colinear, so base it on distance instead
             if ( distance1 < distance2 )
                 return NSOrderedAscending;
             else if ( distance1 > distance2 )

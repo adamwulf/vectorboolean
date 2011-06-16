@@ -101,7 +101,7 @@ static NSRect BoxFrame(NSPoint point)
         NSArray *curves1 = [FBBezierCurve bezierCurvesFromBezierPath:path1]; // rectangle
         NSArray *curves2 = [FBBezierCurve bezierCurvesFromBezierPath:path2]; // circle
         
-#if 1
+#if 0
         FBBezierCurve *curve1 = [curves1 objectAtIndex:1]; // vertical line
         FBBezierCurve *curve2 = [curves2 objectAtIndex:2]; // curve
         NSArray *intersections = [curve1 intersectionsWithBezierCurve:curve2];
