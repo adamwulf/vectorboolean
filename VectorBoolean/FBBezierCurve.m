@@ -171,11 +171,7 @@ static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloa
             case NSLineToBezierPathElement: {
                 // Convert lines to bezier curves as well. Just set control point to be in the line formed
                 //  by the end points
-                CGFloat distance = FBDistanceBetweenPoints(lastPoint, element.point);
-                NSPoint leftTangent = FBNormalizePoint(FBSubtractPoint(element.point, lastPoint));
-                NSPoint controlPoint1 = FBAddPoint(lastPoint, FBUnitScalePoint(leftTangent, distance / 3.0));
-                NSPoint controlPoint2 = FBAddPoint(lastPoint, FBUnitScalePoint(leftTangent, 2.0 * distance / 3.0));
-                [bezierCurves addObject:[FBBezierCurve bezierCurveWithEndPoint1:lastPoint controlPoint1:controlPoint1 controlPoint2:controlPoint2 endPoint2:element.point]];
+                [bezierCurves addObject:[FBBezierCurve bezierCurveWithLineStartPoint:lastPoint endPoint:element.point]];
                 
                 lastPoint = element.point;
                 break;
@@ -196,6 +192,12 @@ static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloa
     return bezierCurves;
 }
 
++ (id) bezierCurveWithLineStartPoint:(NSPoint)startPoint endPoint:(NSPoint)endPoint
+{
+    return [[[FBBezierCurve alloc] initWithLineStartPoint:startPoint endPoint:endPoint] autorelease];
+}
+
+
 + (id) bezierCurveWithEndPoint1:(NSPoint)endPoint1 controlPoint1:(NSPoint)controlPoint1 controlPoint2:(NSPoint)controlPoint2 endPoint2:(NSPoint)endPoint2
 {
     return [[[FBBezierCurve alloc] initWithEndPoint1:endPoint1 controlPoint1:controlPoint1 controlPoint2:controlPoint2 endPoint2:endPoint2] autorelease];
@@ -210,6 +212,22 @@ static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloa
         _controlPoint1 = controlPoint1;
         _controlPoint2 = controlPoint2;
         _endPoint2 = endPoint2;
+    }
+    
+    return self;
+}
+
+- (id) initWithLineStartPoint:(NSPoint)startPoint endPoint:(NSPoint)endPoint
+{
+    self = [super init];
+    
+    if ( self != nil ) {
+        CGFloat distance = FBDistanceBetweenPoints(startPoint, endPoint);
+        NSPoint leftTangent = FBNormalizePoint(FBSubtractPoint(endPoint, startPoint));
+        _controlPoint1 = FBAddPoint(startPoint, FBUnitScalePoint(leftTangent, distance / 3.0));
+        _controlPoint2 = FBAddPoint(startPoint, FBUnitScalePoint(leftTangent, 2.0 * distance / 3.0));
+        _endPoint1 = startPoint;
+        _endPoint2 = endPoint;
     }
     
     return self;

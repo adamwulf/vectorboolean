@@ -7,27 +7,45 @@
 //
 
 #import "NSBezierPath+Boolean.h"
+#import "NSBezierPath+Utilities.h"
+#import "FBBezierGraph.h"
 
 @implementation NSBezierPath (Boolean)
 
 - (NSBezierPath *) fb_union:(NSBezierPath *)path
 {
-    return self; // TODO: implement
+    FBBezierGraph *thisGraph = [FBBezierGraph bezierGraphWithBezierPath:self];
+    FBBezierGraph *otherGraph = [FBBezierGraph bezierGraphWithBezierPath:path];
+    NSBezierPath *result = [[thisGraph unionWithBezierGraph:otherGraph] bezierPath];
+    [result fb_copyAttributesFrom:self];
+    return result;
 }
 
 - (NSBezierPath *) fb_intersect:(NSBezierPath *)path
 {
-    return self; // TODO: implement
+    FBBezierGraph *thisGraph = [FBBezierGraph bezierGraphWithBezierPath:self];
+    FBBezierGraph *otherGraph = [FBBezierGraph bezierGraphWithBezierPath:path];
+    NSBezierPath *result = [[thisGraph intersectWithBezierGraph:otherGraph] bezierPath];
+    [result fb_copyAttributesFrom:self];
+    return result;
 }
 
 - (NSBezierPath *) fb_difference:(NSBezierPath *)path
 {
-    return self; // TODO: implement
+    FBBezierGraph *thisGraph = [FBBezierGraph bezierGraphWithBezierPath:self];
+    FBBezierGraph *otherGraph = [FBBezierGraph bezierGraphWithBezierPath:path];
+    NSBezierPath *result = [[thisGraph differenceWithBezierGraph:otherGraph] bezierPath];
+    [result fb_copyAttributesFrom:self];
+    return result;
 }
 
 - (NSBezierPath *) fb_xor:(NSBezierPath *)path
 {
-    return self; // TODO: implement
+    FBBezierGraph *thisGraph = [FBBezierGraph bezierGraphWithBezierPath:self];
+    FBBezierGraph *otherGraph = [FBBezierGraph bezierGraphWithBezierPath:path];
+    NSBezierPath *result = [[thisGraph xorWithBezierGraph:otherGraph] bezierPath];
+    [result fb_copyAttributesFrom:self];
+    return result;
 }
 
 @end

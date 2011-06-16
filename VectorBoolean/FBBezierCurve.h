@@ -18,8 +18,11 @@
 
 + (NSArray *) bezierCurvesFromBezierPath:(NSBezierPath *)path;
 
++ (id) bezierCurveWithLineStartPoint:(NSPoint)startPoint endPoint:(NSPoint)endPoint;
 + (id) bezierCurveWithEndPoint1:(NSPoint)endPoint1 controlPoint1:(NSPoint)controlPoint1 controlPoint2:(NSPoint)controlPoint2 endPoint2:(NSPoint)endPoint2;
+
 - (id) initWithEndPoint1:(NSPoint)endPoint1 controlPoint1:(NSPoint)controlPoint1 controlPoint2:(NSPoint)controlPoint2 endPoint2:(NSPoint)endPoint2;
+- (id) initWithLineStartPoint:(NSPoint)startPoint endPoint:(NSPoint)endPoint;
 
 @property NSPoint endPoint1;
 @property NSPoint controlPoint1;
