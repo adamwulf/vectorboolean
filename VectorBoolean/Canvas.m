@@ -93,7 +93,7 @@ static NSRect BoxFrame(NSPoint point)
         }
     }
 
-    if ( _showIntersections ) {
+    if ( _showIntersections && [_paths count] == 2 ) {
 
         NSBezierPath *path1 = [[_paths objectAtIndex:0] objectForKey:@"path"];
         NSBezierPath *path2 = [[_paths objectAtIndex:1] objectForKey:@"path"];

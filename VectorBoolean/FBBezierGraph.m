@@ -116,7 +116,35 @@
 
 - (FBBezierGraph *) intersectWithBezierGraph:(FBBezierGraph *)graph
 {
-    return self; // TODO: implement
+    BOOL hasCrossings = [self insertCrossingsWithBezierGraph:graph];
+    if ( !hasCrossings ) {
+        // There are no crossings, which means one contains the other, or they're completely disjoint 
+        BOOL subjectContainsClip = [self containsPoint:graph.firstPoint];
+        BOOL clipContainsSubject = [graph containsPoint:self.firstPoint];
+        
+        // Clean up crossings so the graphs can be reused
+        [self removeCrossings];
+        [graph removeCrossings];
+        
+        if ( subjectContainsClip )
+            return graph; // intersection is the clip graph
+        if ( clipContainsSubject )
+            return self; // intersection is the subject (clip doesn't do anything)
+        
+        // Neither contains the other, which means the intersection is nil
+        return [FBBezierGraph bezierGraph];
+    }
+    
+    [self markCrossingsAsEntryOrExitWithBezierGraph:graph markInside:YES];
+    [graph markCrossingsAsEntryOrExitWithBezierGraph:self markInside:YES];
+    
+    FBBezierGraph *result = [self bezierGraphFromIntersections];
+    
+    // Clean up crossings so the graphs can be reused
+    [self removeCrossings];
+    [graph removeCrossings];
+    
+    return result;
 }
 
 - (FBBezierGraph *) differenceWithBezierGraph:(FBBezierGraph *)graph
@@ -305,6 +333,7 @@
             }
             
             // Switch over to counterpart
+            crossing.processed = YES;
             crossing = crossing.counterpart;
         }
         
