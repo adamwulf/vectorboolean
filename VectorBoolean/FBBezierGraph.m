@@ -192,7 +192,8 @@
 - (NSBezierPath *) bezierPath
 {
     NSBezierPath *path = [NSBezierPath bezierPath];
-    
+    [path setWindingRule:NSEvenOddWindingRule];
+
     for (FBBezierContour *contour in _contours) {
         BOOL firstPoint = YES;        
         for (FBContourEdge *edge in contour.edges) {

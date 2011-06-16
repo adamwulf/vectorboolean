@@ -56,7 +56,6 @@
     [self setLineWidth:[path lineWidth]];
     [self setLineCapStyle:[path lineCapStyle]];
     [self setLineJoinStyle:[path lineJoinStyle]];
-    [self setWindingRule:[path windingRule]];
     [self setMiterLimit:[path miterLimit]];
     [self setFlatness:[path flatness]];
 }
