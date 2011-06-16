@@ -14,6 +14,14 @@
 @interface FBEdgeCrossing : NSObject {
     FBBezierIntersection *_intersection;
     FBContourEdge *_edge;
+    FBEdgeCrossing *_counterpart;
 }
+
++ (id) crossingWithIntersection:(FBBezierIntersection *)intersection;
+- (id) initWithIntersection:(FBBezierIntersection *)intersection;
+
+@property (assign) FBContourEdge *edge;
+@property (assign) FBEdgeCrossing *counterpart;
+@property (readonly) CGFloat order;
 
 @end

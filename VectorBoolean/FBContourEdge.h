@@ -10,6 +10,7 @@
 
 @class FBBezierCurve;
 @class FBBezierContour;
+@class FBEdgeCrossing;
 
 @interface FBContourEdge : NSObject {
     FBBezierCurve *_curve;
@@ -20,5 +21,7 @@
 - (id) initWithBezierCurve:(FBBezierCurve *)curve contour:(FBBezierContour *)contour;
 
 @property (readonly) FBBezierCurve *curve;
+
+- (void) addCrossing:(FBEdgeCrossing *)crossing;
 
 @end

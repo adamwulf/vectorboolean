@@ -11,8 +11,20 @@
 #import "NSBezierPath+Utilities.h"
 #import "FBBezierContour.h"
 #import "FBContourEdge.h"
+#import "FBBezierIntersection.h"
+#import "FBEdgeCrossing.h"
+
+@interface FBBezierGraph ()
+
+- (BOOL) insertCrossingsWithBezierGraph:(FBBezierGraph *)other;
+
+@property (readonly) NSArray *contours;
+
+@end
 
 @implementation FBBezierGraph
+
+@synthesize contours=_contours;
 
 + (id) bezierGraphWithBezierPath:(NSBezierPath *)path
 {
@@ -111,5 +123,34 @@
     return path;
 }
 
+- (BOOL) insertCrossingsWithBezierGraph:(FBBezierGraph *)other
+{
+    BOOL hasIntersection = NO;
+    
+    for (FBBezierContour *ourContour in self.contours) {
+        for (FBContourEdge *ourEdge in ourContour.edges) {
+            for (FBBezierContour *theirContour in other.contours) {
+                for (FBContourEdge *theirEdge in theirContour.edges) {
+                    NSArray *intersections = [ourEdge.curve intersectionsWithBezierCurve:theirEdge.curve];
+                    for (FBBezierIntersection *intersection in intersections) {
+                        FBEdgeCrossing *ourCrossing = [FBEdgeCrossing crossingWithIntersection:intersection];
+                        FBEdgeCrossing *theirCrossing = [FBEdgeCrossing crossingWithIntersection:intersection];
+
+                        ourCrossing.counterpart = theirCrossing;
+                        theirCrossing.counterpart = ourCrossing;
+                        
+                        [ourEdge addCrossing:ourCrossing];
+                        [theirEdge addCrossing:theirCrossing];
+                        
+                        hasIntersection = YES;
+                    }
+                }
+            }
+            
+        }
+    }
+ 
+    return hasIntersection;
+}
 
 @end
