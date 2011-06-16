@@ -268,6 +268,8 @@
         [menuItem setState:_resetAction == @selector(addHoleyRectangleWithRectangle) ? NSOnState : NSOffState];
     } else if ( [anItem action] == @selector(onTwoRectanglesOverlappingCircle:) ) {
         [menuItem setState:_resetAction == @selector(addCircleOnTwoRectangles) ? NSOnState : NSOffState];
+    } else if ( [anItem action] == @selector(onCircleOverlappingCircle:) ) {
+        [menuItem setState:_resetAction == @selector(addCircleOverlappingCircle) ? NSOnState : NSOffState];
     }
     
     return YES;
