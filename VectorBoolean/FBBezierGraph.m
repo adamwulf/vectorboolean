@@ -181,7 +181,42 @@
 
 - (FBBezierGraph *) differenceWithBezierGraph:(FBBezierGraph *)graph
 {
-    return self; // TODO: implement
+    BOOL hasCrossings = [self insertCrossingsWithBezierGraph:graph];
+    if ( !hasCrossings ) {
+        // There are no crossings, which means one contains the other, or they're completely disjoint 
+        BOOL subjectContainsClip = [self containsPoint:graph.firstPoint];
+        BOOL clipContainsSubject = [graph containsPoint:self.firstPoint];
+        
+        // Clean up crossings so the graphs can be reused
+        [self removeCrossings];
+        [graph removeCrossings];
+        
+        if ( subjectContainsClip ) {
+            // Clip punches a clean (non-intersecting) hole in subject
+            FBBezierGraph *result = [FBBezierGraph bezierGraph];
+            [result addBezierGraph:self];
+            [result addBezierGraph:graph];
+            return result;
+        }
+        
+        if ( clipContainsSubject )
+            // We're subtracting out everything
+            return [FBBezierGraph bezierGraph];
+        
+        // No crossings, so nothing to subtract from subject
+        return self;
+    }
+    
+    [self markCrossingsAsEntryOrExitWithBezierGraph:graph markInside:NO];
+    [graph markCrossingsAsEntryOrExitWithBezierGraph:self markInside:YES];
+    
+    FBBezierGraph *result = [self bezierGraphFromIntersections];
+    
+    // Clean up crossings so the graphs can be reused
+    [self removeCrossings];
+    [graph removeCrossings];
+    
+    return result;
 }
 
 - (FBBezierGraph *) xorWithBezierGraph:(FBBezierGraph *)graph
