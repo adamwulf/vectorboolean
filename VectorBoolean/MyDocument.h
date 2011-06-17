@@ -30,4 +30,7 @@
 - (IBAction) onCircleOverlappingCircle:(id)sender;
 - (IBAction) onComplexShapes:(id)sender;
 
+- (IBAction) onShowPoints:(id)sender;
+- (IBAction) onShowIntersections:(id)sender;
+
 @end

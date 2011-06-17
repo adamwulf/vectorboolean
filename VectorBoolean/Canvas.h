@@ -23,4 +23,7 @@
 
 - (void) drawRect:(NSRect)dirtyRect;
 
+@property BOOL showPoints;
+@property BOOL showIntersections;
+
 @end

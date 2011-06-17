@@ -18,6 +18,9 @@ static NSRect BoxFrame(NSPoint point)
 
 @implementation Canvas
 
+@synthesize showPoints=_showPoints;
+@synthesize showIntersections=_showIntersections;
+
 - (id)init
 {
     self = [super init];

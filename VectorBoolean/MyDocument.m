@@ -276,6 +276,18 @@
     [self onReset:sender];        
 }
 
+- (IBAction) onShowPoints:(id)sender
+{
+    _view.canvas.showPoints = !_view.canvas.showPoints;
+    [_view setNeedsDisplay:YES];
+}
+
+- (IBAction) onShowIntersections:(id)sender
+{
+    _view.canvas.showIntersections = !_view.canvas.showIntersections;
+    [_view setNeedsDisplay:YES];    
+}
+
 - (BOOL)validateUserInterfaceItem:(id < NSValidatedUserInterfaceItem >)anItem
 {
     NSMenuItem *menuItem = (NSMenuItem *)anItem;
@@ -295,7 +307,12 @@
         [menuItem setState:_resetAction == @selector(addCircleOverlappingCircle) ? NSOnState : NSOffState];
     } else if ( [anItem action] == @selector(onComplexShapes:) ) {
         [menuItem setState:_resetAction == @selector(addComplexShapes) ? NSOnState : NSOffState];
+    } else if ( [anItem action] == @selector(onShowPoints:) ) {
+        [menuItem setState:_view.canvas.showPoints ? NSOnState : NSOffState];
+    } else if ( [anItem action] == @selector(onShowIntersections:) ) {
+        [menuItem setState:_view.canvas.showIntersections ? NSOnState : NSOffState];
     }
+
     
     return YES;
 }
