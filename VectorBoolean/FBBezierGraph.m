@@ -221,7 +221,9 @@
 
 - (FBBezierGraph *) xorWithBezierGraph:(FBBezierGraph *)graph
 {
-    return self; // TODO: implement
+    FBBezierGraph *allParts = [self unionWithBezierGraph:graph];
+    FBBezierGraph *intersectingParts = [self intersectWithBezierGraph:graph];
+    return [allParts differenceWithBezierGraph:intersectingParts];
 }
 
 - (NSBezierPath *) bezierPath
