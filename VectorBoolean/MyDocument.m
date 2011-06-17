@@ -20,6 +20,7 @@
 - (void) addHoleyRectangleWithRectangle;
 - (void) addCircleOnTwoRectangles;
 - (void) addCircleOverlappingCircle;
+- (void) addComplexShapes;
 
 - (void) addRectangle:(NSRect)rect;
 - (void) addCircleAtPoint:(NSPoint)center withRadius:(CGFloat)radius;
@@ -141,6 +142,22 @@
     [self addCircleAtPoint:NSMakePoint(355, 240) withRadius:125];
 }
 
+- (void) addComplexShapes
+{
+    NSBezierPath *holeyRectangle = [NSBezierPath bezierPath];
+    [self addRectangle:NSMakeRect(50, 50, 350, 300) toPath:holeyRectangle];
+    [self addCircleAtPoint:NSMakePoint(210, 200) withRadius:125 toPath:holeyRectangle];    
+
+    NSBezierPath *rectangle = [NSBezierPath bezierPath];
+    [self addRectangle:NSMakeRect(180, 5, 100, 400) toPath:rectangle];
+
+    NSBezierPath *allParts = [holeyRectangle fb_union:rectangle];
+    NSBezierPath *intersectingParts = [holeyRectangle fb_intersect:rectangle];
+    
+    [_view.canvas addPath:allParts withColor:[NSColor blueColor]];
+    [_view.canvas addPath:intersectingParts withColor:[NSColor redColor]];
+}
+
 - (void) addRectangle:(NSRect)rect
 {
     NSBezierPath *rectangle = [NSBezierPath bezierPath];
@@ -253,6 +270,12 @@
     [self onReset:sender];    
 }
 
+- (IBAction) onComplexShapes:(id)sender
+{
+    _resetAction = @selector(addComplexShapes);
+    [self onReset:sender];        
+}
+
 - (BOOL)validateUserInterfaceItem:(id < NSValidatedUserInterfaceItem >)anItem
 {
     NSMenuItem *menuItem = (NSMenuItem *)anItem;
@@ -270,6 +293,8 @@
         [menuItem setState:_resetAction == @selector(addCircleOnTwoRectangles) ? NSOnState : NSOffState];
     } else if ( [anItem action] == @selector(onCircleOverlappingCircle:) ) {
         [menuItem setState:_resetAction == @selector(addCircleOverlappingCircle) ? NSOnState : NSOffState];
+    } else if ( [anItem action] == @selector(onComplexShapes:) ) {
+        [menuItem setState:_resetAction == @selector(addComplexShapes) ? NSOnState : NSOffState];
     }
     
     return YES;
