@@ -29,6 +29,7 @@
 - (IBAction) onTwoRectanglesOverlappingCircle:(id)sender;
 - (IBAction) onCircleOverlappingCircle:(id)sender;
 - (IBAction) onComplexShapes:(id)sender;
+- (IBAction) onComplexShapes2:(id)sender;
 
 - (IBAction) onShowPoints:(id)sender;
 - (IBAction) onShowIntersections:(id)sender;

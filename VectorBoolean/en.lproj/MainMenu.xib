@@ -383,9 +383,17 @@
 									<reference key="NSOnImage" ref="1033313550"/>
 									<reference key="NSMixedImage" ref="310636482"/>
 								</object>
-								<object class="NSMenuItem" id="117414855">
+								<object class="NSMenuItem" id="640705251">
 									<reference key="NSMenu" ref="930598111"/>
 									<string key="NSTitle">Complex Shapes</string>
+									<string key="NSKeyEquiv"/>
+									<int key="NSMnemonicLoc">2147483647</int>
+									<reference key="NSOnImage" ref="1033313550"/>
+									<reference key="NSMixedImage" ref="310636482"/>
+								</object>
+								<object class="NSMenuItem" id="599263357">
+									<reference key="NSMenu" ref="930598111"/>
+									<string key="NSTitle">More Complex Shapes</string>
 									<string key="NSKeyEquiv"/>
 									<int key="NSMnemonicLoc">2147483647</int>
 									<reference key="NSOnImage" ref="1033313550"/>
@@ -460,7 +468,7 @@
 							</object>
 						</object>
 					</object>
-					<object class="NSMenuItem" id="75538958">
+					<object class="NSMenuItem" id="1043616000">
 						<reference key="NSMenu" ref="649796088"/>
 						<string key="NSTitle">Options</string>
 						<string key="NSKeyEquiv"/>
@@ -468,20 +476,20 @@
 						<reference key="NSOnImage" ref="1033313550"/>
 						<reference key="NSMixedImage" ref="310636482"/>
 						<string key="NSAction">submenuAction:</string>
-						<object class="NSMenu" key="NSSubmenu" id="643896864">
+						<object class="NSMenu" key="NSSubmenu" id="3155290">
 							<string key="NSTitle">Options</string>
 							<object class="NSMutableArray" key="NSMenuItems">
 								<bool key="EncodedWithXMLCoder">YES</bool>
-								<object class="NSMenuItem" id="492093845">
-									<reference key="NSMenu" ref="643896864"/>
+								<object class="NSMenuItem" id="726468332">
+									<reference key="NSMenu" ref="3155290"/>
 									<string key="NSTitle">Show end/control points</string>
 									<string key="NSKeyEquiv"/>
 									<int key="NSMnemonicLoc">2147483647</int>
 									<reference key="NSOnImage" ref="1033313550"/>
 									<reference key="NSMixedImage" ref="310636482"/>
 								</object>
-								<object class="NSMenuItem" id="345016861">
-									<reference key="NSMenu" ref="643896864"/>
+								<object class="NSMenuItem" id="644631136">
+									<reference key="NSMenu" ref="3155290"/>
 									<string key="NSTitle">Show intersections</string>
 									<string key="NSKeyEquiv"/>
 									<int key="NSMnemonicLoc">2147483647</int>
@@ -825,7 +833,7 @@
 					<object class="IBActionConnection" key="connection">
 						<string key="label">onComplexShapes:</string>
 						<reference key="source" ref="1014"/>
-						<reference key="destination" ref="117414855"/>
+						<reference key="destination" ref="640705251"/>
 					</object>
 					<int key="connectionID">558</int>
 				</object>
@@ -833,7 +841,7 @@
 					<object class="IBActionConnection" key="connection">
 						<string key="label">onShowPoints:</string>
 						<reference key="source" ref="1014"/>
-						<reference key="destination" ref="492093845"/>
+						<reference key="destination" ref="726468332"/>
 					</object>
 					<int key="connectionID">564</int>
 				</object>
@@ -841,9 +849,17 @@
 					<object class="IBActionConnection" key="connection">
 						<string key="label">onShowIntersections:</string>
 						<reference key="source" ref="1014"/>
-						<reference key="destination" ref="345016861"/>
+						<reference key="destination" ref="644631136"/>
 					</object>
 					<int key="connectionID">565</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">onComplexShapes2:</string>
+						<reference key="source" ref="1014"/>
+						<reference key="destination" ref="599263357"/>
+					</object>
+					<int key="connectionID">567</int>
 				</object>
 			</object>
 			<object class="IBMutableOrderedSet" key="objectRecords">
@@ -884,7 +900,7 @@
 							<reference ref="379814623"/>
 							<reference ref="1050483726"/>
 							<reference ref="40719474"/>
-							<reference ref="75538958"/>
+							<reference ref="1043616000"/>
 						</object>
 						<reference key="parent" ref="0"/>
 					</object>
@@ -1224,7 +1240,8 @@
 							<reference ref="233552625"/>
 							<reference ref="94302509"/>
 							<reference ref="977728388"/>
-							<reference ref="117414855"/>
+							<reference ref="640705251"/>
+							<reference ref="599263357"/>
 						</object>
 						<reference key="parent" ref="40719474"/>
 					</object>
@@ -1265,37 +1282,42 @@
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">557</int>
-						<reference key="object" ref="117414855"/>
+						<reference key="object" ref="640705251"/>
 						<reference key="parent" ref="930598111"/>
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">559</int>
-						<reference key="object" ref="75538958"/>
+						<reference key="object" ref="1043616000"/>
 						<object class="NSMutableArray" key="children">
 							<bool key="EncodedWithXMLCoder">YES</bool>
-							<reference ref="643896864"/>
+							<reference ref="3155290"/>
 						</object>
 						<reference key="parent" ref="649796088"/>
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">560</int>
-						<reference key="object" ref="643896864"/>
+						<reference key="object" ref="3155290"/>
 						<object class="NSMutableArray" key="children">
 							<bool key="EncodedWithXMLCoder">YES</bool>
-							<reference ref="492093845"/>
-							<reference ref="345016861"/>
+							<reference ref="726468332"/>
+							<reference ref="644631136"/>
 						</object>
-						<reference key="parent" ref="75538958"/>
+						<reference key="parent" ref="1043616000"/>
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">561</int>
-						<reference key="object" ref="492093845"/>
-						<reference key="parent" ref="643896864"/>
+						<reference key="object" ref="726468332"/>
+						<reference key="parent" ref="3155290"/>
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">562</int>
-						<reference key="object" ref="345016861"/>
-						<reference key="parent" ref="643896864"/>
+						<reference key="object" ref="644631136"/>
+						<reference key="parent" ref="3155290"/>
+					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">566</int>
+						<reference key="object" ref="599263357"/>
+						<reference key="parent" ref="930598111"/>
 					</object>
 				</object>
 			</object>
@@ -1388,6 +1410,7 @@
 					<string>560.IBPluginDependency</string>
 					<string>561.IBPluginDependency</string>
 					<string>562.IBPluginDependency</string>
+					<string>566.IBPluginDependency</string>
 					<string>57.IBEditorWindowLastContentRect</string>
 					<string>57.IBPluginDependency</string>
 					<string>57.ImportedFromIB2</string>
@@ -1508,6 +1531,7 @@
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
+					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>{{416, 203}, {275, 183}}</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
@@ -1554,7 +1578,7 @@
 				<reference key="dict.values" ref="0"/>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">565</int>
+			<int key="maxID">567</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -1577,6 +1601,7 @@
 							<string>onCircleOnRectangle:</string>
 							<string>onCircleOverlappingCircle:</string>
 							<string>onCircleOverlappingRectangle:</string>
+							<string>onComplexShapes2:</string>
 							<string>onComplexShapes:</string>
 							<string>onDifference:</string>
 							<string>onIntersect:</string>
@@ -1606,6 +1631,7 @@
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
+							<string>id</string>
 						</object>
 					</object>
 					<object class="NSMutableDictionary" key="actionInfosByName">
@@ -1616,6 +1642,7 @@
 							<string>onCircleOnRectangle:</string>
 							<string>onCircleOverlappingCircle:</string>
 							<string>onCircleOverlappingRectangle:</string>
+							<string>onComplexShapes2:</string>
 							<string>onComplexShapes:</string>
 							<string>onDifference:</string>
 							<string>onIntersect:</string>
@@ -1644,6 +1671,10 @@
 							</object>
 							<object class="IBActionInfo">
 								<string key="name">onCircleOverlappingRectangle:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">onComplexShapes2:</string>
 								<string key="candidateClassName">id</string>
 							</object>
 							<object class="IBActionInfo">
@@ -1708,6 +1739,7 @@
 							<string>onCircleOnRectangle:</string>
 							<string>onCircleOverlappingCircle:</string>
 							<string>onCircleOverlappingRectangle:</string>
+							<string>onComplexShapes2:</string>
 							<string>onComplexShapes:</string>
 							<string>onDifference:</string>
 							<string>onIntersect:</string>
@@ -1737,6 +1769,7 @@
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
+							<string>id</string>
 						</object>
 					</object>
 					<object class="NSMutableDictionary" key="actionInfosByName">
@@ -1747,6 +1780,7 @@
 							<string>onCircleOnRectangle:</string>
 							<string>onCircleOverlappingCircle:</string>
 							<string>onCircleOverlappingRectangle:</string>
+							<string>onComplexShapes2:</string>
 							<string>onComplexShapes:</string>
 							<string>onDifference:</string>
 							<string>onIntersect:</string>
@@ -1775,6 +1809,10 @@
 							</object>
 							<object class="IBActionInfo">
 								<string key="name">onCircleOverlappingRectangle:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">onComplexShapes2:</string>
 								<string key="candidateClassName">id</string>
 							</object>
 							<object class="IBActionInfo">

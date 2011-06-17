@@ -21,6 +21,7 @@
 - (void) addCircleOnTwoRectangles;
 - (void) addCircleOverlappingCircle;
 - (void) addComplexShapes;
+- (void) addComplexShapes2;
 
 - (void) addRectangle:(NSRect)rect;
 - (void) addCircleAtPoint:(NSPoint)center withRadius:(CGFloat)radius;
@@ -36,7 +37,7 @@
 {
     self = [super init];
     if (self) {
-        _resetAction = @selector(addComplexShapes);
+        _resetAction = @selector(addComplexShapes2);
     }
     return self;
 }
@@ -154,6 +155,22 @@
     NSBezierPath *allParts = [holeyRectangle fb_union:rectangle];
     NSBezierPath *intersectingParts = [holeyRectangle fb_intersect:rectangle];
     
+    [_view.canvas addPath:allParts withColor:[NSColor blueColor]];
+    [_view.canvas addPath:intersectingParts withColor:[NSColor redColor]];
+}
+
+- (void) addComplexShapes2
+{
+    NSBezierPath *rectangles = [NSBezierPath bezierPath];
+    [self addRectangle:NSMakeRect(50, 5, 100, 400) toPath:rectangles];
+    [self addRectangle:NSMakeRect(350, 5, 100, 400) toPath:rectangles];
+
+    NSBezierPath *circle = [NSBezierPath bezierPath];
+    [self addCircleAtPoint:NSMakePoint(200, 200) withRadius:185 toPath:circle];    
+
+    NSBezierPath *allParts = [rectangles fb_union:circle];
+    NSBezierPath *intersectingParts = [rectangles fb_intersect:circle];
+
     [_view.canvas addPath:allParts withColor:[NSColor blueColor]];
     [_view.canvas addPath:intersectingParts withColor:[NSColor redColor]];
 }
@@ -276,6 +293,12 @@
     [self onReset:sender];        
 }
 
+- (IBAction) onComplexShapes2:(id)sender
+{
+    _resetAction = @selector(addComplexShapes2);
+    [self onReset:sender];        
+}
+
 - (IBAction) onShowPoints:(id)sender
 {
     _view.canvas.showPoints = !_view.canvas.showPoints;
@@ -307,6 +330,8 @@
         [menuItem setState:_resetAction == @selector(addCircleOverlappingCircle) ? NSOnState : NSOffState];
     } else if ( [anItem action] == @selector(onComplexShapes:) ) {
         [menuItem setState:_resetAction == @selector(addComplexShapes) ? NSOnState : NSOffState];
+    } else if ( [anItem action] == @selector(onComplexShapes2:) ) {
+        [menuItem setState:_resetAction == @selector(addComplexShapes2) ? NSOnState : NSOffState];
     } else if ( [anItem action] == @selector(onShowPoints:) ) {
         [menuItem setState:_view.canvas.showPoints ? NSOnState : NSOffState];
     } else if ( [anItem action] == @selector(onShowIntersections:) ) {
