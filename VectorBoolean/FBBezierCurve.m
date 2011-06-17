@@ -590,4 +590,12 @@ static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloa
     return FBArePointsClose(_endPoint1, _endPoint2);
 }
 
+- (NSString *) description
+{
+    return [NSString stringWithFormat:@"<%@ (%f, %f)-[%f, %f] curve to [%f, %f]-(%f, %f)>", 
+            NSStringFromClass([self class]), 
+            _endPoint1.x, _endPoint1.y, _controlPoint1.x, _controlPoint1.y,
+            _controlPoint2.x, _controlPoint2.y, _endPoint2.x, _endPoint2.y];
+}
+
 @end

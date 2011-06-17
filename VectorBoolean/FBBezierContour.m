@@ -111,12 +111,12 @@
     return _bounds;
 }
 
-- (NSPoint) firstPoint
+- (NSPoint) testPoint
 {
     if ( [_edges count] == 0 )
         return NSZeroPoint;
     FBContourEdge *edge = [_edges objectAtIndex:0];
-    return edge.curve.endPoint1;
+    return [edge.curve pointAtParameter:0.5 leftBezierCurve:nil rightBezierCurve:nil];
 }
 
 - (id)copyWithZone:(NSZone *)zone

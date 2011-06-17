@@ -28,7 +28,7 @@
 
 @property (readonly) NSArray *contours;
 @property (readonly) NSRect bounds;
-@property (readonly) NSPoint firstPoint;
+@property (readonly) NSPoint testPoint;
 
 @end
 
@@ -115,8 +115,8 @@
     BOOL hasCrossings = [self insertCrossingsWithBezierGraph:graph];
     if ( !hasCrossings ) {
         // There are no crossings, which means one contains the other, or they're completely disjoint 
-        BOOL subjectContainsClip = [self containsPoint:graph.firstPoint];
-        BOOL clipContainsSubject = [graph containsPoint:self.firstPoint];
+        BOOL subjectContainsClip = [self containsPoint:graph.testPoint];
+        BOOL clipContainsSubject = [graph containsPoint:self.testPoint];
         
         // Clean up crossings so the graphs can be reused
         [self removeCrossings];
@@ -151,8 +151,8 @@
     BOOL hasCrossings = [self insertCrossingsWithBezierGraph:graph];
     if ( !hasCrossings ) {
         // There are no crossings, which means one contains the other, or they're completely disjoint 
-        BOOL subjectContainsClip = [self containsPoint:graph.firstPoint];
-        BOOL clipContainsSubject = [graph containsPoint:self.firstPoint];
+        BOOL subjectContainsClip = [self containsPoint:graph.testPoint];
+        BOOL clipContainsSubject = [graph containsPoint:self.testPoint];
         
         // Clean up crossings so the graphs can be reused
         [self removeCrossings];
@@ -184,8 +184,8 @@
     BOOL hasCrossings = [self insertCrossingsWithBezierGraph:graph];
     if ( !hasCrossings ) {
         // There are no crossings, which means one contains the other, or they're completely disjoint 
-        BOOL subjectContainsClip = [self containsPoint:graph.firstPoint];
-        BOOL clipContainsSubject = [graph containsPoint:self.firstPoint];
+        BOOL subjectContainsClip = [self containsPoint:graph.testPoint];
+        BOOL clipContainsSubject = [graph containsPoint:self.testPoint];
         
         // Clean up crossings so the graphs can be reused
         [self removeCrossings];
@@ -433,11 +433,11 @@
         [self addContour:[[contour copy] autorelease]];
 }
 
-- (NSPoint) firstPoint
+- (NSPoint) testPoint
 {
     if ( [_contours count] == 0 )
         return NSZeroPoint;
     FBBezierContour *contour = [_contours objectAtIndex:0];
-    return contour.firstPoint;
+    return contour.testPoint;
 }
 @end

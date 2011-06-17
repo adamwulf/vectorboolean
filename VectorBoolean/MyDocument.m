@@ -36,7 +36,7 @@
 {
     self = [super init];
     if (self) {
-        _resetAction = @selector(addCircleOnRectangle);
+        _resetAction = @selector(addComplexShapes);
     }
     return self;
 }

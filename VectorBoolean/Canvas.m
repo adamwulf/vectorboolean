@@ -100,9 +100,16 @@ static NSRect BoxFrame(NSPoint point)
 
         NSBezierPath *path1 = [[_paths objectAtIndex:0] objectForKey:@"path"];
         NSBezierPath *path2 = [[_paths objectAtIndex:1] objectForKey:@"path"];
-        NSArray *curves1 = [FBBezierCurve bezierCurvesFromBezierPath:path1]; // rectangle
-        NSArray *curves2 = [FBBezierCurve bezierCurvesFromBezierPath:path2]; // circle
+        NSArray *curves1 = [FBBezierCurve bezierCurvesFromBezierPath:path1];
+        NSArray *curves2 = [FBBezierCurve bezierCurvesFromBezierPath:path2];
         
+#if 0
+        FBBezierCurve *curve1 = [curves1 objectAtIndex:0];
+        FBBezierCurve *curve2 = [curves2 objectAtIndex:0];
+        NSArray *intersections = [curve1 intersectionsWithBezierCurve:curve2];
+        for (FBBezierIntersection *intersection in intersections)
+            NSLog(@"intersection at %f, %f", intersection.location.x, intersection.location.y);
+#else
         for (FBBezierCurve *curve1 in curves1) {
             for (FBBezierCurve *curve2 in curves2) {
                 NSArray *intersections = [curve1 intersectionsWithBezierCurve:curve2];
@@ -116,6 +123,7 @@ static NSRect BoxFrame(NSPoint point)
                 }
             }
         }
+#endif
     }
 }
 
