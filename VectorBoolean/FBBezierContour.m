@@ -10,6 +10,7 @@
 #import "FBBezierCurve.h"
 #import "FBContourEdge.h"
 #import "FBEdgeCrossing.h"
+#import "FBDebug.h"
 
 @implementation FBBezierContour
 
@@ -127,4 +128,13 @@
     return copy;
 }
 
+- (NSString *) description
+{
+    return [NSString stringWithFormat:@"<%@: bounds = (%f, %f)(%f, %f) edges = %@>", 
+            NSStringFromClass([self class]),
+            NSMinX(self.bounds), NSMinY(self.bounds),
+            NSWidth(self.bounds), NSHeight(self.bounds),
+            FBArrayDescription(_edges)
+            ];
+}
 @end

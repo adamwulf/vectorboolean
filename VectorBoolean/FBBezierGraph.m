@@ -13,6 +13,7 @@
 #import "FBContourEdge.h"
 #import "FBBezierIntersection.h"
 #import "FBEdgeCrossing.h"
+#import "FBDebug.h"
 
 @interface FBBezierGraph ()
 
@@ -440,4 +441,14 @@
     FBBezierContour *contour = [_contours objectAtIndex:0];
     return contour.testPoint;
 }
+
+- (NSString *) description
+{
+    return [NSString stringWithFormat:@"<%@: bounds = (%f, %f)(%f, %f) contours = %@>", 
+            NSStringFromClass([self class]), 
+            NSMinX(self.bounds), NSMinY(self.bounds),
+            NSWidth(self.bounds), NSHeight(self.bounds),
+            FBArrayDescription(_contours)];
+}
+
 @end

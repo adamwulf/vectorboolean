@@ -92,4 +92,14 @@
     return _intersection.curve2RightBezier;
 }
 
+- (NSString *) description
+{
+    return [NSString stringWithFormat:@"<%@: isEntry = %d, isProcessed = %d, intersection = %@>", 
+            NSStringFromClass([self class]),
+            (int)_entry,
+            (int)_processed,
+            [_intersection description]
+            ];
+}
+
 @end

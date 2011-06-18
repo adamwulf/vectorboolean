@@ -15,6 +15,7 @@
 		A1A3D0AB13A9CE1200678AA9 /* FBBezierContour.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A3D0AA13A9CE0F00678AA9 /* FBBezierContour.m */; };
 		A1A3D0AE13A9CE3D00678AA9 /* FBContourEdge.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A3D0AD13A9CE3B00678AA9 /* FBContourEdge.m */; };
 		A1A3D0B113A9CE5400678AA9 /* FBEdgeCrossing.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A3D0B013A9CE5200678AA9 /* FBEdgeCrossing.m */; };
+		A1A3D0B413AC0F3600678AA9 /* FBDebug.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A3D0B313AC0F3100678AA9 /* FBDebug.m */; };
 		A1C48B381395FA380043E2C7 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1C48B371395FA380043E2C7 /* Cocoa.framework */; };
 		A1C48B421395FA390043E2C7 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1C48B401395FA390043E2C7 /* InfoPlist.strings */; };
 		A1C48B451395FA390043E2C7 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = A1C48B441395FA390043E2C7 /* main.m */; };
@@ -44,6 +45,8 @@
 		A1A3D0AD13A9CE3B00678AA9 /* FBContourEdge.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBContourEdge.m; sourceTree = "<group>"; };
 		A1A3D0AF13A9CE5100678AA9 /* FBEdgeCrossing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBEdgeCrossing.h; sourceTree = "<group>"; };
 		A1A3D0B013A9CE5200678AA9 /* FBEdgeCrossing.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBEdgeCrossing.m; sourceTree = "<group>"; };
+		A1A3D0B213AC0F2F00678AA9 /* FBDebug.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDebug.h; sourceTree = "<group>"; };
+		A1A3D0B313AC0F3100678AA9 /* FBDebug.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDebug.m; sourceTree = "<group>"; };
 		A1C48B331395FA380043E2C7 /* VectorBoolean.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VectorBoolean.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1C48B371395FA380043E2C7 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		A1C48B3A1395FA390043E2C7 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -141,6 +144,8 @@
 				A1A3D0AD13A9CE3B00678AA9 /* FBContourEdge.m */,
 				A1A3D0AF13A9CE5100678AA9 /* FBEdgeCrossing.h */,
 				A1A3D0B013A9CE5200678AA9 /* FBEdgeCrossing.m */,
+				A1A3D0B213AC0F2F00678AA9 /* FBDebug.h */,
+				A1A3D0B313AC0F3100678AA9 /* FBDebug.m */,
 				A1C48B4C1395FA390043E2C7 /* MyDocument.xib */,
 				A1C48B4F1395FA390043E2C7 /* MainMenu.xib */,
 				A1C48B3E1395FA390043E2C7 /* Supporting Files */,
@@ -237,6 +242,7 @@
 				A1A3D0AB13A9CE1200678AA9 /* FBBezierContour.m in Sources */,
 				A1A3D0AE13A9CE3D00678AA9 /* FBContourEdge.m in Sources */,
 				A1A3D0B113A9CE5400678AA9 /* FBEdgeCrossing.m in Sources */,
+				A1A3D0B413AC0F3600678AA9 /* FBDebug.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -126,4 +126,12 @@
     _needToComputeCurve2 = NO;
 }
 
+- (NSString *) description
+{
+    return [NSString stringWithFormat:@"<%@: location = (%f, %f), isTangent = %d>", 
+            NSStringFromClass([self class]),
+            self.location.x, self.location.y,
+            (int)self.isTangent];
+}
+
 @end

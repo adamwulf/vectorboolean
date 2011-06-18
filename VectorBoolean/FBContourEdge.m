@@ -9,6 +9,7 @@
 #import "FBContourEdge.h"
 #import "FBEdgeCrossing.h"
 #import "FBBezierContour.h"
+#import "FBDebug.h"
 
 @implementation FBContourEdge
 
@@ -89,6 +90,11 @@
     if ( [_crossings count] == 0 )
         return nil;
     return [_crossings objectAtIndex:[_crossings count] - 1];    
+}
+
+- (NSString *) description
+{
+    return [NSString stringWithFormat:@"<%@: curve = %@ crossings = %@>", NSStringFromClass([self class]), [_curve description], FBArrayDescription(_crossings)];
 }
 
 @end
