@@ -42,6 +42,11 @@
     [super dealloc];
 }
 
+- (void) removeFromEdge
+{
+    [_edge removeCrossing:self];
+}
+
 - (CGFloat) order
 {
     return self.parameter;
@@ -90,6 +95,22 @@
         return _intersection.curve1RightBezier;
     
     return _intersection.curve2RightBezier;
+}
+
+- (BOOL) isAtStart
+{
+    if ( self.edge.curve == _intersection.curve1 )
+        return _intersection.isAtStartOfCurve1;
+    
+    return _intersection.isAtStartOfCurve2;
+}
+
+- (BOOL) isAtEnd
+{
+    if ( self.edge.curve == _intersection.curve1 )
+        return _intersection.isAtStopOfCurve1;
+    
+    return _intersection.isAtStopOfCurve2;
 }
 
 - (NSString *) description

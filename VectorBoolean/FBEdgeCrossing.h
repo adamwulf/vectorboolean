@@ -24,6 +24,8 @@
 + (id) crossingWithIntersection:(FBBezierIntersection *)intersection;
 - (id) initWithIntersection:(FBBezierIntersection *)intersection;
 
+- (void) removeFromEdge;
+
 @property (assign) FBContourEdge *edge;
 @property (assign) FBEdgeCrossing *counterpart;
 @property (readonly) CGFloat order;
@@ -37,5 +39,7 @@
 @property (readonly) FBBezierCurve *curve;
 @property (readonly) FBBezierCurve *leftCurve;
 @property (readonly) FBBezierCurve *rightCurve;
+@property (readonly, getter = isAtStart) BOOL atStart;
+@property (readonly, getter = isAtEnd) BOOL atEnd;
 
 @end

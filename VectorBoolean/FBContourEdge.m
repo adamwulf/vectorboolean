@@ -11,6 +11,12 @@
 #import "FBBezierContour.h"
 #import "FBDebug.h"
 
+@interface FBContourEdge ()
+
+- (void) sortCrossings;
+
+@end
+
 @implementation FBContourEdge
 
 @synthesize curve=_curve;
@@ -43,6 +49,18 @@
 {
     crossing.edge = self;
     [_crossings addObject:crossing];
+    [self sortCrossings];
+}
+
+- (void) removeCrossing:(FBEdgeCrossing *)crossing
+{
+    crossing.edge = nil;
+    [_crossings removeObject:crossing];
+    [self sortCrossings];
+}
+
+- (void) sortCrossings
+{
     [_crossings sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
         FBEdgeCrossing *crossing1 = obj1;
         FBEdgeCrossing *crossing2 = obj2;

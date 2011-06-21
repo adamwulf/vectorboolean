@@ -259,7 +259,7 @@ static CGFloat AngleBetweenUnitVectors(NSPoint vector1, NSPoint vector2)
 
 - (BOOL) insertCrossingsWithBezierGraph:(FBBezierGraph *)other
 {
-    BOOL hasIntersection = NO;
+    NSMutableArray *crossings = [NSMutableArray arrayWithCapacity:10];
     
     for (FBBezierContour *ourContour in self.contours) {
         for (FBContourEdge *ourEdge in ourContour.edges) {
@@ -279,7 +279,8 @@ static CGFloat AngleBetweenUnitVectors(NSPoint vector1, NSPoint vector2)
                         [ourEdge addCrossing:ourCrossing];
                         [theirEdge addCrossing:theirCrossing];
                         
-                        hasIntersection = YES;
+                        // Keep track of the crossing
+                        [crossings addObject:ourCrossing];
                     }
                 }
             }
@@ -287,7 +288,23 @@ static CGFloat AngleBetweenUnitVectors(NSPoint vector1, NSPoint vector2)
         }
     }
  
-    return hasIntersection;
+    // Find any duplicate crossings. These will happen at the endpoints of edges
+    NSUInteger removeCount = 0;
+    for (FBEdgeCrossing *crossing in crossings) {
+        if ( crossing.isAtStart && crossing.edge.previous.lastCrossing.isAtEnd ) {
+            FBEdgeCrossing *counterpart = crossing.counterpart;
+            [crossing removeFromEdge];
+            [counterpart removeFromEdge];
+            removeCount++;
+        }
+        if ( crossing.isAtEnd && crossing.edge.next.firstCrossing.isAtStart ) {
+            FBEdgeCrossing *counterpart = crossing.edge.next.firstCrossing.counterpart;
+            [crossing.edge.next.firstCrossing removeFromEdge];
+            [counterpart removeFromEdge];            
+            removeCount++;
+        }
+    }
+    return ([crossings count] - removeCount) > 0;
 }
 
 - (BOOL) doesEdge:(FBContourEdge *)edge1 crossEdge:(FBContourEdge *)edge2 atIntersection:(FBBezierIntersection *)intersection
