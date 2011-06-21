@@ -14,9 +14,19 @@
 #import "FBBezierIntersection.h"
 #import "FBEdgeCrossing.h"
 #import "FBDebug.h"
+#import "Geometry.h"
+#import <math.h>
+
+static CGFloat AngleBetweenUnitVectors(NSPoint vector1, NSPoint vector2)
+{
+    // Law of cosines, making the assumption lenght of the vectors is 1
+    CGFloat distance = FBDistanceBetweenPoints(vector1, vector2);
+    return acosf(distance * distance / -2.0 + 1.0);
+}
 
 @interface FBBezierGraph ()
 
+- (BOOL) doesEdge:(FBContourEdge *)edge1 crossEdge:(FBContourEdge *)edge2 atIntersection:(FBBezierIntersection *)intersection;
 - (BOOL) insertCrossingsWithBezierGraph:(FBBezierGraph *)other;
 - (BOOL) containsPoint:(NSPoint)point;
 - (FBEdgeCrossing *) firstUnprocessedCrossing;
@@ -257,10 +267,9 @@
                 for (FBContourEdge *theirEdge in theirContour.edges) {
                     NSArray *intersections = [ourEdge.curve intersectionsWithBezierCurve:theirEdge.curve];
                     for (FBBezierIntersection *intersection in intersections) {
-                        // Don't insert tangents since we don't want to split on them
-                        if ( intersection.isTangent )
+                        if ( ![self doesEdge:ourEdge crossEdge:theirEdge atIntersection:intersection] )
                             continue;
-                        
+
                         FBEdgeCrossing *ourCrossing = [FBEdgeCrossing crossingWithIntersection:intersection];
                         FBEdgeCrossing *theirCrossing = [FBEdgeCrossing crossingWithIntersection:intersection];
 
@@ -279,6 +288,59 @@
     }
  
     return hasIntersection;
+}
+
+- (BOOL) doesEdge:(FBContourEdge *)edge1 crossEdge:(FBContourEdge *)edge2 atIntersection:(FBBezierIntersection *)intersection
+{
+    // Handle the main case first
+    if ( !intersection.isAtEndPointOfCurve )
+        return YES;
+    if ( intersection.isTangent )
+        return NO;
+    
+    // The intersection happens at the end of one of the edges, meaning we'll have to look at the next
+    //  edge in sequence to see if it crosses or not
+    
+    // Calculate the four tangents
+    NSPoint edge1Tangents[] = { NSZeroPoint, NSZeroPoint };
+    NSPoint edge2Tangents[] = { NSZeroPoint, NSZeroPoint };
+    
+    // End of edge1 intersects middle of edge2
+    if ( intersection.isAtEndPointOfCurve1 && !intersection.isAtEndPointOfCurve2 ) {
+        FBContourEdge *otherEdge = intersection.isAtStartOfCurve1 ? edge1.previous : edge1.next;
+        edge1Tangents[0] = FBNormalizePoint( intersection.isAtStartOfCurve1 ? FBSubtractPoint(otherEdge.curve.controlPoint2, otherEdge.curve.endPoint2) : FBSubtractPoint(edge1.curve.controlPoint2, edge1.curve.endPoint2) );
+        edge1Tangents[1] = FBNormalizePoint( intersection.isAtStartOfCurve1 ? FBSubtractPoint(edge1.curve.controlPoint1, edge1.curve.endPoint1) : FBSubtractPoint(otherEdge.curve.controlPoint1, otherEdge.curve.endPoint1) );
+        edge2Tangents[0] = FBNormalizePoint( FBSubtractPoint(intersection.curve2LeftBezier.controlPoint2, intersection.curve2LeftBezier.endPoint2) );
+        edge2Tangents[1] = FBNormalizePoint( FBSubtractPoint(intersection.curve2RightBezier.controlPoint1, intersection.curve2RightBezier.endPoint1) );        
+    } else if ( !intersection.isAtEndPointOfCurve1 && intersection.isAtEndPointOfCurve2 ) {
+        // End of edge2 intersects middle of edge 1
+        edge1Tangents[0] = FBNormalizePoint( FBSubtractPoint(intersection.curve1LeftBezier.controlPoint2, intersection.curve1LeftBezier.endPoint2) );
+        edge1Tangents[1] = FBNormalizePoint( FBSubtractPoint(intersection.curve1RightBezier.controlPoint1, intersection.curve1RightBezier.endPoint1) );        
+        FBContourEdge *otherEdge = intersection.isAtStartOfCurve2 ? edge2.previous : edge2.next;
+        edge2Tangents[0] = FBNormalizePoint( intersection.isAtStartOfCurve2 ? FBSubtractPoint(otherEdge.curve.controlPoint2, otherEdge.curve.endPoint2) : FBSubtractPoint(edge2.curve.controlPoint2, edge2.curve.endPoint2) );
+        edge2Tangents[1] = FBNormalizePoint( intersection.isAtStartOfCurve2 ? FBSubtractPoint(edge2.curve.controlPoint1, edge2.curve.endPoint1) : FBSubtractPoint(otherEdge.curve.controlPoint1, otherEdge.curve.endPoint1) );
+    } else {
+        // End of edge1 intersects end of edge2
+        FBContourEdge *otherEdge1 = intersection.isAtStartOfCurve1 ? edge1.previous : edge1.next;
+        edge1Tangents[0] = FBNormalizePoint( intersection.isAtStartOfCurve1 ? FBSubtractPoint(otherEdge1.curve.controlPoint2, otherEdge1.curve.endPoint2) : FBSubtractPoint(edge1.curve.controlPoint2, edge1.curve.endPoint2) );
+        edge1Tangents[1] = FBNormalizePoint( intersection.isAtStartOfCurve1 ? FBSubtractPoint(edge1.curve.controlPoint1, edge1.curve.endPoint1) : FBSubtractPoint(otherEdge1.curve.controlPoint1, otherEdge1.curve.endPoint1) );
+        FBContourEdge *otherEdge2 = intersection.isAtStartOfCurve2 ? edge2.previous : edge2.next;
+        edge2Tangents[0] = FBNormalizePoint( intersection.isAtStartOfCurve2 ? FBSubtractPoint(otherEdge2.curve.controlPoint2, otherEdge2.curve.endPoint2) : FBSubtractPoint(edge2.curve.controlPoint2, edge2.curve.endPoint2) );
+        edge2Tangents[1] = FBNormalizePoint( intersection.isAtStartOfCurve2 ? FBSubtractPoint(edge2.curve.controlPoint1, edge2.curve.endPoint1) : FBSubtractPoint(otherEdge2.curve.controlPoint1, otherEdge2.curve.endPoint1) );
+    }
+    
+    // Calculate angles between the tangents
+    NSPoint baseVector = edge1Tangents[0];
+    CGFloat edge1Angles[] = { AngleBetweenUnitVectors(edge1Tangents[0], baseVector), AngleBetweenUnitVectors(edge1Tangents[1], baseVector) };
+    CGFloat edge2Angles[] = { AngleBetweenUnitVectors(edge2Tangents[0], baseVector), AngleBetweenUnitVectors(edge2Tangents[1], baseVector) };
+    
+    // Count how many times edge2 angles are between edge1 angles
+    NSUInteger count = 0;
+    if ( edge2Angles[0] >= edge1Angles[0] && edge2Angles[0] <= edge1Angles[1] )
+        count++;
+    if ( edge2Angles[1] >= edge1Angles[0] && edge2Angles[1] <= edge1Angles[1] )
+        count++;
+    return (count % 2) == 1; // if an odd number, then it splits it
 }
 
 - (NSRect) bounds

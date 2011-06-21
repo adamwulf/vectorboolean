@@ -65,6 +65,10 @@
 
 - (BOOL) isTangent
 {
+    // If we're at the end of a curve, it's not tangent, so skip all the calculations
+    if ( self.isAtEndPointOfCurve )
+        return NO;
+    
     [self computeCurve1];
     [self computeCurve2];
 
@@ -100,6 +104,41 @@
 {
     [self computeCurve2];
     return _curve2RightBezier;
+}
+
+- (BOOL) isAtStartOfCurve1
+{
+    return FBAreValuesClose(_parameter1, 0.0);
+}
+
+- (BOOL) isAtStopOfCurve1
+{
+    return FBAreValuesClose(_parameter1, 1.0);
+}
+
+- (BOOL) isAtEndPointOfCurve1
+{
+    return self.isAtStartOfCurve1 || self.isAtStopOfCurve1;
+}
+
+- (BOOL) isAtStartOfCurve2
+{
+    return FBAreValuesClose(_parameter2, 0.0);
+}
+
+- (BOOL) isAtStopOfCurve2
+{
+    return FBAreValuesClose(_parameter2, 1.0);
+}
+
+- (BOOL) isAtEndPointOfCurve2
+{
+    return self.isAtStartOfCurve2 || self.isAtStopOfCurve2;
+}
+
+- (BOOL) isAtEndPointOfCurve
+{
+    return self.isAtEndPointOfCurve1 || self.isAtEndPointOfCurve2;
 }
 
 - (void) computeCurve1

@@ -37,6 +37,15 @@
 @property (readonly) FBBezierCurve *curve1LeftBezier;
 @property (readonly) FBBezierCurve *curve1RightBezier;
 @property (readonly) FBBezierCurve *curve2LeftBezier;
-@property (readonly) FBBezierCurve *curve2RightBezier;    
+@property (readonly) FBBezierCurve *curve2RightBezier;
+
+@property (readonly, getter = isAtStartOfCurve1) BOOL atStartOfCurve1;
+@property (readonly, getter = isAtStopOfCurve1) BOOL atStopOfCurve1;
+@property (readonly, getter = isAtStartOfCurve2) BOOL atStartOfCurve2;
+@property (readonly, getter = isAtStopOfCurve2) BOOL atStopOfCurve2;
+
+@property (readonly, getter = isAtEndPointOfCurve1) BOOL atEndPointOfCurve1;
+@property (readonly, getter = isAtEndPointOfCurve2) BOOL atEndPointOfCurve2;
+@property (readonly, getter = isAtEndPointOfCurve) BOOL atEndPointOfCurve;
 
 @end
