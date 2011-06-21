@@ -44,7 +44,7 @@
 {
     self = [super init];
     if (self) {
-        _resetAction = @selector(addComplexShapes2);
+        _resetAction = @selector(addDiamondOverlappingRectangle);
     }
     return self;
 }

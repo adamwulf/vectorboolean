@@ -17,11 +17,31 @@
 #import "Geometry.h"
 #import <math.h>
 
-static CGFloat AngleBetweenUnitVectors(NSPoint vector1, NSPoint vector2)
+static const CGFloat FB2PI = 2.0 * M_PI;
+
+static CGFloat PolarAngle(NSPoint point)
 {
-    // Law of cosines, making the assumption lenght of the vectors is 1
-    CGFloat distance = FBDistanceBetweenPoints(vector1, vector2);
-    return acosf(distance * distance / -2.0 + 1.0);
+    CGFloat value = 0.0;
+    if ( point.x > 0.0 )
+        value = atan2f(point.y, point.x);
+    else if ( point.x < 0.0 ) {
+        if ( point.y >= 0.0 )
+            value = atan2f(point.y, point.x) + M_PI;
+        else
+            value = atan2f(point.y, point.x) - M_PI;
+    } else {
+        if ( point.y > 0.0 )
+            value =  M_PI_2;
+        else if ( point.y < 0.0 )
+            value =  -M_PI_2;
+        else
+            value = 0.0;
+    }
+    while ( value < 0.0 )
+        value += FB2PI;
+    while ( value > FB2PI )
+        value -= FB2PI;
+    return value;
 }
 
 @interface FBBezierGraph ()
@@ -281,6 +301,7 @@ static CGFloat AngleBetweenUnitVectors(NSPoint vector1, NSPoint vector2)
                         
                         // Keep track of the crossing
                         [crossings addObject:ourCrossing];
+                        [crossings addObject:theirCrossing];
                     }
                 }
             }
@@ -295,13 +316,13 @@ static CGFloat AngleBetweenUnitVectors(NSPoint vector1, NSPoint vector2)
             FBEdgeCrossing *counterpart = crossing.counterpart;
             [crossing removeFromEdge];
             [counterpart removeFromEdge];
-            removeCount++;
+            removeCount += 2;
         }
         if ( crossing.isAtEnd && crossing.edge.next.firstCrossing.isAtStart ) {
             FBEdgeCrossing *counterpart = crossing.edge.next.firstCrossing.counterpart;
             [crossing.edge.next.firstCrossing removeFromEdge];
-            [counterpart removeFromEdge];            
-            removeCount++;
+            [counterpart removeFromEdge];
+            removeCount += 2;
         }
     }
     return ([crossings count] - removeCount) > 0;
@@ -321,41 +342,42 @@ static CGFloat AngleBetweenUnitVectors(NSPoint vector1, NSPoint vector2)
     // Calculate the four tangents
     NSPoint edge1Tangents[] = { NSZeroPoint, NSZeroPoint };
     NSPoint edge2Tangents[] = { NSZeroPoint, NSZeroPoint };
-    
-    // End of edge1 intersects middle of edge2
-    if ( intersection.isAtEndPointOfCurve1 && !intersection.isAtEndPointOfCurve2 ) {
-        FBContourEdge *otherEdge = intersection.isAtStartOfCurve1 ? edge1.previous : edge1.next;
-        edge1Tangents[0] = FBNormalizePoint( intersection.isAtStartOfCurve1 ? FBSubtractPoint(otherEdge.curve.controlPoint2, otherEdge.curve.endPoint2) : FBSubtractPoint(edge1.curve.controlPoint2, edge1.curve.endPoint2) );
-        edge1Tangents[1] = FBNormalizePoint( intersection.isAtStartOfCurve1 ? FBSubtractPoint(edge1.curve.controlPoint1, edge1.curve.endPoint1) : FBSubtractPoint(otherEdge.curve.controlPoint1, otherEdge.curve.endPoint1) );
-        edge2Tangents[0] = FBNormalizePoint( FBSubtractPoint(intersection.curve2LeftBezier.controlPoint2, intersection.curve2LeftBezier.endPoint2) );
-        edge2Tangents[1] = FBNormalizePoint( FBSubtractPoint(intersection.curve2RightBezier.controlPoint1, intersection.curve2RightBezier.endPoint1) );        
-    } else if ( !intersection.isAtEndPointOfCurve1 && intersection.isAtEndPointOfCurve2 ) {
-        // End of edge2 intersects middle of edge 1
-        edge1Tangents[0] = FBNormalizePoint( FBSubtractPoint(intersection.curve1LeftBezier.controlPoint2, intersection.curve1LeftBezier.endPoint2) );
-        edge1Tangents[1] = FBNormalizePoint( FBSubtractPoint(intersection.curve1RightBezier.controlPoint1, intersection.curve1RightBezier.endPoint1) );        
-        FBContourEdge *otherEdge = intersection.isAtStartOfCurve2 ? edge2.previous : edge2.next;
-        edge2Tangents[0] = FBNormalizePoint( intersection.isAtStartOfCurve2 ? FBSubtractPoint(otherEdge.curve.controlPoint2, otherEdge.curve.endPoint2) : FBSubtractPoint(edge2.curve.controlPoint2, edge2.curve.endPoint2) );
-        edge2Tangents[1] = FBNormalizePoint( intersection.isAtStartOfCurve2 ? FBSubtractPoint(edge2.curve.controlPoint1, edge2.curve.endPoint1) : FBSubtractPoint(otherEdge.curve.controlPoint1, otherEdge.curve.endPoint1) );
+    if ( intersection.isAtStartOfCurve1 ) {
+        FBContourEdge *otherEdge1 = edge1.previous;
+        edge1Tangents[0] = FBSubtractPoint(otherEdge1.curve.controlPoint2, otherEdge1.curve.endPoint2);
+        edge1Tangents[1] = FBSubtractPoint(edge1.curve.controlPoint1, edge1.curve.endPoint1);
+    } else if ( intersection.isAtStopOfCurve1 ) {
+        FBContourEdge *otherEdge1 = edge1.next;
+        edge1Tangents[0] = FBSubtractPoint(edge1.curve.controlPoint2, edge1.curve.endPoint2);
+        edge1Tangents[1] = FBSubtractPoint(otherEdge1.curve.controlPoint1, otherEdge1.curve.endPoint1);
     } else {
-        // End of edge1 intersects end of edge2
-        FBContourEdge *otherEdge1 = intersection.isAtStartOfCurve1 ? edge1.previous : edge1.next;
-        edge1Tangents[0] = FBNormalizePoint( intersection.isAtStartOfCurve1 ? FBSubtractPoint(otherEdge1.curve.controlPoint2, otherEdge1.curve.endPoint2) : FBSubtractPoint(edge1.curve.controlPoint2, edge1.curve.endPoint2) );
-        edge1Tangents[1] = FBNormalizePoint( intersection.isAtStartOfCurve1 ? FBSubtractPoint(edge1.curve.controlPoint1, edge1.curve.endPoint1) : FBSubtractPoint(otherEdge1.curve.controlPoint1, otherEdge1.curve.endPoint1) );
-        FBContourEdge *otherEdge2 = intersection.isAtStartOfCurve2 ? edge2.previous : edge2.next;
-        edge2Tangents[0] = FBNormalizePoint( intersection.isAtStartOfCurve2 ? FBSubtractPoint(otherEdge2.curve.controlPoint2, otherEdge2.curve.endPoint2) : FBSubtractPoint(edge2.curve.controlPoint2, edge2.curve.endPoint2) );
-        edge2Tangents[1] = FBNormalizePoint( intersection.isAtStartOfCurve2 ? FBSubtractPoint(edge2.curve.controlPoint1, edge2.curve.endPoint1) : FBSubtractPoint(otherEdge2.curve.controlPoint1, otherEdge2.curve.endPoint1) );
+        edge1Tangents[0] = FBSubtractPoint(intersection.curve1LeftBezier.controlPoint2, intersection.curve1LeftBezier.endPoint2);
+        edge1Tangents[1] = FBSubtractPoint(intersection.curve1RightBezier.controlPoint1, intersection.curve1RightBezier.endPoint1);
     }
-    
+    if ( intersection.isAtStartOfCurve2 ) {
+        FBContourEdge *otherEdge2 = edge2.previous;
+        edge2Tangents[0] = FBSubtractPoint(otherEdge2.curve.controlPoint2, otherEdge2.curve.endPoint2);
+        edge2Tangents[1] = FBSubtractPoint(edge2.curve.controlPoint1, edge2.curve.endPoint1);
+    } else if ( intersection.isAtStopOfCurve2 ) {
+        FBContourEdge *otherEdge2 = edge2.next;
+        edge2Tangents[0] = FBSubtractPoint(edge2.curve.controlPoint2, edge2.curve.endPoint2);
+        edge2Tangents[1] = FBSubtractPoint(otherEdge2.curve.controlPoint1, otherEdge2.curve.endPoint1);
+    } else {
+        edge2Tangents[0] = FBSubtractPoint(intersection.curve2LeftBezier.controlPoint2, intersection.curve2LeftBezier.endPoint2);
+        edge2Tangents[1] = FBSubtractPoint(intersection.curve2RightBezier.controlPoint1, intersection.curve2RightBezier.endPoint1);
+    }
+
     // Calculate angles between the tangents
-    NSPoint baseVector = edge1Tangents[0];
-    CGFloat edge1Angles[] = { AngleBetweenUnitVectors(edge1Tangents[0], baseVector), AngleBetweenUnitVectors(edge1Tangents[1], baseVector) };
-    CGFloat edge2Angles[] = { AngleBetweenUnitVectors(edge2Tangents[0], baseVector), AngleBetweenUnitVectors(edge2Tangents[1], baseVector) };
+    CGFloat edge1Angles[] = { PolarAngle(edge1Tangents[0]), PolarAngle(edge1Tangents[1]) };
+    CGFloat edge2Angles[] = { PolarAngle(edge2Tangents[0]), PolarAngle(edge2Tangents[1]) };
     
     // Count how many times edge2 angles are between edge1 angles
+    CGFloat minAngle = MIN(edge1Angles[0], edge1Angles[1]);
+    CGFloat maxAngle = MAX(edge1Angles[0], edge1Angles[1]);    
     NSUInteger count = 0;
-    if ( edge2Angles[0] >= edge1Angles[0] && edge2Angles[0] <= edge1Angles[1] )
+    if ( edge2Angles[0] > minAngle && edge2Angles[0] < maxAngle )
         count++;
-    if ( edge2Angles[1] >= edge1Angles[0] && edge2Angles[1] <= edge1Angles[1] )
+    if ( edge2Angles[1] > minAngle && edge2Angles[1] < maxAngle )
         count++;
     return (count % 2) == 1; // if an odd number, then it splits it
 }
@@ -399,22 +421,31 @@ static CGFloat AngleBetweenUnitVectors(NSPoint vector1, NSPoint vector2)
 - (void) markCrossingsAsEntryOrExitWithBezierGraph:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside
 {
     for (FBBezierContour *contour in _contours) {
-        FBContourEdge *firstEdge = nil;
-        BOOL isEntry = NO;
-        for (FBContourEdge *edge in contour.edges) {
-            // Handle the first edge special case
-            if ( firstEdge == nil ) {
-                firstEdge = edge;
-                BOOL contains = [otherGraph containsPoint:firstEdge.curve.endPoint1];
-                isEntry = markInside ? !contains : contains;
-            }
-            
+        // When marking we need to start at a point that is clearly either inside or outside
+        //  the other graph.
+        FBContourEdge *startEdge = [contour.edges objectAtIndex:0];
+        FBContourEdge *stopValue = startEdge;
+        while ( startEdge.firstCrossing != nil && startEdge.firstCrossing.isAtStart ) {
+            startEdge = startEdge.next;
+            if ( startEdge == stopValue )
+                break; // for safety
+        }
+        
+        // Calculate the first entry value
+        BOOL contains = [otherGraph containsPoint:startEdge.curve.endPoint1];
+        BOOL isEntry = markInside ? !contains : contains;
+        
+        // Walk all the edges in this contour and mark the crossings
+        FBContourEdge *edge = startEdge;
+        do {
             // Mark all the crossings on this edge
             for (FBEdgeCrossing *crossing in edge.crossings) {
                 crossing.entry = isEntry;
                 isEntry = !isEntry; // toggle
             }
-        }
+
+            edge = edge.next;
+        } while ( edge != startEdge );        
     }
 }
 
