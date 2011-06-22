@@ -17,6 +17,8 @@
     NSMutableArray *_crossings;
     FBBezierContour *_contour;
     NSUInteger _index;
+    BOOL _startShared;
+    BOOL _stopShared;
 }
 
 - (id) initWithBezierCurve:(FBBezierCurve *)curve contour:(FBBezierContour *)contour;
@@ -29,6 +31,9 @@
 @property (readonly) FBContourEdge *previous;
 @property (readonly) FBEdgeCrossing *firstCrossing;
 @property (readonly) FBEdgeCrossing *lastCrossing;
+
+@property (getter = isStartShared) BOOL startShared;
+@property (getter = isStopShared) BOOL stopShared;
 
 - (void) addCrossing:(FBEdgeCrossing *)crossing;
 - (void) removeCrossing:(FBEdgeCrossing *)crossing;

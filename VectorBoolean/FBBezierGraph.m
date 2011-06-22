@@ -316,6 +316,23 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
                 for (FBContourEdge *theirEdge in theirContour.edges) {
                     NSArray *intersections = [ourEdge.curve intersectionsWithBezierCurve:theirEdge.curve];
                     for (FBBezierIntersection *intersection in intersections) {
+                        // Mark shared points
+                        if ( intersection.isAtStartOfCurve1 ) {
+                            ourEdge.startShared = YES;
+                            ourEdge.previous.stopShared = YES;
+                        } else if ( intersection.isAtStopOfCurve1 ) {
+                            ourEdge.stopShared = YES;
+                            ourEdge.next.startShared = YES;
+                        }
+                        if ( intersection.isAtStartOfCurve2 ) {
+                            theirEdge.startShared = YES;
+                            theirEdge.previous.stopShared = YES;
+                        } else if ( intersection.isAtStopOfCurve2 ) {
+                            theirEdge.stopShared = YES;
+                            theirEdge.next.startShared = YES;
+                        }
+
+                        // Don't add a crossing unless one edge actually crosses the other
                         if ( ![self doesEdge:ourEdge crossEdge:theirEdge atIntersection:intersection] )
                             continue;
 
@@ -335,6 +352,7 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     }
  
     [self removeDuplicateCrossings];
+    [other removeDuplicateCrossings];
 
     return [self numberOfCrossings];
 }
@@ -344,7 +362,8 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     // Find any duplicate crossings. These will happen at the endpoints of edges
     for (FBBezierContour *ourContour in self.contours) {
         for (FBContourEdge *ourEdge in ourContour.edges) {
-            for (FBEdgeCrossing *crossing in ourEdge.crossings) {
+            NSArray *crossings = [[ourEdge.crossings copy] autorelease];
+            for (FBEdgeCrossing *crossing in crossings) {
                 if ( crossing.isAtStart && crossing.edge.previous.lastCrossing.isAtEnd ) {
                     FBEdgeCrossing *counterpart = crossing.counterpart;
                     [crossing removeFromEdge];
@@ -473,7 +492,7 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
         //  the other graph.
         FBContourEdge *startEdge = [contour.edges objectAtIndex:0];
         FBContourEdge *stopValue = startEdge;
-        while ( startEdge.firstCrossing != nil && startEdge.firstCrossing.isAtStart ) {
+        while ( startEdge.isStartShared ) {
             startEdge = startEdge.next;
             if ( startEdge == stopValue )
                 break; // for safety

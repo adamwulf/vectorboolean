@@ -117,7 +117,13 @@
     if ( [_edges count] == 0 )
         return NSZeroPoint;
     FBContourEdge *edge = [_edges objectAtIndex:0];
-    return [edge.curve pointAtParameter:0.5 leftBezierCurve:nil rightBezierCurve:nil];
+    FBContourEdge *stopValue = edge;
+    while ( edge.isStartShared ) {
+        edge = edge.next;
+        if ( edge == stopValue )
+            break;
+    }
+    return edge.curve.endPoint1;
 }
 
 - (id)copyWithZone:(NSZone *)zone

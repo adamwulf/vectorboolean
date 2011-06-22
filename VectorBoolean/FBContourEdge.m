@@ -23,6 +23,8 @@
 @synthesize crossings=_crossings;
 @synthesize index=_index;
 @synthesize contour=_contour;
+@synthesize startShared=_startShared;
+@synthesize stopShared=_stopShared;
 
 - (id) initWithBezierCurve:(FBBezierCurve *)curve contour:(FBBezierContour *)contour
 {
