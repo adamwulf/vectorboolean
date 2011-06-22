@@ -35,6 +35,8 @@
 
 - (void) addCurve:(FBBezierCurve *)curve
 {
+    if ( curve == nil )
+        return;
     FBContourEdge *edge = [[[FBContourEdge alloc] initWithBezierCurve:curve contour:self] autorelease];
     edge.index = [_edges count];
     [_edges addObject:edge];
@@ -60,6 +62,8 @@
 
 - (void) addReverseCurve:(FBBezierCurve *)curve
 {
+    if ( curve == nil )
+        return;
     FBBezierCurve *reverseCurve = [FBBezierCurve bezierCurveWithEndPoint1:curve.endPoint2 controlPoint1:curve.controlPoint2 controlPoint2:curve.controlPoint1 endPoint2:curve.endPoint1];
     [self addCurve:reverseCurve];
 }

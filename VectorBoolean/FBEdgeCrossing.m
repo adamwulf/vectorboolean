@@ -83,6 +83,9 @@
 
 - (FBBezierCurve *) leftCurve
 {
+    if ( self.isAtStart )
+        return nil;
+    
     if ( self.edge.curve == _intersection.curve1 )
         return _intersection.curve1LeftBezier;
     
@@ -91,6 +94,9 @@
 
 - (FBBezierCurve *) rightCurve
 {
+    if ( self.isAtEnd )
+        return nil;
+    
     if ( self.edge.curve == _intersection.curve1 )
         return _intersection.curve1RightBezier;
     
