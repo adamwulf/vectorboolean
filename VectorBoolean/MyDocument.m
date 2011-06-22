@@ -44,7 +44,7 @@
 {
     self = [super init];
     if (self) {
-        _resetAction = @selector(addDiamondOverlappingRectangle);
+        _resetAction = @selector(addTriangleInsideRectangle);
     }
     return self;
 }

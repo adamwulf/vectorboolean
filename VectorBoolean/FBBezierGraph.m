@@ -19,6 +19,15 @@
 
 static const CGFloat FB2PI = 2.0 * M_PI;
 
+static CGFloat NormalizeAngle(CGFloat value)
+{
+    while ( value < 0.0 )
+        value += FB2PI;
+    while ( value >= FB2PI )
+        value -= FB2PI;
+    return value;
+}
+
 static CGFloat PolarAngle(NSPoint point)
 {
     CGFloat value = 0.0;
@@ -37,15 +46,36 @@ static CGFloat PolarAngle(NSPoint point)
         else
             value = 0.0;
     }
-    while ( value < 0.0 )
-        value += FB2PI;
-    while ( value > FB2PI )
-        value -= FB2PI;
-    return value;
+    return NormalizeAngle(value);
+}
+
+typedef struct FBAngleRange {
+    CGFloat minimum;
+    CGFloat maximum;
+} FBAngleRange;
+
+static FBAngleRange FBAngleRangeMake(CGFloat minimum, CGFloat maximum)
+{
+    FBAngleRange range = { minimum, maximum };
+    return range;
+}
+
+static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
+{
+    if ( range.minimum <= range.maximum )
+        return angle > range.minimum && angle < range.maximum;
+    
+    // The range wraps around 0. See if the angle falls in the first half
+    if ( angle > range.minimum && angle <= FB2PI )
+        return YES;
+    
+    return angle >= 0.0 && angle < range.maximum;
 }
 
 @interface FBBezierGraph ()
 
+- (NSUInteger) numberOfCrossings;
+- (void) removeDuplicateCrossings;
 - (BOOL) doesEdge:(FBContourEdge *)edge1 crossEdge:(FBContourEdge *)edge2 atIntersection:(FBBezierIntersection *)intersection;
 - (BOOL) insertCrossingsWithBezierGraph:(FBBezierGraph *)other;
 - (BOOL) containsPoint:(NSPoint)point;
@@ -279,8 +309,7 @@ static CGFloat PolarAngle(NSPoint point)
 
 - (BOOL) insertCrossingsWithBezierGraph:(FBBezierGraph *)other
 {
-    NSMutableArray *crossings = [NSMutableArray arrayWithCapacity:10];
-    
+    // Find all intersections and, if they cross the other graph, create crossings for them
     for (FBBezierContour *ourContour in self.contours) {
         for (FBContourEdge *ourEdge in ourContour.edges) {
             for (FBBezierContour *theirContour in other.contours) {
@@ -298,10 +327,6 @@ static CGFloat PolarAngle(NSPoint point)
                         
                         [ourEdge addCrossing:ourCrossing];
                         [theirEdge addCrossing:theirCrossing];
-                        
-                        // Keep track of the crossing
-                        [crossings addObject:ourCrossing];
-                        [crossings addObject:theirCrossing];
                     }
                 }
             }
@@ -309,23 +334,39 @@ static CGFloat PolarAngle(NSPoint point)
         }
     }
  
+    [self removeDuplicateCrossings];
+
+    return [self numberOfCrossings];
+}
+
+- (void) removeDuplicateCrossings
+{
     // Find any duplicate crossings. These will happen at the endpoints of edges
-    NSUInteger removeCount = 0;
-    for (FBEdgeCrossing *crossing in crossings) {
-        if ( crossing.isAtStart && crossing.edge.previous.lastCrossing.isAtEnd ) {
-            FBEdgeCrossing *counterpart = crossing.counterpart;
-            [crossing removeFromEdge];
-            [counterpart removeFromEdge];
-            removeCount += 2;
-        }
-        if ( crossing.isAtEnd && crossing.edge.next.firstCrossing.isAtStart ) {
-            FBEdgeCrossing *counterpart = crossing.edge.next.firstCrossing.counterpart;
-            [crossing.edge.next.firstCrossing removeFromEdge];
-            [counterpart removeFromEdge];
-            removeCount += 2;
+    for (FBBezierContour *ourContour in self.contours) {
+        for (FBContourEdge *ourEdge in ourContour.edges) {
+            for (FBEdgeCrossing *crossing in ourEdge.crossings) {
+                if ( crossing.isAtStart && crossing.edge.previous.lastCrossing.isAtEnd ) {
+                    FBEdgeCrossing *counterpart = crossing.counterpart;
+                    [crossing removeFromEdge];
+                    [counterpart removeFromEdge];
+                }
+                if ( crossing.isAtEnd && crossing.edge.next.firstCrossing.isAtStart ) {
+                    FBEdgeCrossing *counterpart = crossing.edge.next.firstCrossing.counterpart;
+                    [crossing.edge.next.firstCrossing removeFromEdge];
+                    [counterpart removeFromEdge];
+                }
+            }
         }
     }
-    return ([crossings count] - removeCount) > 0;
+}
+
+- (NSUInteger) numberOfCrossings
+{
+    NSUInteger count = 0;
+    for (FBBezierContour *ourContour in self.contours)
+        for (FBContourEdge *ourEdge in ourContour.edges)
+            count += [ourEdge.crossings count];
+    return count;
 }
 
 - (BOOL) doesEdge:(FBContourEdge *)edge1 crossEdge:(FBContourEdge *)edge2 atIntersection:(FBBezierIntersection *)intersection
@@ -372,14 +413,21 @@ static CGFloat PolarAngle(NSPoint point)
     CGFloat edge2Angles[] = { PolarAngle(edge2Tangents[0]), PolarAngle(edge2Tangents[1]) };
     
     // Count how many times edge2 angles are between edge1 angles
-    CGFloat minAngle = MIN(edge1Angles[0], edge1Angles[1]);
-    CGFloat maxAngle = MAX(edge1Angles[0], edge1Angles[1]);    
-    NSUInteger count = 0;
-    if ( edge2Angles[0] > minAngle && edge2Angles[0] < maxAngle )
-        count++;
-    if ( edge2Angles[1] > minAngle && edge2Angles[1] < maxAngle )
-        count++;
-    return (count % 2) == 1; // if an odd number, then it splits it
+    FBAngleRange range1 = FBAngleRangeMake(edge1Angles[0], edge1Angles[1]);
+    NSUInteger rangeCount1 = 0;
+    if ( FBAngleRangeContainsAngle(range1, edge2Angles[0]) )
+        rangeCount1++;
+    if ( FBAngleRangeContainsAngle(range1, edge2Angles[1]) )
+        rangeCount1++;
+    
+    FBAngleRange range2 = FBAngleRangeMake(edge1Angles[1], edge1Angles[0]);
+    NSUInteger rangeCount2 = 0;
+    if ( FBAngleRangeContainsAngle(range2, edge2Angles[0]) )
+        rangeCount2++;
+    if ( FBAngleRangeContainsAngle(range2, edge2Angles[1]) )
+        rangeCount2++;
+
+    return rangeCount1 == 1 && rangeCount2 == 1;
 }
 
 - (NSRect) bounds
