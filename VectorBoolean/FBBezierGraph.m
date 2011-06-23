@@ -32,12 +32,12 @@ static CGFloat PolarAngle(NSPoint point)
 {
     CGFloat value = 0.0;
     if ( point.x > 0.0 )
-        value = atan2f(point.y, point.x);
+        value = atanf(point.y / point.x);
     else if ( point.x < 0.0 ) {
         if ( point.y >= 0.0 )
-            value = atan2f(point.y, point.x) + M_PI;
+            value = atanf(point.y / point.x) + M_PI;
         else
-            value = atan2f(point.y, point.x) - M_PI;
+            value = atanf(point.y / point.x) - M_PI;
     } else {
         if ( point.y > 0.0 )
             value =  M_PI_2;
