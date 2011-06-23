@@ -296,11 +296,11 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
         BOOL firstPoint = YES;        
         for (FBContourEdge *edge in contour.edges) {
             if ( firstPoint ) {
-                [path moveToPoint:edge.curve.endPoint1];
+                [path moveToPoint:FBRoundPoint(edge.curve.endPoint1)];
                 firstPoint = NO;
             }
             
-            [path curveToPoint:edge.curve.endPoint2 controlPoint1:edge.curve.controlPoint1 controlPoint2:edge.curve.controlPoint2];
+            [path curveToPoint:FBRoundPoint(edge.curve.endPoint2) controlPoint1:FBRoundPoint(edge.curve.controlPoint1) controlPoint2:FBRoundPoint(edge.curve.controlPoint2)];
         }
     }
     

@@ -44,7 +44,7 @@
 {
     self = [super init];
     if (self) {
-        _resetAction = @selector(addTriangleInsideRectangle);
+        _resetAction = @selector(addComplexShapes);
     }
     return self;
 }

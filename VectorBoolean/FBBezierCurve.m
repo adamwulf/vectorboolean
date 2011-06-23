@@ -415,12 +415,17 @@ static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloa
             if ( intersectionPoint.x > range.maximum )
                 range.maximum = intersectionPoint.x;
         }
+        if ( FBAreValuesClose(startPoint.y, endPoint.y) && FBAreValuesClose(startPoint.y, bounds.minimum) && !FBAreValuesClose(bounds.minimum, bounds.maximum) )
+            range = FBRangeMake(0, 1);
+        
         if ( LineIntersectsHorizontalLine(startPoint, endPoint, bounds.maximum, &intersectionPoint) ) {
             if ( intersectionPoint.x < range.minimum )
                 range.minimum = intersectionPoint.x;
             if ( intersectionPoint.x > range.maximum )
                 range.maximum = intersectionPoint.x;
         }
+        if ( FBAreValuesClose(startPoint.y, endPoint.y) && FBAreValuesClose(startPoint.y, bounds.maximum) && !FBAreValuesClose(bounds.minimum, bounds.maximum) )
+            range = FBRangeMake(0, 1);
         
         // We want to be able to refine t even if the convex hull lies completely inside the bounds. This
         //  also allows us to be able to use range of [1..0] as a sentinel value meaning the convex hull
@@ -439,6 +444,8 @@ static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloa
 {
     NSArray *curves1 = [self splitCurveAtParameter:range.minimum];
     FBBezierCurve *upperCurve = [curves1 objectAtIndex:1];
+    if ( range.minimum == 1.0 )
+        return upperCurve;
     CGFloat adjustedMaximum = (range.maximum - range.minimum) / (1.0 - range.minimum);
     NSArray *curves2 = [upperCurve splitCurveAtParameter:adjustedMaximum];
     return [curves2 objectAtIndex:0];

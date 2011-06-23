@@ -85,6 +85,12 @@ NSPoint FBNegatePoint(NSPoint point)
     return NSMakePoint(-point.x, -point.y);
 }
 
+NSPoint FBRoundPoint(NSPoint point)
+{
+    NSPoint result = { roundf(point.x), roundf(point.y) };
+    return result;
+}
+
 NSPoint FBLineNormal(NSPoint lineStart, NSPoint lineEnd)
 {
     return FBNormalizePoint(NSMakePoint(-(lineEnd.y - lineStart.y), lineEnd.x - lineStart.x));

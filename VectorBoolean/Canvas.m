@@ -104,8 +104,8 @@ static NSRect BoxFrame(NSPoint point)
         NSArray *curves2 = [FBBezierCurve bezierCurvesFromBezierPath:path2];
         
 #if 0
-        FBBezierCurve *curve1 = [curves1 objectAtIndex:0];
-        FBBezierCurve *curve2 = [curves2 objectAtIndex:0];
+        FBBezierCurve *curve1 = [curves1 objectAtIndex:13];
+        FBBezierCurve *curve2 = [curves2 objectAtIndex:4];
         NSArray *intersections = [curve1 intersectionsWithBezierCurve:curve2];
         for (FBBezierIntersection *intersection in intersections)
             NSLog(@"intersection at %f, %f", intersection.location.x, intersection.location.y);
