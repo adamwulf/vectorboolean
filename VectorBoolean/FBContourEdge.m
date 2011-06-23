@@ -112,6 +112,11 @@
     return [_crossings objectAtIndex:[_crossings count] - 1];    
 }
 
+- (void) round
+{
+    [_curve round];
+}
+
 - (NSString *) description
 {
     return [NSString stringWithFormat:@"<%@: curve = %@ crossings = %@>", NSStringFromClass([self class]), [_curve description], FBArrayDescription(_crossings)];

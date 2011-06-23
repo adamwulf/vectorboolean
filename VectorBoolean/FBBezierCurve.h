@@ -44,4 +44,6 @@ extern CGFloat FBRangeScaleNormalizedValue(FBRange range, CGFloat value);
 - (NSPoint) pointAtParameter:(CGFloat)parameter leftBezierCurve:(FBBezierCurve **)leftBezierCurve rightBezierCurve:(FBBezierCurve **)rightBezierCurve;
 - (FBBezierCurve *) subcurveWithRange:(FBRange)range;
 
+- (void) round;
+
 @end

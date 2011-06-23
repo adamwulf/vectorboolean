@@ -130,6 +130,12 @@
     return edge.curve.endPoint1;
 }
 
+- (void) round
+{
+    for (FBContourEdge *edge in _edges)
+        [edge round];
+}
+
 - (id)copyWithZone:(NSZone *)zone
 {
     FBBezierContour *copy = [[FBBezierContour allocWithZone:zone] init];

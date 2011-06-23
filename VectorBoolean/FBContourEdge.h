@@ -38,5 +38,6 @@
 - (void) addCrossing:(FBEdgeCrossing *)crossing;
 - (void) removeCrossing:(FBEdgeCrossing *)crossing;
 - (void) removeAllCrossings;
+- (void) round;
 
 @end

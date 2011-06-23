@@ -86,6 +86,7 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
 
 - (void) addContour:(FBBezierContour *)contour;
 - (void) addBezierGraph:(FBBezierGraph *)graph;
+- (void) round;
 
 @property (readonly) NSArray *contours;
 @property (readonly) NSRect bounds;
@@ -199,6 +200,7 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     [graph markCrossingsAsEntryOrExitWithBezierGraph:self markInside:NO];
     
     FBBezierGraph *result = [self bezierGraphFromIntersections];
+    [result round];
     
     // Clean up crossings so the graphs can be reused
     [self removeCrossings];
@@ -232,6 +234,7 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     [graph markCrossingsAsEntryOrExitWithBezierGraph:self markInside:YES];
     
     FBBezierGraph *result = [self bezierGraphFromIntersections];
+    [result round];
     
     // Clean up crossings so the graphs can be reused
     [self removeCrossings];
@@ -272,6 +275,7 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     [graph markCrossingsAsEntryOrExitWithBezierGraph:self markInside:YES];
     
     FBBezierGraph *result = [self bezierGraphFromIntersections];
+    [result round];
     
     // Clean up crossings so the graphs can be reused
     [self removeCrossings];
@@ -296,15 +300,21 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
         BOOL firstPoint = YES;        
         for (FBContourEdge *edge in contour.edges) {
             if ( firstPoint ) {
-                [path moveToPoint:FBRoundPoint(edge.curve.endPoint1)];
+                [path moveToPoint:edge.curve.endPoint1];
                 firstPoint = NO;
             }
             
-            [path curveToPoint:FBRoundPoint(edge.curve.endPoint2) controlPoint1:FBRoundPoint(edge.curve.controlPoint1) controlPoint2:FBRoundPoint(edge.curve.controlPoint2)];
+            [path curveToPoint:edge.curve.endPoint2 controlPoint1:edge.curve.controlPoint1 controlPoint2:edge.curve.controlPoint2];
         }
     }
     
     return path;
+}
+
+- (void) round
+{
+    for (FBBezierContour *contour in _contours)
+        [contour round];
 }
 
 - (BOOL) insertCrossingsWithBezierGraph:(FBBezierGraph *)other
