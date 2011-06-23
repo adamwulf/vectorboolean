@@ -122,11 +122,18 @@
         return NSZeroPoint;
     FBContourEdge *edge = [_edges objectAtIndex:0];
     FBContourEdge *stopValue = edge;
+    BOOL allPointsAreShared = NO;
     while ( edge.isStartShared ) {
         edge = edge.next;
-        if ( edge == stopValue )
+        if ( edge == stopValue ) {
+            allPointsAreShared = YES;
             break;
+        }
     }
+    
+    if ( allPointsAreShared )
+        return [edge.curve pointAtParameter:0.5 leftBezierCurve:nil rightBezierCurve:nil];
+    
     return edge.curve.endPoint1;
 }
 
