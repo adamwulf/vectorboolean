@@ -35,6 +35,7 @@
 - (IBAction) onDiamondInsideRectangle:(id)sender;
 - (IBAction) onNonOverlappingContours:(id)sender;
 - (IBAction) onMoreNonOverlappingContours:(id)sender;
+- (IBAction) onConcentricContours:(id)sender;
 
 - (IBAction) onShowPoints:(id)sender;
 - (IBAction) onShowIntersections:(id)sender;
