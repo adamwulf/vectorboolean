@@ -21,6 +21,8 @@
 - (void) addReverseCurve:(FBBezierCurve *)curve;
 - (void) addReverseCurveFrom:(FBEdgeCrossing *)startCrossing to:(FBEdgeCrossing *)endCrossing;
 
+- (BOOL) containsPoint:(NSPoint)point;
+
 - (void) round;
 
 @property (readonly) NSArray *edges;

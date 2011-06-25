@@ -206,6 +206,28 @@
     return NO;
 }
 
+- (BOOL) containsPoint:(NSPoint)testPoint
+{
+    // Create a test line from our point to somewhere outside our graph. We'll see how many times the test
+    //  line intersects edges of the graph. Based on the winding rule, if it's an odd number, we're inside
+    //  the graph, if even, outside.
+    NSPoint lineEndPoint = NSMakePoint(testPoint.x > NSMinX(self.bounds) ? NSMinX(self.bounds) - 10 : NSMaxX(self.bounds) + 10, testPoint.y); /* just move us outside the bounds of the graph */
+    FBBezierCurve *testCurve = [FBBezierCurve bezierCurveWithLineStartPoint:testPoint endPoint:lineEndPoint];
+    
+    NSUInteger intersectCount = 0;
+    for (FBContourEdge *edge in _edges) {
+        NSArray *intersections = [testCurve intersectionsWithBezierCurve:edge.curve];
+        for (FBBezierIntersection *intersection in intersections) {
+            if ( intersection.isTangent )
+                continue;
+            intersectCount++;
+        }
+    }
+    
+    return (intersectCount % 2) == 1;
+}
+
+
 - (void) round
 {
     for (FBContourEdge *edge in _edges)
