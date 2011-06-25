@@ -25,6 +25,8 @@
 - (void) addTriangleInsideRectangle;
 - (void) addDiamondOverlappingRectangle;
 - (void) addDiamondInsideRectangle;
+- (void) addNonOverlappingContours;
+- (void) addMoreNonOverlappingContours;
 
 - (void) addRectangle:(NSRect)rect;
 - (void) addCircleAtPoint:(NSPoint)center withRadius:(CGFloat)radius;
@@ -198,6 +200,29 @@
 {
     [self addRectangle:NSMakeRect(100, 100, 300, 300)];
     [self addQuadrangle:NSMakePoint(100, 250) point2:NSMakePoint(250, 400) point3:NSMakePoint(400, 250) point4:NSMakePoint(250, 100)];
+}
+
+- (void) addNonOverlappingContours
+{
+    [self addRectangle:NSMakeRect(100, 200, 200, 200)];
+    
+    NSBezierPath *circles = [NSBezierPath bezierPath];
+    [self addCircleAtPoint:NSMakePoint(200, 300) withRadius:85 toPath:circles];    
+    [self addCircleAtPoint:NSMakePoint(200, 95) withRadius:85 toPath:circles];
+    [_view.canvas addPath:circles withColor:[NSColor redColor]];
+}
+
+- (void) addMoreNonOverlappingContours
+{
+    NSBezierPath *rectangles = [NSBezierPath bezierPath];
+    [self addRectangle:NSMakeRect(100, 200, 200, 200) toPath:rectangles];
+    [self addRectangle:NSMakeRect(175, 70, 50, 50) toPath:rectangles];    
+    [_view.canvas addPath:rectangles withColor:[NSColor blueColor]];
+
+    NSBezierPath *circles = [NSBezierPath bezierPath];
+    [self addCircleAtPoint:NSMakePoint(200, 300) withRadius:85 toPath:circles];    
+    [self addCircleAtPoint:NSMakePoint(200, 95) withRadius:85 toPath:circles];
+    [_view.canvas addPath:circles withColor:[NSColor redColor]];
 }
 
 - (void) addRectangle:(NSRect)rect
@@ -374,6 +399,18 @@
     [self onReset:sender];        
 }
 
+- (IBAction) onNonOverlappingContours:(id)sender
+{
+    _resetAction = @selector(addNonOverlappingContours);
+    [self onReset:sender];            
+}
+
+- (IBAction) onMoreNonOverlappingContours:(id)sender
+{
+    _resetAction = @selector(addMoreNonOverlappingContours);
+    [self onReset:sender];            
+}
+
 - (IBAction) onShowPoints:(id)sender
 {
     _view.canvas.showPoints = !_view.canvas.showPoints;
@@ -413,7 +450,11 @@
         [menuItem setState:_resetAction == @selector(addDiamondOverlappingRectangle) ? NSOnState : NSOffState];
     } else if ( [anItem action] == @selector(onDiamondInsideRectangle:) ) {
         [menuItem setState:_resetAction == @selector(addDiamondInsideRectangle) ? NSOnState : NSOffState];
-    } else if ( [anItem action] == @selector(onShowPoints:) ) {
+    } else if ( [anItem action] == @selector(onNonOverlappingContours:) ) {
+        [menuItem setState:_resetAction == @selector(addNonOverlappingContours) ? NSOnState : NSOffState];
+    } else if ( [anItem action] == @selector(onMoreNonOverlappingContours:) ) {
+        [menuItem setState:_resetAction == @selector(addMoreNonOverlappingContours) ? NSOnState : NSOffState];
+   } else if ( [anItem action] == @selector(onShowPoints:) ) {
         [menuItem setState:_view.canvas.showPoints ? NSOnState : NSOffState];
     } else if ( [anItem action] == @selector(onShowIntersections:) ) {
         [menuItem setState:_view.canvas.showIntersections ? NSOnState : NSOffState];

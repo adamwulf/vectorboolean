@@ -423,6 +423,22 @@
 									<reference key="NSOnImage" ref="1033313550"/>
 									<reference key="NSMixedImage" ref="310636482"/>
 								</object>
+								<object class="NSMenuItem" id="125004856">
+									<reference key="NSMenu" ref="930598111"/>
+									<string key="NSTitle">Non-overlapping Contours</string>
+									<string key="NSKeyEquiv"/>
+									<int key="NSMnemonicLoc">2147483647</int>
+									<reference key="NSOnImage" ref="1033313550"/>
+									<reference key="NSMixedImage" ref="310636482"/>
+								</object>
+								<object class="NSMenuItem" id="25565448">
+									<reference key="NSMenu" ref="930598111"/>
+									<string key="NSTitle">More Non-overlapping Contours</string>
+									<string key="NSKeyEquiv"/>
+									<int key="NSMnemonicLoc">2147483647</int>
+									<reference key="NSOnImage" ref="1033313550"/>
+									<reference key="NSMixedImage" ref="310636482"/>
+								</object>
 							</object>
 						</object>
 					</object>
@@ -909,6 +925,22 @@
 					</object>
 					<int key="connectionID">573</int>
 				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">onNonOverlappingContours:</string>
+						<reference key="source" ref="1014"/>
+						<reference key="destination" ref="125004856"/>
+					</object>
+					<int key="connectionID">575</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">onMoreNonOverlappingContours:</string>
+						<reference key="source" ref="1014"/>
+						<reference key="destination" ref="25565448"/>
+					</object>
+					<int key="connectionID">577</int>
+				</object>
 			</object>
 			<object class="IBMutableOrderedSet" key="objectRecords">
 				<object class="NSArray" key="orderedObjects">
@@ -1293,6 +1325,8 @@
 							<reference ref="239388374"/>
 							<reference ref="206127035"/>
 							<reference ref="300298976"/>
+							<reference ref="125004856"/>
+							<reference ref="25565448"/>
 						</object>
 						<reference key="parent" ref="40719474"/>
 					</object>
@@ -1383,6 +1417,16 @@
 					<object class="IBObjectRecord">
 						<int key="objectID">570</int>
 						<reference key="object" ref="300298976"/>
+						<reference key="parent" ref="930598111"/>
+					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">574</int>
+						<reference key="object" ref="125004856"/>
+						<reference key="parent" ref="930598111"/>
+					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">576</int>
+						<reference key="object" ref="25565448"/>
 						<reference key="parent" ref="930598111"/>
 					</object>
 				</object>
@@ -1484,6 +1528,8 @@
 					<string>57.ImportedFromIB2</string>
 					<string>57.editorWindowContentRectSynchronizationRect</string>
 					<string>570.IBPluginDependency</string>
+					<string>574.IBPluginDependency</string>
+					<string>576.IBPluginDependency</string>
 					<string>58.IBPluginDependency</string>
 					<string>58.ImportedFromIB2</string>
 					<string>72.IBPluginDependency</string>
@@ -1609,6 +1655,8 @@
 					<string>{{23, 794}, {245, 183}}</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
+					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
+					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
@@ -1650,7 +1698,7 @@
 				<reference key="dict.values" ref="0"/>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">573</int>
+			<int key="maxID">577</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -1680,6 +1728,8 @@
 							<string>onDifference:</string>
 							<string>onIntersect:</string>
 							<string>onJoin:</string>
+							<string>onMoreNonOverlappingContours:</string>
+							<string>onNonOverlappingContours:</string>
 							<string>onRectangleInCircle:</string>
 							<string>onRectangleWithHoleOverlappingRectangle:</string>
 							<string>onReset:</string>
@@ -1691,6 +1741,8 @@
 						</object>
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>id</string>
+							<string>id</string>
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
@@ -1727,6 +1779,8 @@
 							<string>onDifference:</string>
 							<string>onIntersect:</string>
 							<string>onJoin:</string>
+							<string>onMoreNonOverlappingContours:</string>
+							<string>onNonOverlappingContours:</string>
 							<string>onRectangleInCircle:</string>
 							<string>onRectangleWithHoleOverlappingRectangle:</string>
 							<string>onReset:</string>
@@ -1780,6 +1834,14 @@
 							</object>
 							<object class="IBActionInfo">
 								<string key="name">onJoin:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">onMoreNonOverlappingContours:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">onNonOverlappingContours:</string>
 								<string key="candidateClassName">id</string>
 							</object>
 							<object class="IBActionInfo">
@@ -1839,6 +1901,8 @@
 							<string>onDifference:</string>
 							<string>onIntersect:</string>
 							<string>onJoin:</string>
+							<string>onMoreNonOverlappingContours:</string>
+							<string>onNonOverlappingContours:</string>
 							<string>onRectangleInCircle:</string>
 							<string>onRectangleWithHoleOverlappingRectangle:</string>
 							<string>onReset:</string>
@@ -1850,6 +1914,8 @@
 						</object>
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>id</string>
+							<string>id</string>
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
@@ -1886,6 +1952,8 @@
 							<string>onDifference:</string>
 							<string>onIntersect:</string>
 							<string>onJoin:</string>
+							<string>onMoreNonOverlappingContours:</string>
+							<string>onNonOverlappingContours:</string>
 							<string>onRectangleInCircle:</string>
 							<string>onRectangleWithHoleOverlappingRectangle:</string>
 							<string>onReset:</string>
@@ -1939,6 +2007,14 @@
 							</object>
 							<object class="IBActionInfo">
 								<string key="name">onJoin:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">onMoreNonOverlappingContours:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">onNonOverlappingContours:</string>
 								<string key="candidateClassName">id</string>
 							</object>
 							<object class="IBActionInfo">
