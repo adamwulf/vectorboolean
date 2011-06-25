@@ -28,6 +28,7 @@
 - (void) addNonOverlappingContours;
 - (void) addMoreNonOverlappingContours;
 - (void) addConcentricContours;
+- (void) addMoreConcentricContours;
 
 - (void) addRectangle:(NSRect)rect;
 - (void) addCircleAtPoint:(NSPoint)center withRadius:(CGFloat)radius;
@@ -236,6 +237,16 @@
     [self addCircleAtPoint:NSMakePoint(210, 200) withRadius:140];
 }
 
+- (void) addMoreConcentricContours
+{
+    NSBezierPath *holeyRectangle = [NSBezierPath bezierPath];
+    [self addRectangle:NSMakeRect(50, 50, 350, 300) toPath:holeyRectangle];
+    [self addCircleAtPoint:NSMakePoint(210, 200) withRadius:125 toPath:holeyRectangle];    
+    [_view.canvas addPath:holeyRectangle withColor:[NSColor blueColor]];
+    
+    [self addCircleAtPoint:NSMakePoint(210, 200) withRadius:70];
+}
+
 - (void) addRectangle:(NSRect)rect
 {
     NSBezierPath *rectangle = [NSBezierPath bezierPath];
@@ -428,6 +439,12 @@
     [self onReset:sender];            
 }
 
+- (IBAction) onMoreConcentricContours:(id)sender
+{
+    _resetAction = @selector(addMoreConcentricContours);
+    [self onReset:sender];            
+}
+
 - (IBAction) onShowPoints:(id)sender
 {
     _view.canvas.showPoints = !_view.canvas.showPoints;
@@ -473,6 +490,8 @@
         [menuItem setState:_resetAction == @selector(addMoreNonOverlappingContours) ? NSOnState : NSOffState];
     } else if ( [anItem action] == @selector(onConcentricContours:) ) {
         [menuItem setState:_resetAction == @selector(addConcentricContours) ? NSOnState : NSOffState];
+    } else if ( [anItem action] == @selector(onMoreConcentricContours:) ) {
+        [menuItem setState:_resetAction == @selector(addMoreConcentricContours) ? NSOnState : NSOffState];
    } else if ( [anItem action] == @selector(onShowPoints:) ) {
         [menuItem setState:_view.canvas.showPoints ? NSOnState : NSOffState];
     } else if ( [anItem action] == @selector(onShowIntersections:) ) {

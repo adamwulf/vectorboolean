@@ -423,7 +423,7 @@
 									<reference key="NSOnImage" ref="1033313550"/>
 									<reference key="NSMixedImage" ref="310636482"/>
 								</object>
-								<object class="NSMenuItem" id="796805952">
+								<object class="NSMenuItem" id="473169778">
 									<reference key="NSMenu" ref="930598111"/>
 									<string key="NSTitle">Non-overlapping Contours</string>
 									<string key="NSKeyEquiv"/>
@@ -431,7 +431,7 @@
 									<reference key="NSOnImage" ref="1033313550"/>
 									<reference key="NSMixedImage" ref="310636482"/>
 								</object>
-								<object class="NSMenuItem" id="895961210">
+								<object class="NSMenuItem" id="194875618">
 									<reference key="NSMenu" ref="930598111"/>
 									<string key="NSTitle">More Non-overlapping Contours</string>
 									<string key="NSKeyEquiv"/>
@@ -439,9 +439,17 @@
 									<reference key="NSOnImage" ref="1033313550"/>
 									<reference key="NSMixedImage" ref="310636482"/>
 								</object>
-								<object class="NSMenuItem" id="402158463">
+								<object class="NSMenuItem" id="220359971">
 									<reference key="NSMenu" ref="930598111"/>
 									<string key="NSTitle">Concentric Contours</string>
+									<string key="NSKeyEquiv"/>
+									<int key="NSMnemonicLoc">2147483647</int>
+									<reference key="NSOnImage" ref="1033313550"/>
+									<reference key="NSMixedImage" ref="310636482"/>
+								</object>
+								<object class="NSMenuItem" id="372939282">
+									<reference key="NSMenu" ref="930598111"/>
+									<string key="NSTitle">More Concentric Contours</string>
 									<string key="NSKeyEquiv"/>
 									<int key="NSMnemonicLoc">2147483647</int>
 									<reference key="NSOnImage" ref="1033313550"/>
@@ -937,7 +945,7 @@
 					<object class="IBActionConnection" key="connection">
 						<string key="label">onNonOverlappingContours:</string>
 						<reference key="source" ref="1014"/>
-						<reference key="destination" ref="796805952"/>
+						<reference key="destination" ref="473169778"/>
 					</object>
 					<int key="connectionID">575</int>
 				</object>
@@ -945,7 +953,7 @@
 					<object class="IBActionConnection" key="connection">
 						<string key="label">onMoreNonOverlappingContours:</string>
 						<reference key="source" ref="1014"/>
-						<reference key="destination" ref="895961210"/>
+						<reference key="destination" ref="194875618"/>
 					</object>
 					<int key="connectionID">577</int>
 				</object>
@@ -953,9 +961,17 @@
 					<object class="IBActionConnection" key="connection">
 						<string key="label">onConcentricContours:</string>
 						<reference key="source" ref="1014"/>
-						<reference key="destination" ref="402158463"/>
+						<reference key="destination" ref="220359971"/>
 					</object>
 					<int key="connectionID">579</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">onMoreConcentricContours:</string>
+						<reference key="source" ref="1014"/>
+						<reference key="destination" ref="372939282"/>
+					</object>
+					<int key="connectionID">581</int>
 				</object>
 			</object>
 			<object class="IBMutableOrderedSet" key="objectRecords">
@@ -1341,9 +1357,10 @@
 							<reference ref="239388374"/>
 							<reference ref="206127035"/>
 							<reference ref="300298976"/>
-							<reference ref="796805952"/>
-							<reference ref="895961210"/>
-							<reference ref="402158463"/>
+							<reference ref="473169778"/>
+							<reference ref="194875618"/>
+							<reference ref="220359971"/>
+							<reference ref="372939282"/>
 						</object>
 						<reference key="parent" ref="40719474"/>
 					</object>
@@ -1438,17 +1455,22 @@
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">574</int>
-						<reference key="object" ref="796805952"/>
+						<reference key="object" ref="473169778"/>
 						<reference key="parent" ref="930598111"/>
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">576</int>
-						<reference key="object" ref="895961210"/>
+						<reference key="object" ref="194875618"/>
 						<reference key="parent" ref="930598111"/>
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">578</int>
-						<reference key="object" ref="402158463"/>
+						<reference key="object" ref="220359971"/>
+						<reference key="parent" ref="930598111"/>
+					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">580</int>
+						<reference key="object" ref="372939282"/>
 						<reference key="parent" ref="930598111"/>
 					</object>
 				</object>
@@ -1555,6 +1577,7 @@
 					<string>578.IBPluginDependency</string>
 					<string>58.IBPluginDependency</string>
 					<string>58.ImportedFromIB2</string>
+					<string>580.IBPluginDependency</string>
 					<string>72.IBPluginDependency</string>
 					<string>72.ImportedFromIB2</string>
 					<string>73.IBPluginDependency</string>
@@ -1683,6 +1706,7 @@
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
+					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
@@ -1722,7 +1746,7 @@
 				<reference key="dict.values" ref="0"/>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">579</int>
+			<int key="maxID">581</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -1753,6 +1777,7 @@
 							<string>onDifference:</string>
 							<string>onIntersect:</string>
 							<string>onJoin:</string>
+							<string>onMoreConcentricContours:</string>
 							<string>onMoreNonOverlappingContours:</string>
 							<string>onNonOverlappingContours:</string>
 							<string>onRectangleInCircle:</string>
@@ -1766,6 +1791,7 @@
 						</object>
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>id</string>
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
@@ -1806,6 +1832,7 @@
 							<string>onDifference:</string>
 							<string>onIntersect:</string>
 							<string>onJoin:</string>
+							<string>onMoreConcentricContours:</string>
 							<string>onMoreNonOverlappingContours:</string>
 							<string>onNonOverlappingContours:</string>
 							<string>onRectangleInCircle:</string>
@@ -1865,6 +1892,10 @@
 							</object>
 							<object class="IBActionInfo">
 								<string key="name">onJoin:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">onMoreConcentricContours:</string>
 								<string key="candidateClassName">id</string>
 							</object>
 							<object class="IBActionInfo">
@@ -1933,6 +1964,7 @@
 							<string>onDifference:</string>
 							<string>onIntersect:</string>
 							<string>onJoin:</string>
+							<string>onMoreConcentricContours:</string>
 							<string>onMoreNonOverlappingContours:</string>
 							<string>onNonOverlappingContours:</string>
 							<string>onRectangleInCircle:</string>
@@ -1946,6 +1978,7 @@
 						</object>
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>id</string>
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
@@ -1986,6 +2019,7 @@
 							<string>onDifference:</string>
 							<string>onIntersect:</string>
 							<string>onJoin:</string>
+							<string>onMoreConcentricContours:</string>
 							<string>onMoreNonOverlappingContours:</string>
 							<string>onNonOverlappingContours:</string>
 							<string>onRectangleInCircle:</string>
@@ -2045,6 +2079,10 @@
 							</object>
 							<object class="IBActionInfo">
 								<string key="name">onJoin:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">onMoreConcentricContours:</string>
 								<string key="candidateClassName">id</string>
 							</object>
 							<object class="IBActionInfo">
