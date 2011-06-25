@@ -11,6 +11,13 @@
 #import "FBContourEdge.h"
 #import "FBEdgeCrossing.h"
 #import "FBDebug.h"
+#import "FBBezierIntersection.h"
+
+@interface FBBezierContour ()
+
+- (BOOL) testPoint:(NSPoint *)point onRay:(FBBezierCurve *)ray;
+
+@end
 
 @implementation FBBezierContour
 
@@ -120,21 +127,83 @@
 {
     if ( [_edges count] == 0 )
         return NSZeroPoint;
-    FBContourEdge *edge = [_edges objectAtIndex:0];
-    FBContourEdge *stopValue = edge;
-    BOOL allPointsAreShared = NO;
-    while ( edge.isStartShared ) {
-        edge = edge.next;
-        if ( edge == stopValue ) {
-            allPointsAreShared = YES;
-            break;
+    
+    static const CGFloat FBRayOverlap = 10.0;
+    
+    NSUInteger count = MAX(ceilf(NSWidth(self.bounds)), ceilf(NSHeight(self.bounds)));
+    for (NSUInteger fraction = 2; fraction <= count; fraction++) {
+        CGFloat verticalSpacing = NSHeight(self.bounds) / (CGFloat)fraction;
+        for (CGFloat y = NSMinY(self.bounds) + verticalSpacing; y <= NSMaxY(self.bounds); y += verticalSpacing) {
+            FBBezierCurve *ray = [FBBezierCurve bezierCurveWithLineStartPoint:NSMakePoint(NSMinX(self.bounds) - FBRayOverlap, y) endPoint:NSMakePoint(NSMaxX(self.bounds) + FBRayOverlap, y)];
+            NSPoint testPoint = NSZeroPoint;
+            if ( [self testPoint:&testPoint onRay:ray] )
+                return testPoint;
+        }
+        
+        CGFloat horizontalSpacing = NSWidth(self.bounds) / (CGFloat)fraction;
+        for (CGFloat x = NSMinX(self.bounds) + horizontalSpacing; x <= NSMaxX(self.bounds); x += horizontalSpacing) {
+            FBBezierCurve *ray = [FBBezierCurve bezierCurveWithLineStartPoint:NSMakePoint(x, NSMinY(self.bounds) - FBRayOverlap) endPoint:NSMakePoint(x, NSMaxY(self.bounds) + FBRayOverlap)];
+            NSPoint testPoint = NSZeroPoint;
+            if ( [self testPoint:&testPoint onRay:ray] )
+                return testPoint;            
         }
     }
     
-    if ( allPointsAreShared )
-        return [edge.curve pointAtParameter:0.5 leftBezierCurve:nil rightBezierCurve:nil];
+    return NSZeroPoint; // we're hosed
+}
+
+- (BOOL) testPoint:(NSPoint *)point onRay:(FBBezierCurve *)ray
+{
+    static const CGFloat FBMinimumIntersectionDistance = 2.0;
     
-    return edge.curve.endPoint1;
+    BOOL horizontalRay = ray.endPoint1.y == ray.endPoint2.y; // ray has to be a vertical or horizontal line
+
+    // First, find all the intersections and sort them
+    NSMutableArray *intersections = [NSMutableArray arrayWithCapacity:10];
+    for (FBContourEdge *edge in _edges) 
+        [intersections addObjectsFromArray:[ray intersectionsWithBezierCurve:edge.curve]];
+    if ( [intersections count] < 2 )
+        return NO;
+    [intersections sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+        FBBezierIntersection *intersection1 = obj1;
+        FBBezierIntersection *intersection2 = obj2;
+        if ( horizontalRay ) {
+            if ( intersection1.location.x < intersection2.location.x )
+                return NSOrderedAscending;
+            else if ( intersection1.location.x > intersection2.location.x )
+                return NSOrderedDescending;
+            else
+                return NSOrderedSame;
+        }
+        
+        if ( intersection1.location.y < intersection2.location.y )
+            return NSOrderedAscending;
+        else if ( intersection1.location.y > intersection2.location.y )
+            return NSOrderedDescending;
+        return NSOrderedSame;
+    }];
+    
+    
+    // Walk the intersections looking for when the ray crosses inside of the contour
+    for (NSUInteger i = 0; i < ([intersections count] - 1); i += 2) {
+        // Between these two intersections is "inside" the contour
+        FBBezierIntersection *firstIntersection = [intersections objectAtIndex:i];
+        FBBezierIntersection *secondIntersection = [intersections objectAtIndex:i + 1];
+        
+        // We don't want a point on the edge, so make sure there is a minimum distance between them
+        CGFloat distance = horizontalRay ? secondIntersection.location.x - firstIntersection.location.x : secondIntersection.location.y - firstIntersection.location.y;
+        if ( distance < FBMinimumIntersectionDistance )
+            continue;
+        
+        // We have a winner
+        if ( horizontalRay )
+            *point = NSMakePoint((secondIntersection.location.x + firstIntersection.location.x) / 2.0, firstIntersection.location.y);
+        else
+            *point = NSMakePoint(firstIntersection.location.x, (secondIntersection.location.y + firstIntersection.location.y) / 2.0);
+        return YES;
+    }
+    
+    return NO;
 }
 
 - (void) round
