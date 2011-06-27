@@ -22,6 +22,7 @@
 @implementation FBBezierContour
 
 @synthesize edges=_edges;
+@synthesize inside=_inside;
 
 - (id)init
 {
@@ -121,6 +122,15 @@
     _bounds = NSMakeRect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
 
     return _bounds;
+}
+
+- (NSPoint) firstPoint
+{
+    if ( [_edges count] == 0 )
+        return NSZeroPoint;
+
+    FBContourEdge *edge = [_edges objectAtIndex:0];
+    return edge.curve.endPoint1;
 }
 
 - (NSPoint) testPoint

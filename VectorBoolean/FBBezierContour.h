@@ -11,9 +11,15 @@
 @class FBBezierCurve;
 @class FBEdgeCrossing;
 
+typedef enum FBContourInside {
+    FBContourInsideFilled,
+    FBContourInsideHole
+} FBContourInside;
+
 @interface FBBezierContour : NSObject<NSCopying> {
     NSMutableArray *_edges;
     NSRect _bounds;
+    FBContourInside _inside;
 }
 
 - (void) addCurve:(FBBezierCurve *)curve;
@@ -28,5 +34,7 @@
 @property (readonly) NSArray *edges;
 @property (readonly) NSRect bounds;
 @property (readonly) NSPoint testPoint;
+@property (readonly) NSPoint firstPoint;
+@property FBContourInside inside;
 
 @end

@@ -87,6 +87,7 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
 - (void) addContour:(FBBezierContour *)contour;
 - (void) addBezierGraph:(FBBezierGraph *)graph;
 - (void) round;
+- (FBContourInside) contourInsides:(FBBezierContour *)contour;
 
 @property (readonly) NSArray *contours;
 @property (readonly) NSRect bounds;
@@ -149,6 +150,9 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
                     break;
             }
         }
+        
+        for (contour in _contours)
+            contour.inside = [self contourInsides:contour];
     }
     
     return self;
@@ -493,6 +497,29 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     }
     
     return (intersectCount % 2) == 1;
+}
+
+- (FBContourInside) contourInsides:(FBBezierContour *)testContour
+{
+    NSPoint testPoint = testContour.firstPoint;
+    NSPoint lineEndPoint = NSMakePoint(testPoint.x > NSMinX(self.bounds) ? NSMinX(self.bounds) - 10 : NSMaxX(self.bounds) + 10, testPoint.y); /* just move us outside the bounds of the graph */
+    FBBezierCurve *testCurve = [FBBezierCurve bezierCurveWithLineStartPoint:testPoint endPoint:lineEndPoint];
+
+    NSUInteger intersectCount = 0;
+    for (FBBezierContour *contour in self.contours) {
+        if ( contour == testContour )
+            continue; // don't test self intersections
+        for (FBContourEdge *edge in contour.edges) {
+            NSArray *intersections = [testCurve intersectionsWithBezierCurve:edge.curve];
+            for (FBBezierIntersection *intersection in intersections) {
+                if ( intersection.isTangent )
+                    continue;
+                intersectCount++;
+            }
+        }
+    }
+
+    return (intersectCount % 2) == 1 ? FBContourInsideHole : FBContourInsideFilled;
 }
 
 - (void) markCrossingsAsEntryOrExitWithBezierGraph:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside
