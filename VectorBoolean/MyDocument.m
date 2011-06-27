@@ -29,6 +29,7 @@
 - (void) addMoreNonOverlappingContours;
 - (void) addConcentricContours;
 - (void) addMoreConcentricContours;
+- (void) addOverlappingHole;
 
 - (void) addRectangle:(NSRect)rect;
 - (void) addCircleAtPoint:(NSPoint)center withRadius:(CGFloat)radius;
@@ -247,6 +248,18 @@
     [self addCircleAtPoint:NSMakePoint(210, 200) withRadius:70];
 }
 
+- (void) addOverlappingHole
+{
+    NSBezierPath *holeyRectangle = [NSBezierPath bezierPath];
+    [self addRectangle:NSMakeRect(50, 50, 350, 300) toPath:holeyRectangle];
+    [self addCircleAtPoint:NSMakePoint(210, 200) withRadius:125 toPath:holeyRectangle];    
+    [_view.canvas addPath:holeyRectangle withColor:[NSColor blueColor]];
+
+    NSBezierPath *circle = [NSBezierPath bezierPath];
+    [self addCircleAtPoint:NSMakePoint(180, 180) withRadius:125 toPath:circle];    
+    [_view.canvas addPath:circle withColor:[NSColor redColor]];
+}
+
 - (void) addRectangle:(NSRect)rect
 {
     NSBezierPath *rectangle = [NSBezierPath bezierPath];
@@ -445,6 +458,12 @@
     [self onReset:sender];            
 }
 
+- (IBAction) onCircleOverlappingHole:(id)sender
+{
+    _resetAction = @selector(addOverlappingHole);
+    [self onReset:sender];                
+}
+
 - (IBAction) onShowPoints:(id)sender
 {
     _view.canvas.showPoints = !_view.canvas.showPoints;
@@ -492,7 +511,9 @@
         [menuItem setState:_resetAction == @selector(addConcentricContours) ? NSOnState : NSOffState];
     } else if ( [anItem action] == @selector(onMoreConcentricContours:) ) {
         [menuItem setState:_resetAction == @selector(addMoreConcentricContours) ? NSOnState : NSOffState];
-   } else if ( [anItem action] == @selector(onShowPoints:) ) {
+    } else if ( [anItem action] == @selector(onCircleOverlappingHole:) ) {
+        [menuItem setState:_resetAction == @selector(addOverlappingHole) ? NSOnState : NSOffState];
+    } else if ( [anItem action] == @selector(onShowPoints:) ) {
         [menuItem setState:_view.canvas.showPoints ? NSOnState : NSOffState];
     } else if ( [anItem action] == @selector(onShowIntersections:) ) {
         [menuItem setState:_view.canvas.showIntersections ? NSOnState : NSOffState];

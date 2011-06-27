@@ -423,7 +423,7 @@
 									<reference key="NSOnImage" ref="1033313550"/>
 									<reference key="NSMixedImage" ref="310636482"/>
 								</object>
-								<object class="NSMenuItem" id="473169778">
+								<object class="NSMenuItem" id="162564221">
 									<reference key="NSMenu" ref="930598111"/>
 									<string key="NSTitle">Non-overlapping Contours</string>
 									<string key="NSKeyEquiv"/>
@@ -431,7 +431,7 @@
 									<reference key="NSOnImage" ref="1033313550"/>
 									<reference key="NSMixedImage" ref="310636482"/>
 								</object>
-								<object class="NSMenuItem" id="194875618">
+								<object class="NSMenuItem" id="984648082">
 									<reference key="NSMenu" ref="930598111"/>
 									<string key="NSTitle">More Non-overlapping Contours</string>
 									<string key="NSKeyEquiv"/>
@@ -439,7 +439,7 @@
 									<reference key="NSOnImage" ref="1033313550"/>
 									<reference key="NSMixedImage" ref="310636482"/>
 								</object>
-								<object class="NSMenuItem" id="220359971">
+								<object class="NSMenuItem" id="21338714">
 									<reference key="NSMenu" ref="930598111"/>
 									<string key="NSTitle">Concentric Contours</string>
 									<string key="NSKeyEquiv"/>
@@ -447,9 +447,17 @@
 									<reference key="NSOnImage" ref="1033313550"/>
 									<reference key="NSMixedImage" ref="310636482"/>
 								</object>
-								<object class="NSMenuItem" id="372939282">
+								<object class="NSMenuItem" id="33431505">
 									<reference key="NSMenu" ref="930598111"/>
 									<string key="NSTitle">More Concentric Contours</string>
+									<string key="NSKeyEquiv"/>
+									<int key="NSMnemonicLoc">2147483647</int>
+									<reference key="NSOnImage" ref="1033313550"/>
+									<reference key="NSMixedImage" ref="310636482"/>
+								</object>
+								<object class="NSMenuItem" id="94560581">
+									<reference key="NSMenu" ref="930598111"/>
+									<string key="NSTitle">Circle Overlapping Hole</string>
 									<string key="NSKeyEquiv"/>
 									<int key="NSMnemonicLoc">2147483647</int>
 									<reference key="NSOnImage" ref="1033313550"/>
@@ -945,7 +953,7 @@
 					<object class="IBActionConnection" key="connection">
 						<string key="label">onNonOverlappingContours:</string>
 						<reference key="source" ref="1014"/>
-						<reference key="destination" ref="473169778"/>
+						<reference key="destination" ref="162564221"/>
 					</object>
 					<int key="connectionID">575</int>
 				</object>
@@ -953,7 +961,7 @@
 					<object class="IBActionConnection" key="connection">
 						<string key="label">onMoreNonOverlappingContours:</string>
 						<reference key="source" ref="1014"/>
-						<reference key="destination" ref="194875618"/>
+						<reference key="destination" ref="984648082"/>
 					</object>
 					<int key="connectionID">577</int>
 				</object>
@@ -961,7 +969,7 @@
 					<object class="IBActionConnection" key="connection">
 						<string key="label">onConcentricContours:</string>
 						<reference key="source" ref="1014"/>
-						<reference key="destination" ref="220359971"/>
+						<reference key="destination" ref="21338714"/>
 					</object>
 					<int key="connectionID">579</int>
 				</object>
@@ -969,9 +977,17 @@
 					<object class="IBActionConnection" key="connection">
 						<string key="label">onMoreConcentricContours:</string>
 						<reference key="source" ref="1014"/>
-						<reference key="destination" ref="372939282"/>
+						<reference key="destination" ref="33431505"/>
 					</object>
 					<int key="connectionID">581</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">onCircleOverlappingHole:</string>
+						<reference key="source" ref="1014"/>
+						<reference key="destination" ref="94560581"/>
+					</object>
+					<int key="connectionID">583</int>
 				</object>
 			</object>
 			<object class="IBMutableOrderedSet" key="objectRecords">
@@ -1357,10 +1373,11 @@
 							<reference ref="239388374"/>
 							<reference ref="206127035"/>
 							<reference ref="300298976"/>
-							<reference ref="473169778"/>
-							<reference ref="194875618"/>
-							<reference ref="220359971"/>
-							<reference ref="372939282"/>
+							<reference ref="162564221"/>
+							<reference ref="984648082"/>
+							<reference ref="21338714"/>
+							<reference ref="33431505"/>
+							<reference ref="94560581"/>
 						</object>
 						<reference key="parent" ref="40719474"/>
 					</object>
@@ -1455,22 +1472,27 @@
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">574</int>
-						<reference key="object" ref="473169778"/>
+						<reference key="object" ref="162564221"/>
 						<reference key="parent" ref="930598111"/>
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">576</int>
-						<reference key="object" ref="194875618"/>
+						<reference key="object" ref="984648082"/>
 						<reference key="parent" ref="930598111"/>
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">578</int>
-						<reference key="object" ref="220359971"/>
+						<reference key="object" ref="21338714"/>
 						<reference key="parent" ref="930598111"/>
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">580</int>
-						<reference key="object" ref="372939282"/>
+						<reference key="object" ref="33431505"/>
+						<reference key="parent" ref="930598111"/>
+					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">582</int>
+						<reference key="object" ref="94560581"/>
 						<reference key="parent" ref="930598111"/>
 					</object>
 				</object>
@@ -1578,6 +1600,7 @@
 					<string>58.IBPluginDependency</string>
 					<string>58.ImportedFromIB2</string>
 					<string>580.IBPluginDependency</string>
+					<string>582.IBPluginDependency</string>
 					<string>72.IBPluginDependency</string>
 					<string>72.ImportedFromIB2</string>
 					<string>73.IBPluginDependency</string>
@@ -1707,6 +1730,7 @@
 					<integer value="1"/>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
+					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
@@ -1746,7 +1770,7 @@
 				<reference key="dict.values" ref="0"/>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">581</int>
+			<int key="maxID">583</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -1768,6 +1792,7 @@
 							<string>onCircleInRectangle:</string>
 							<string>onCircleOnRectangle:</string>
 							<string>onCircleOverlappingCircle:</string>
+							<string>onCircleOverlappingHole:</string>
 							<string>onCircleOverlappingRectangle:</string>
 							<string>onComplexShapes2:</string>
 							<string>onComplexShapes:</string>
@@ -1814,6 +1839,7 @@
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
+							<string>id</string>
 						</object>
 					</object>
 					<object class="NSMutableDictionary" key="actionInfosByName">
@@ -1823,6 +1849,7 @@
 							<string>onCircleInRectangle:</string>
 							<string>onCircleOnRectangle:</string>
 							<string>onCircleOverlappingCircle:</string>
+							<string>onCircleOverlappingHole:</string>
 							<string>onCircleOverlappingRectangle:</string>
 							<string>onComplexShapes2:</string>
 							<string>onComplexShapes:</string>
@@ -1856,6 +1883,10 @@
 							</object>
 							<object class="IBActionInfo">
 								<string key="name">onCircleOverlappingCircle:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">onCircleOverlappingHole:</string>
 								<string key="candidateClassName">id</string>
 							</object>
 							<object class="IBActionInfo">
@@ -1955,6 +1986,7 @@
 							<string>onCircleInRectangle:</string>
 							<string>onCircleOnRectangle:</string>
 							<string>onCircleOverlappingCircle:</string>
+							<string>onCircleOverlappingHole:</string>
 							<string>onCircleOverlappingRectangle:</string>
 							<string>onComplexShapes2:</string>
 							<string>onComplexShapes:</string>
@@ -2001,6 +2033,7 @@
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
+							<string>id</string>
 						</object>
 					</object>
 					<object class="NSMutableDictionary" key="actionInfosByName">
@@ -2010,6 +2043,7 @@
 							<string>onCircleInRectangle:</string>
 							<string>onCircleOnRectangle:</string>
 							<string>onCircleOverlappingCircle:</string>
+							<string>onCircleOverlappingHole:</string>
 							<string>onCircleOverlappingRectangle:</string>
 							<string>onComplexShapes2:</string>
 							<string>onComplexShapes:</string>
@@ -2043,6 +2077,10 @@
 							</object>
 							<object class="IBActionInfo">
 								<string key="name">onCircleOverlappingCircle:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">onCircleOverlappingHole:</string>
 								<string key="candidateClassName">id</string>
 							</object>
 							<object class="IBActionInfo">
