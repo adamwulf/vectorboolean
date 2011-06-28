@@ -244,6 +244,19 @@
         [edge round];
 }
 
+- (NSArray *) intersectingContours
+{
+    NSMutableArray *contours = [NSMutableArray arrayWithCapacity:3];
+    for (FBContourEdge *edge in _edges) {
+        NSArray *intersectingEdges = edge.intersectingEdges;
+        for (FBContourEdge *intersectingEdge in intersectingEdges) {
+            if ( ![contours containsObject:intersectingEdge.contour] )
+                [contours addObject:intersectingEdge.contour];
+        }
+    }
+    return contours;
+}
+
 - (id)copyWithZone:(NSZone *)zone
 {
     FBBezierContour *copy = [[FBBezierContour allocWithZone:zone] init];

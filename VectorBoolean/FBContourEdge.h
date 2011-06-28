@@ -31,6 +31,7 @@
 @property (readonly) FBContourEdge *previous;
 @property (readonly) FBEdgeCrossing *firstCrossing;
 @property (readonly) FBEdgeCrossing *lastCrossing;
+@property (readonly) NSArray *intersectingEdges;
 
 @property (getter = isStartShared) BOOL startShared;
 @property (getter = isStopShared) BOOL stopShared;

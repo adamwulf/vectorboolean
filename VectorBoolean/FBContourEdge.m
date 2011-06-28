@@ -98,6 +98,17 @@
     return [self.contour.edges objectAtIndex:_index - 1];
 }
 
+- (NSArray *) intersectingEdges
+{
+    NSMutableArray *edges = [NSMutableArray arrayWithCapacity:[_crossings count]];
+    for (FBEdgeCrossing *crossing in _crossings) {
+        FBContourEdge *intersectingEdge = crossing.counterpart.edge;
+        if ( ![edges containsObject:intersectingEdge] )
+            [edges addObject:intersectingEdge];
+    }
+    return edges;
+}
+
 - (FBEdgeCrossing *) firstCrossing
 {
     if ( [_crossings count] == 0 )

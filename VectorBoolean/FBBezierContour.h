@@ -36,5 +36,6 @@ typedef enum FBContourInside {
 @property (readonly) NSPoint testPoint;
 @property (readonly) NSPoint firstPoint;
 @property FBContourInside inside;
+@property (readonly) NSArray *intersectingContours;
 
 @end
