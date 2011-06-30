@@ -28,6 +28,7 @@ typedef enum FBContourInside {
 - (void) addReverseCurveFrom:(FBEdgeCrossing *)startCrossing to:(FBEdgeCrossing *)endCrossing;
 
 - (BOOL) containsPoint:(NSPoint)point;
+- (void) markCrossingsAsEntryOrExitWithContour:(FBBezierContour *)otherContour markInside:(BOOL)markInside;
 
 - (void) round;
 

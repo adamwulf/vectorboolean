@@ -76,6 +76,11 @@
     return _intersection.parameter2;
 }
 
+- (NSPoint) location
+{
+    return _intersection.location;
+}
+
 - (FBBezierCurve *) curve
 {
     return self.edge.curve;

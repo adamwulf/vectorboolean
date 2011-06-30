@@ -89,6 +89,21 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
 - (void) round;
 - (FBContourInside) contourInsides:(FBBezierContour *)contour;
 
+- (void) markCrossingsAsEntryOrExitWithBezierGraphForUnion:(FBBezierGraph *)otherGraph;
+- (NSArray *) nonintersectingContours;
+- (BOOL) containsContour:(FBBezierContour *)contour;
+- (FBBezierContour *) containerForContour:(FBBezierContour *)testContour;
+- (BOOL) eliminateContainers:(NSMutableArray *)containers thatDontContainContour:(FBBezierContour *)testContour usingRay:(FBBezierCurve *)ray;
+- (BOOL) findBoundsOfContour:(FBBezierContour *)testContour onRay:(FBBezierCurve *)ray minimum:(NSPoint *)testMinimum maximum:(NSPoint *)testMaximum;
+- (void) removeContoursThatDontContain:(NSMutableArray *)crossings;
+- (BOOL) findCrossingsOnContainers:(NSArray *)containers onRay:(FBBezierCurve *)ray beforeMinimum:(NSPoint)testMinimum afterMaximum:(NSPoint)testMaximum crossingsBefore:(NSMutableArray *)crossingsBeforeMinimum crossingsAfter:(NSMutableArray *)crossingsAfterMaximum;
+- (void) removeCrossings:(NSMutableArray *)crossings forContours:(NSArray *)containersToRemove;
+- (void) removeContourCrossings:(NSMutableArray *)crossings1 thatDontAppearIn:(NSMutableArray *)crossings2;
+- (NSArray *) minimumCrossings:(NSArray *)crossings onRay:(FBBezierCurve *)ray;
+- (NSArray *) maximumCrossings:(NSArray *)crossings onRay:(FBBezierCurve *)ray;
+- (NSArray *) contoursFromCrossings:(NSArray *)crossings;
+- (NSUInteger) numberOfTimesContour:(FBBezierContour *)contour appearsInCrossings:(NSArray *)crossings;
+
 @property (readonly) NSArray *contours;
 @property (readonly) NSRect bounds;
 @property (readonly) NSPoint testPoint;
@@ -178,6 +193,41 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
 
 - (FBBezierGraph *) unionWithBezierGraph:(FBBezierGraph *)graph
 {
+#if 1
+    [self insertCrossingsWithBezierGraph:graph];
+    
+    [self markCrossingsAsEntryOrExitWithBezierGraphForUnion:graph];
+    [graph markCrossingsAsEntryOrExitWithBezierGraphForUnion:self];
+
+    FBBezierGraph *result = [self bezierGraphFromIntersections];
+    [result round];
+    
+    NSArray *ourNonintersectingContours = [self nonintersectingContours];
+    NSArray *theirNonintersectinContours = [graph nonintersectingContours];
+    NSMutableArray *finalNonintersectingContours = [[ourNonintersectingContours mutableCopy] autorelease];
+    [finalNonintersectingContours addObjectsFromArray:theirNonintersectinContours];
+    // There are no crossings, which means one contains the other, or they're completely disjoint 
+    for (FBBezierContour *ourContour in ourNonintersectingContours) {
+        BOOL clipContainsSubject = [graph containsContour:ourContour];
+        if ( clipContainsSubject )
+            [finalNonintersectingContours removeObject:ourContour];
+    }
+    for (FBBezierContour *theirContour in theirNonintersectinContours) {
+        BOOL subjectContainsClip = [self containsContour:theirContour];
+        if ( subjectContainsClip )
+            [finalNonintersectingContours removeObject:theirContour];
+    }
+
+    // Append the final nonintersecting contours
+    for (FBBezierContour *contour in finalNonintersectingContours)
+        [result addContour:contour];
+    
+    // Clean up crossings so the graphs can be reused
+    [self removeCrossings];
+    [graph removeCrossings];
+    
+    return result;
+#else
     BOOL hasCrossings = [self insertCrossingsWithBezierGraph:graph];
     if ( !hasCrossings ) {
         // There are no crossings, which means one contains the other, or they're completely disjoint 
@@ -211,6 +261,20 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     [graph removeCrossings];
     
     return result;
+#endif
+}
+
+- (void) markCrossingsAsEntryOrExitWithBezierGraphForUnion:(FBBezierGraph *)otherGraph
+{
+    for (FBBezierContour *contour in self.contours) {
+        NSArray *intersectingContours = contour.intersectingContours;
+        for (FBBezierContour *otherContour in intersectingContours) {
+            if ( otherContour.inside == FBContourInsideHole )
+                [contour markCrossingsAsEntryOrExitWithContour:otherContour markInside:YES];
+            else
+                [contour markCrossingsAsEntryOrExitWithContour:otherContour markInside:NO];
+        }
+    }
 }
 
 - (FBBezierGraph *) intersectWithBezierGraph:(FBBezierGraph *)graph
@@ -522,36 +586,303 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     return (intersectCount % 2) == 1 ? FBContourInsideHole : FBContourInsideFilled;
 }
 
-- (void) markCrossingsAsEntryOrExitWithBezierGraph:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside
+- (BOOL) containsContour:(FBBezierContour *)testContour
 {
-    for (FBBezierContour *contour in _contours) {
-        // When marking we need to start at a point that is clearly either inside or outside
-        //  the other graph.
-        FBContourEdge *startEdge = [contour.edges objectAtIndex:0];
-        FBContourEdge *stopValue = startEdge;
-        while ( startEdge.isStartShared ) {
-            startEdge = startEdge.next;
-            if ( startEdge == stopValue )
-                break; // for safety
+    FBBezierContour *container = [self containerForContour:testContour];
+    return container != nil && container.inside == FBContourInsideFilled;
+}
+
+- (FBBezierContour *) containerForContour:(FBBezierContour *)testContour
+{
+    static const CGFloat FBRayOverlap = 10.0;
+    
+    NSMutableArray *containers = [[_contours mutableCopy] autorelease];
+    
+    NSUInteger count = MAX(ceilf(NSWidth(testContour.bounds)), ceilf(NSHeight(testContour.bounds)));
+    for (NSUInteger fraction = 2; fraction <= count; fraction++) {
+        BOOL didEliminate = NO;
+        
+        CGFloat verticalSpacing = NSHeight(testContour.bounds) / (CGFloat)fraction;
+        for (CGFloat y = NSMinY(testContour.bounds) + verticalSpacing; y < NSMaxY(testContour.bounds); y += verticalSpacing) {
+            FBBezierCurve *ray = [FBBezierCurve bezierCurveWithLineStartPoint:NSMakePoint(MIN(NSMinX(self.bounds), NSMinX(testContour.bounds)) - FBRayOverlap, y) endPoint:NSMakePoint(MAX(NSMaxX(self.bounds), NSMaxX(testContour.bounds)) + FBRayOverlap, y)];
+            BOOL eliminated = [self eliminateContainers:containers thatDontContainContour:testContour usingRay:ray];
+            if ( eliminated )
+                didEliminate = YES;
         }
         
-        // Calculate the first entry value
-        BOOL contains = [otherGraph containsPoint:startEdge.curve.endPoint1];
-        BOOL isEntry = markInside ? !contains : contains;
+        CGFloat horizontalSpacing = NSWidth(testContour.bounds) / (CGFloat)fraction;
+        for (CGFloat x = NSMinX(testContour.bounds) + horizontalSpacing; x < NSMaxX(testContour.bounds); x += horizontalSpacing) {
+            FBBezierCurve *ray = [FBBezierCurve bezierCurveWithLineStartPoint:NSMakePoint(x, MIN(NSMinY(self.bounds), NSMinY(testContour.bounds)) - FBRayOverlap) endPoint:NSMakePoint(x, MAX(NSMaxY(self.bounds), NSMaxY(testContour.bounds)) + FBRayOverlap)];
+            BOOL eliminated = [self eliminateContainers:containers thatDontContainContour:testContour usingRay:ray];
+            if ( eliminated )
+                didEliminate = YES;
+        }
         
-        // Walk all the edges in this contour and mark the crossings
-        FBContourEdge *edge = startEdge;
-        do {
-            // Mark all the crossings on this edge
-            for (FBEdgeCrossing *crossing in edge.crossings) {
-                crossing.entry = isEntry;
-                isEntry = !isEntry; // toggle
-            }
+        if ( [containers count] == 0 )
+            return nil;
+        if ( didEliminate && [containers count] == 1 )
+            return [containers objectAtIndex:0];
+    }
 
-            edge = edge.next;
-        } while ( edge != startEdge );        
+    return nil;
+}
+
+- (BOOL) findBoundsOfContour:(FBBezierContour *)testContour onRay:(FBBezierCurve *)ray minimum:(NSPoint *)testMinimum maximum:(NSPoint *)testMaximum
+{
+    BOOL horizontalRay = ray.endPoint1.y == ray.endPoint2.y; // ray has to be a vertical or horizontal line
+    
+    // First determine the exterior bounds of testContour on the given ray
+    NSMutableArray *rayIntersections = [NSMutableArray arrayWithCapacity:9];
+    for (FBContourEdge *edge in testContour.edges)
+        [rayIntersections addObjectsFromArray:[ray intersectionsWithBezierCurve:edge.curve]];
+    if ( [rayIntersections count] == 0 )
+        return NO; // shouldn't happen
+    FBBezierIntersection *firstRayIntersection = [rayIntersections objectAtIndex:0];
+    *testMinimum = firstRayIntersection.location;
+    *testMaximum = *testMinimum;    
+    for (FBBezierIntersection *intersection in rayIntersections) {
+        if ( horizontalRay ) {
+            if ( intersection.location.x < testMinimum->x )
+                *testMinimum = intersection.location;
+            if ( intersection.location.x > testMaximum->x )
+                *testMaximum = intersection.location;
+        } else {
+            if ( intersection.location.y < testMinimum->y )
+                *testMinimum = intersection.location;
+            if ( intersection.location.y > testMaximum->y )
+                *testMaximum = intersection.location;            
+        }
+    }
+    return YES;
+}
+
+- (BOOL) findCrossingsOnContainers:(NSArray *)containers onRay:(FBBezierCurve *)ray beforeMinimum:(NSPoint)testMinimum afterMaximum:(NSPoint)testMaximum crossingsBefore:(NSMutableArray *)crossingsBeforeMinimum crossingsAfter:(NSMutableArray *)crossingsAfterMaximum
+{
+    BOOL horizontalRay = ray.endPoint1.y == ray.endPoint2.y; // ray has to be a vertical or horizontal line
+
+    NSMutableArray *ambiguousCrossings = [NSMutableArray arrayWithCapacity:10];
+    for (FBBezierContour *container in containers) {
+        for (FBContourEdge *containerEdge in container.edges) {
+            NSArray *intersections = [ray intersectionsWithBezierCurve:containerEdge.curve];
+            for (FBBezierIntersection *intersection in intersections) {
+                if ( intersection.isTangent )
+                    continue;
+                
+                if ( intersection.parameter2 == 0.0 || intersection.parameter2 == 1.0 )
+                    return NO;
+                
+                // only examine those intersections outside of or on testContour
+                if ( horizontalRay && intersection.location.x < testMaximum.x && intersection.location.x > testMinimum.x )
+                    continue;
+                else if ( !horizontalRay && intersection.location.y < testMaximum.y && intersection.location.y > testMinimum.y )
+                    continue;
+                
+                FBEdgeCrossing *crossing = [FBEdgeCrossing crossingWithIntersection:intersection];
+                crossing.edge = containerEdge;
+                
+                // Special case if the bounds are just a point, and this crossing is on that point
+                if ( NSEqualPoints(testMaximum, testMinimum) && NSEqualPoints(testMaximum, intersection.location) ) {
+                    [ambiguousCrossings addObject:crossing];
+                    continue;
+                }
+                
+                if ( horizontalRay && intersection.location.x <= testMinimum.x )
+                    [crossingsBeforeMinimum addObject:crossing];
+                else if ( !horizontalRay && intersection.location.y <= testMinimum.y )
+                    [crossingsBeforeMinimum addObject:crossing];
+                if ( horizontalRay && intersection.location.x >= testMaximum.x )
+                    [crossingsAfterMaximum addObject:crossing];
+                else if ( !horizontalRay && intersection.location.y >= testMaximum.y )
+                    [crossingsAfterMaximum addObject:crossing];
+            }
+        }
+    }
+    
+    for (FBEdgeCrossing *ambiguousCrossing in ambiguousCrossings) {
+        NSUInteger numberOfTimesContourAppearsBefore = [self numberOfTimesContour:ambiguousCrossing.edge.contour appearsInCrossings:crossingsBeforeMinimum];
+        NSUInteger numberOfTimesContourAppearsAfter = [self numberOfTimesContour:ambiguousCrossing.edge.contour appearsInCrossings:crossingsAfterMaximum];
+        if ( numberOfTimesContourAppearsBefore < numberOfTimesContourAppearsAfter )
+            [crossingsBeforeMinimum addObject:ambiguousCrossing];
+        else
+            [crossingsAfterMaximum addObject:ambiguousCrossing];            
+    }
+    
+    return YES;
+}
+
+- (NSUInteger) numberOfTimesContour:(FBBezierContour *)contour appearsInCrossings:(NSArray *)crossings
+{
+    NSUInteger count = 0;
+    for (FBEdgeCrossing *crossing in crossings) {
+        if ( crossing.edge.contour == contour )
+            count++;
+    }
+    return count;
+}
+
+- (NSArray *) minimumCrossings:(NSArray *)crossings onRay:(FBBezierCurve *)ray
+{
+    if ( [crossings count] == 0 )
+        return [NSArray array];
+    
+    BOOL horizontalRay = ray.endPoint1.y == ray.endPoint2.y; // ray has to be a vertical or horizontal line
+    
+    NSMutableArray *minimums = [NSMutableArray arrayWithCapacity:[crossings count]];
+    FBEdgeCrossing *firstCrossing = [crossings objectAtIndex:0];
+    NSPoint minimum = firstCrossing.location;
+    for (FBEdgeCrossing *crossing in crossings) {
+        if ( horizontalRay ) {
+            if ( crossing.location.x < minimum.x ) {
+                minimum = crossing.location;
+                [minimums removeAllObjects];
+                [minimums addObject:crossing];
+            } else if ( crossing.location.x == minimum.x ) 
+                [minimums addObject:crossing];                
+        } else {
+            if ( crossing.location.y < minimum.y ) {
+                minimum = crossing.location;
+                [minimums removeAllObjects];
+                [minimums addObject:crossing];
+            } else if ( crossing.location.y == minimum.y ) 
+                [minimums addObject:crossing];
+        }
+    }
+    
+    return minimums;
+}
+
+- (NSArray *) maximumCrossings:(NSArray *)crossings onRay:(FBBezierCurve *)ray
+{
+    if ( [crossings count] == 0 )
+        return [NSArray array];
+    
+    BOOL horizontalRay = ray.endPoint1.y == ray.endPoint2.y; // ray has to be a vertical or horizontal line
+    
+    NSMutableArray *maximums = [NSMutableArray arrayWithCapacity:[crossings count]];
+    FBEdgeCrossing *firstCrossing = [crossings objectAtIndex:0];
+    NSPoint maximum = firstCrossing.location;
+    for (FBEdgeCrossing *crossing in crossings) {
+        if ( horizontalRay ) {
+            if ( crossing.location.x > maximum.x ) {
+                maximum = crossing.location;
+                [maximums removeAllObjects];
+                [maximums addObject:crossing];
+            } else if ( crossing.location.x == maximum.x ) 
+                [maximums addObject:crossing];                
+        } else {
+            if ( crossing.location.y > maximum.y ) {
+                maximum = crossing.location;
+                [maximums removeAllObjects];
+                [maximums addObject:crossing];
+            } else if ( crossing.location.y == maximum.y ) 
+                [maximums addObject:crossing];
+        }
+    }
+    
+    return maximums;
+}
+
+- (BOOL) eliminateContainers:(NSMutableArray *)containers thatDontContainContour:(FBBezierContour *)testContour usingRay:(FBBezierCurve *)ray
+{    
+    // First determine the exterior bounds of testContour on the given ray
+    NSPoint testMinimum = NSZeroPoint;
+    NSPoint testMaximum = NSZeroPoint;    
+    BOOL foundBounds = [self findBoundsOfContour:testContour onRay:ray minimum:&testMinimum maximum:&testMaximum];
+    if ( !foundBounds)
+        return NO;
+    
+    // Find all the containers on either side of the otherContour
+    NSMutableArray *crossingsBeforeMinimum = [NSMutableArray arrayWithCapacity:[containers count]];
+    NSMutableArray *crossingsAfterMaximum = [NSMutableArray arrayWithCapacity:[containers count]];
+    BOOL foundCrossings = [self findCrossingsOnContainers:containers onRay:ray beforeMinimum:testMinimum afterMaximum:testMaximum crossingsBefore:crossingsBeforeMinimum crossingsAfter:crossingsAfterMaximum];
+    if ( !foundCrossings )
+        return NO;
+    
+    // Remove containers that appear an even number of times on either side
+    [self removeContoursThatDontContain:crossingsBeforeMinimum];
+    [self removeContoursThatDontContain:crossingsAfterMaximum];
+    
+    // Find the container(s) that are the closest
+    [crossingsBeforeMinimum setArray:[self maximumCrossings:crossingsBeforeMinimum onRay:ray]];
+    [crossingsAfterMaximum setArray:[self minimumCrossings:crossingsAfterMaximum onRay:ray]];
+    
+    // Remove containers that appear only on one side
+    [self removeContourCrossings:crossingsBeforeMinimum thatDontAppearIn:crossingsAfterMaximum];
+    [self removeContourCrossings:crossingsAfterMaximum thatDontAppearIn:crossingsBeforeMinimum];
+    
+    // Although crossingsBeforeMinimum and crossingsAfterMaximum contain different crossings, they should contain the same
+    //  contours, so just pick one to pull the contours from
+    [containers setArray:[self contoursFromCrossings:crossingsBeforeMinimum]];
+    
+    return YES;
+}
+
+- (NSArray *) contoursFromCrossings:(NSArray *)crossings
+{
+    NSMutableArray *contours = [NSMutableArray arrayWithCapacity:[crossings count]];
+    for (FBEdgeCrossing *crossing in crossings) {
+        if ( ![contours containsObject:crossing.edge.contour] )
+            [contours addObject:crossing.edge.contour];
+    }
+    return contours;
+}
+
+- (void) removeContourCrossings:(NSMutableArray *)crossings1 thatDontAppearIn:(NSMutableArray *)crossings2
+{
+    NSMutableArray *containersToRemove = [NSMutableArray arrayWithCapacity:[crossings1 count]];
+    for (FBEdgeCrossing *crossingToTest in crossings1) {
+        FBBezierContour *containerToTest = crossingToTest.edge.contour;
+        BOOL existsInOther = NO;
+        for (FBEdgeCrossing *crossing in crossings2) {
+            if ( crossing.edge.contour == containerToTest ) {
+                existsInOther = YES;
+                break;
+            }
+        }
+        if ( !existsInOther )
+            [containersToRemove addObject:containerToTest];
+    }
+    [self removeCrossings:crossings1 forContours:containersToRemove];
+}
+
+- (void) removeContoursThatDontContain:(NSMutableArray *)crossings
+{
+    NSMutableArray *containersToRemove = [NSMutableArray arrayWithCapacity:[crossings count]];
+    for (FBEdgeCrossing *crossingToTest in crossings) {
+        FBBezierContour *containerToTest = crossingToTest.edge.contour;
+        NSUInteger count = 0;
+        for (FBEdgeCrossing *crossing in crossings) {
+            if ( crossing.edge.contour == containerToTest )
+                count++;
+        }
+        if ( (count % 2) != 1 )
+            [containersToRemove addObject:containerToTest];
+    }
+    [self removeCrossings:crossings forContours:containersToRemove];
+}
+
+- (void) removeCrossings:(NSMutableArray *)crossings forContours:(NSArray *)containersToRemove
+{
+    NSMutableArray *crossingsToRemove = [NSMutableArray arrayWithCapacity:[crossings count]];
+    for (FBBezierContour *contour in containersToRemove) {
+        for (FBEdgeCrossing *crossing in crossings) {
+            if ( crossing.edge.contour == contour )
+                [crossingsToRemove addObject:crossing];
+        }
+    }
+    for (FBEdgeCrossing *crossing in crossingsToRemove)
+        [crossings removeObject:crossing];
+}
+
+- (void) markCrossingsAsEntryOrExitWithBezierGraph:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside
+{
+    for (FBBezierContour *contour in self.contours) {
+        NSArray *intersectingContours = contour.intersectingContours;
+        for (FBBezierContour *otherContour in intersectingContours)
+            [contour markCrossingsAsEntryOrExitWithContour:otherContour markInside:markInside];
     }
 }
+
 
 - (FBEdgeCrossing *) firstUnprocessedCrossing
 {
@@ -654,6 +985,16 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
         return NSZeroPoint;
     FBBezierContour *contour = [_contours objectAtIndex:0];
     return contour.testPoint;
+}
+
+- (NSArray *) nonintersectingContours
+{
+    NSMutableArray *contours = [NSMutableArray arrayWithCapacity:[_contours count]];
+    for (FBBezierContour *contour in self.contours) {
+        if ( [contour.intersectingContours count] == 0 )
+            [contours addObject:contour];
+    }
+    return contours;
 }
 
 - (NSString *) description

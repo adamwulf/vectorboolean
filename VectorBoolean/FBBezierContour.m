@@ -237,6 +237,37 @@
     return (intersectCount % 2) == 1;
 }
 
+- (void) markCrossingsAsEntryOrExitWithContour:(FBBezierContour *)otherContour markInside:(BOOL)markInside
+{
+    // When marking we need to start at a point that is clearly either inside or outside
+    //  the other graph.
+    FBContourEdge *startEdge = [self.edges objectAtIndex:0];
+    FBContourEdge *stopValue = startEdge;
+    while ( startEdge.isStartShared ) {
+        startEdge = startEdge.next;
+        if ( startEdge == stopValue )
+            break; // for safety
+    }
+    
+    // Calculate the first entry value
+    BOOL contains = [otherContour containsPoint:startEdge.curve.endPoint1];
+    BOOL isEntry = markInside ? !contains : contains;
+    
+    // Walk all the edges in this contour and mark the crossings
+    FBContourEdge *edge = startEdge;
+    do {
+        // Mark all the crossings on this edge
+        for (FBEdgeCrossing *crossing in edge.crossings) {
+            // skip over other contours
+            if ( crossing.counterpart.edge.contour != otherContour )
+                continue;
+            crossing.entry = isEntry;
+            isEntry = !isEntry; // toggle
+        }
+        
+        edge = edge.next;
+    } while ( edge != startEdge );
+}
 
 - (void) round
 {
