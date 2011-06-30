@@ -30,6 +30,7 @@
 - (void) addConcentricContours;
 - (void) addMoreConcentricContours;
 - (void) addOverlappingHole;
+- (void) addHoleOverlappingHole;
 
 - (void) addRectangle:(NSRect)rect;
 - (void) addCircleAtPoint:(NSPoint)center withRadius:(CGFloat)radius;
@@ -260,6 +261,20 @@
     [_view.canvas addPath:circle withColor:[NSColor redColor]];
 }
 
+- (void) addHoleOverlappingHole
+{
+    NSBezierPath *holeyRectangle1 = [NSBezierPath bezierPath];
+    [self addRectangle:NSMakeRect(50, 50, 350, 300) toPath:holeyRectangle1];
+    [self addCircleAtPoint:NSMakePoint(210, 200) withRadius:125 toPath:holeyRectangle1];    
+    [_view.canvas addPath:holeyRectangle1 withColor:[NSColor blueColor]];
+    
+    
+    NSBezierPath *holeyRectangle2 = [NSBezierPath bezierPath];
+    [self addRectangle:NSMakeRect(225, 65, 160, 160) toPath:holeyRectangle2];
+    [self addCircleAtPoint:NSMakePoint(305, 145) withRadius:65 toPath:holeyRectangle2];    
+    [_view.canvas addPath:holeyRectangle2 withColor:[NSColor redColor]];
+}
+
 - (void) addRectangle:(NSRect)rect
 {
     NSBezierPath *rectangle = [NSBezierPath bezierPath];
@@ -464,6 +479,12 @@
     [self onReset:sender];                
 }
 
+- (IBAction) onHoleOverlappingHole:(id)sender
+{
+    _resetAction = @selector(addHoleOverlappingHole);
+    [self onReset:sender];                
+}
+
 - (IBAction) onShowPoints:(id)sender
 {
     _view.canvas.showPoints = !_view.canvas.showPoints;
@@ -513,6 +534,8 @@
         [menuItem setState:_resetAction == @selector(addMoreConcentricContours) ? NSOnState : NSOffState];
     } else if ( [anItem action] == @selector(onCircleOverlappingHole:) ) {
         [menuItem setState:_resetAction == @selector(addOverlappingHole) ? NSOnState : NSOffState];
+    } else if ( [anItem action] == @selector(onHoleOverlappingHole:) ) {
+        [menuItem setState:_resetAction == @selector(addHoleOverlappingHole) ? NSOnState : NSOffState];
     } else if ( [anItem action] == @selector(onShowPoints:) ) {
         [menuItem setState:_view.canvas.showPoints ? NSOnState : NSOffState];
     } else if ( [anItem action] == @selector(onShowIntersections:) ) {

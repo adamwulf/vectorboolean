@@ -463,6 +463,14 @@
 									<reference key="NSOnImage" ref="1033313550"/>
 									<reference key="NSMixedImage" ref="310636482"/>
 								</object>
+								<object class="NSMenuItem" id="892473285">
+									<reference key="NSMenu" ref="930598111"/>
+									<string key="NSTitle">Rectangle w/hole Overlapping Rectangle w/hole</string>
+									<string key="NSKeyEquiv"/>
+									<int key="NSMnemonicLoc">2147483647</int>
+									<reference key="NSOnImage" ref="1033313550"/>
+									<reference key="NSMixedImage" ref="310636482"/>
+								</object>
 							</object>
 						</object>
 					</object>
@@ -989,6 +997,14 @@
 					</object>
 					<int key="connectionID">583</int>
 				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">onHoleOverlappingHole:</string>
+						<reference key="source" ref="1014"/>
+						<reference key="destination" ref="892473285"/>
+					</object>
+					<int key="connectionID">585</int>
+				</object>
 			</object>
 			<object class="IBMutableOrderedSet" key="objectRecords">
 				<object class="NSArray" key="orderedObjects">
@@ -1378,6 +1394,7 @@
 							<reference ref="21338714"/>
 							<reference ref="33431505"/>
 							<reference ref="94560581"/>
+							<reference ref="892473285"/>
 						</object>
 						<reference key="parent" ref="40719474"/>
 					</object>
@@ -1495,6 +1512,11 @@
 						<reference key="object" ref="94560581"/>
 						<reference key="parent" ref="930598111"/>
 					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">584</int>
+						<reference key="object" ref="892473285"/>
+						<reference key="parent" ref="930598111"/>
+					</object>
 				</object>
 			</object>
 			<object class="NSMutableDictionary" key="flattenedProperties">
@@ -1601,6 +1623,7 @@
 					<string>58.ImportedFromIB2</string>
 					<string>580.IBPluginDependency</string>
 					<string>582.IBPluginDependency</string>
+					<string>584.IBPluginDependency</string>
 					<string>72.IBPluginDependency</string>
 					<string>72.ImportedFromIB2</string>
 					<string>73.IBPluginDependency</string>
@@ -1731,6 +1754,7 @@
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
+					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
@@ -1770,7 +1794,7 @@
 				<reference key="dict.values" ref="0"/>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">583</int>
+			<int key="maxID">585</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -1800,6 +1824,7 @@
 							<string>onDiamondInsideRectangle:</string>
 							<string>onDiamondOverlappingRectangle:</string>
 							<string>onDifference:</string>
+							<string>onHoleOverlappingHole:</string>
 							<string>onIntersect:</string>
 							<string>onJoin:</string>
 							<string>onMoreConcentricContours:</string>
@@ -1816,6 +1841,7 @@
 						</object>
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>id</string>
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
@@ -1857,6 +1883,7 @@
 							<string>onDiamondInsideRectangle:</string>
 							<string>onDiamondOverlappingRectangle:</string>
 							<string>onDifference:</string>
+							<string>onHoleOverlappingHole:</string>
 							<string>onIntersect:</string>
 							<string>onJoin:</string>
 							<string>onMoreConcentricContours:</string>
@@ -1915,6 +1942,10 @@
 							</object>
 							<object class="IBActionInfo">
 								<string key="name">onDifference:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">onHoleOverlappingHole:</string>
 								<string key="candidateClassName">id</string>
 							</object>
 							<object class="IBActionInfo">
@@ -1994,6 +2025,7 @@
 							<string>onDiamondInsideRectangle:</string>
 							<string>onDiamondOverlappingRectangle:</string>
 							<string>onDifference:</string>
+							<string>onHoleOverlappingHole:</string>
 							<string>onIntersect:</string>
 							<string>onJoin:</string>
 							<string>onMoreConcentricContours:</string>
@@ -2010,6 +2042,7 @@
 						</object>
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>id</string>
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
@@ -2051,6 +2084,7 @@
 							<string>onDiamondInsideRectangle:</string>
 							<string>onDiamondOverlappingRectangle:</string>
 							<string>onDifference:</string>
+							<string>onHoleOverlappingHole:</string>
 							<string>onIntersect:</string>
 							<string>onJoin:</string>
 							<string>onMoreConcentricContours:</string>
@@ -2109,6 +2143,10 @@
 							</object>
 							<object class="IBActionInfo">
 								<string key="name">onDifference:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">onHoleOverlappingHole:</string>
 								<string key="candidateClassName">id</string>
 							</object>
 							<object class="IBActionInfo">

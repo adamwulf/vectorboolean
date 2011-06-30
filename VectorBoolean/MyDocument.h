@@ -38,6 +38,7 @@
 - (IBAction) onConcentricContours:(id)sender;
 - (IBAction) onMoreConcentricContours:(id)sender;
 - (IBAction) onCircleOverlappingHole:(id)sender;
+- (IBAction) onHoleOverlappingHole:(id)sender;
 
 - (IBAction) onShowPoints:(id)sender;
 - (IBAction) onShowIntersections:(id)sender;

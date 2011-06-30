@@ -90,6 +90,8 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
 - (FBContourInside) contourInsides:(FBBezierContour *)contour;
 
 - (void) markCrossingsAsEntryOrExitWithBezierGraphForUnion:(FBBezierGraph *)otherGraph;
+- (void) markCrossingsAsEntryOrExitWithBezierGraphForIntersect:(FBBezierGraph *)otherGraph;
+
 - (NSArray *) nonintersectingContours;
 - (BOOL) containsContour:(FBBezierContour *)contour;
 - (FBBezierContour *) containerForContour:(FBBezierContour *)testContour;
@@ -193,7 +195,6 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
 
 - (FBBezierGraph *) unionWithBezierGraph:(FBBezierGraph *)graph
 {
-#if 1
     [self insertCrossingsWithBezierGraph:graph];
     
     [self markCrossingsAsEntryOrExitWithBezierGraphForUnion:graph];
@@ -227,41 +228,6 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     [graph removeCrossings];
     
     return result;
-#else
-    BOOL hasCrossings = [self insertCrossingsWithBezierGraph:graph];
-    if ( !hasCrossings ) {
-        // There are no crossings, which means one contains the other, or they're completely disjoint 
-        BOOL subjectContainsClip = [self containsPoint:graph.testPoint];
-        BOOL clipContainsSubject = [graph containsPoint:self.testPoint];
-        
-        // Clean up crossings so the graphs can be reused
-        [self removeCrossings];
-        [graph removeCrossings];
-        
-        if ( subjectContainsClip )
-            return self; // union is the subject graph
-        if ( clipContainsSubject )
-            return graph; // union is the clip graph
-        
-        // Neither contains the other, which means we should just append them
-        FBBezierGraph *result = [FBBezierGraph bezierGraph];
-        [result addBezierGraph:self];
-        [result addBezierGraph:graph];
-        return result;
-    }
-    
-    [self markCrossingsAsEntryOrExitWithBezierGraph:graph markInside:NO];
-    [graph markCrossingsAsEntryOrExitWithBezierGraph:self markInside:NO];
-    
-    FBBezierGraph *result = [self bezierGraphFromIntersections];
-    [result round];
-    
-    // Clean up crossings so the graphs can be reused
-    [self removeCrossings];
-    [graph removeCrossings];
-    
-    return result;
-#endif
 }
 
 - (void) markCrossingsAsEntryOrExitWithBezierGraphForUnion:(FBBezierGraph *)otherGraph
@@ -279,6 +245,40 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
 
 - (FBBezierGraph *) intersectWithBezierGraph:(FBBezierGraph *)graph
 {
+#if 1
+    [self insertCrossingsWithBezierGraph:graph];
+    
+    [self markCrossingsAsEntryOrExitWithBezierGraphForIntersect:graph];
+    [graph markCrossingsAsEntryOrExitWithBezierGraphForIntersect:self];
+    
+    FBBezierGraph *result = [self bezierGraphFromIntersections];
+    [result round];
+    
+    NSArray *ourNonintersectingContours = [self nonintersectingContours];
+    NSArray *theirNonintersectinContours = [graph nonintersectingContours];
+    NSMutableArray *finalNonintersectingContours = [NSMutableArray arrayWithCapacity:[ourNonintersectingContours count] + [theirNonintersectinContours count]];
+    // There are no crossings, which means one contains the other, or they're completely disjoint 
+    for (FBBezierContour *ourContour in ourNonintersectingContours) {
+        BOOL clipContainsSubject = [graph containsContour:ourContour];
+        if ( clipContainsSubject )
+            [finalNonintersectingContours addObject:ourContour];
+    }
+    for (FBBezierContour *theirContour in theirNonintersectinContours) {
+        BOOL subjectContainsClip = [self containsContour:theirContour];
+        if ( subjectContainsClip )
+            [finalNonintersectingContours addObject:theirContour];
+    }
+    
+    // Append the final nonintersecting contours
+    for (FBBezierContour *contour in finalNonintersectingContours)
+        [result addContour:contour];
+    
+    // Clean up crossings so the graphs can be reused
+    [self removeCrossings];
+    [graph removeCrossings];
+    
+    return result;
+#else
     BOOL hasCrossings = [self insertCrossingsWithBezierGraph:graph];
     if ( !hasCrossings ) {
         // There are no crossings, which means one contains the other, or they're completely disjoint 
@@ -309,6 +309,20 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     [graph removeCrossings];
     
     return result;
+#endif
+}
+
+- (void) markCrossingsAsEntryOrExitWithBezierGraphForIntersect:(FBBezierGraph *)otherGraph
+{
+    for (FBBezierContour *contour in self.contours) {
+        NSArray *intersectingContours = contour.intersectingContours;
+        for (FBBezierContour *otherContour in intersectingContours) {
+            if ( otherContour.inside == FBContourInsideHole )
+                [contour markCrossingsAsEntryOrExitWithContour:otherContour markInside:NO];
+            else
+                [contour markCrossingsAsEntryOrExitWithContour:otherContour markInside:YES];
+        }
+    }
 }
 
 - (FBBezierGraph *) differenceWithBezierGraph:(FBBezierGraph *)graph
