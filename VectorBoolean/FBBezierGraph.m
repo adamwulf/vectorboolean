@@ -74,24 +74,17 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
 
 @interface FBBezierGraph ()
 
-- (NSUInteger) numberOfCrossings;
 - (void) removeDuplicateCrossings;
 - (BOOL) doesEdge:(FBContourEdge *)edge1 crossEdge:(FBContourEdge *)edge2 atIntersection:(FBBezierIntersection *)intersection;
-- (BOOL) insertCrossingsWithBezierGraph:(FBBezierGraph *)other;
-- (BOOL) containsPoint:(NSPoint)point;
+- (void) insertCrossingsWithBezierGraph:(FBBezierGraph *)other;
 - (FBEdgeCrossing *) firstUnprocessedCrossing;
 - (void) markCrossingsAsEntryOrExitWithBezierGraph:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside;
 - (FBBezierGraph *) bezierGraphFromIntersections;
 - (void) removeCrossings;
 
 - (void) addContour:(FBBezierContour *)contour;
-- (void) addBezierGraph:(FBBezierGraph *)graph;
 - (void) round;
 - (FBContourInside) contourInsides:(FBBezierContour *)contour;
-
-- (void) markCrossingsAsEntryOrExitWithBezierGraphForUnion:(FBBezierGraph *)otherGraph;
-- (void) markCrossingsAsEntryOrExitWithBezierGraphForIntersect:(FBBezierGraph *)otherGraph;
-- (void) markCrossingsAsEntryOrExitWithBezierGraphForDifference:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside;
 
 - (NSArray *) nonintersectingContours;
 - (BOOL) containsContour:(FBBezierContour *)contour;
@@ -109,7 +102,6 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
 
 @property (readonly) NSArray *contours;
 @property (readonly) NSRect bounds;
-@property (readonly) NSPoint testPoint;
 
 @end
 
@@ -198,8 +190,8 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
 {
     [self insertCrossingsWithBezierGraph:graph];
     
-    [self markCrossingsAsEntryOrExitWithBezierGraphForUnion:graph];
-    [graph markCrossingsAsEntryOrExitWithBezierGraphForUnion:self];
+    [self markCrossingsAsEntryOrExitWithBezierGraph:graph markInside:NO];
+    [graph markCrossingsAsEntryOrExitWithBezierGraph:self markInside:NO];
 
     FBBezierGraph *result = [self bezierGraphFromIntersections];
     [result round];
@@ -231,25 +223,12 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     return result;
 }
 
-- (void) markCrossingsAsEntryOrExitWithBezierGraphForUnion:(FBBezierGraph *)otherGraph
-{
-    for (FBBezierContour *contour in self.contours) {
-        NSArray *intersectingContours = contour.intersectingContours;
-        for (FBBezierContour *otherContour in intersectingContours) {
-            if ( otherContour.inside == FBContourInsideHole )
-                [contour markCrossingsAsEntryOrExitWithContour:otherContour markInside:YES];
-            else
-                [contour markCrossingsAsEntryOrExitWithContour:otherContour markInside:NO];
-        }
-    }
-}
-
 - (FBBezierGraph *) intersectWithBezierGraph:(FBBezierGraph *)graph
 {
     [self insertCrossingsWithBezierGraph:graph];
     
-    [self markCrossingsAsEntryOrExitWithBezierGraphForIntersect:graph];
-    [graph markCrossingsAsEntryOrExitWithBezierGraphForIntersect:self];
+    [self markCrossingsAsEntryOrExitWithBezierGraph:graph markInside:YES];
+    [graph markCrossingsAsEntryOrExitWithBezierGraph:self markInside:YES];
     
     FBBezierGraph *result = [self bezierGraphFromIntersections];
     [result round];
@@ -280,26 +259,12 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     return result;
 }
 
-- (void) markCrossingsAsEntryOrExitWithBezierGraphForIntersect:(FBBezierGraph *)otherGraph
-{
-    for (FBBezierContour *contour in self.contours) {
-        NSArray *intersectingContours = contour.intersectingContours;
-        for (FBBezierContour *otherContour in intersectingContours) {
-            if ( otherContour.inside == FBContourInsideHole )
-                [contour markCrossingsAsEntryOrExitWithContour:otherContour markInside:NO];
-            else
-                [contour markCrossingsAsEntryOrExitWithContour:otherContour markInside:YES];
-        }
-    }
-}
-
 - (FBBezierGraph *) differenceWithBezierGraph:(FBBezierGraph *)graph
 {
-#if 1
     [self insertCrossingsWithBezierGraph:graph];
     
-    [self markCrossingsAsEntryOrExitWithBezierGraphForDifference:graph markInside:NO];
-    [graph markCrossingsAsEntryOrExitWithBezierGraphForDifference:self markInside:YES];
+    [self markCrossingsAsEntryOrExitWithBezierGraph:graph markInside:NO];
+    [graph markCrossingsAsEntryOrExitWithBezierGraph:self markInside:YES];
     
     FBBezierGraph *result = [self bezierGraphFromIntersections];
     [result round];
@@ -328,48 +293,9 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     [graph removeCrossings];
     
     return result;  
-#else
-    BOOL hasCrossings = [self insertCrossingsWithBezierGraph:graph];
-    if ( !hasCrossings ) {
-        // There are no crossings, which means one contains the other, or they're completely disjoint 
-        BOOL subjectContainsClip = [self containsPoint:graph.testPoint];
-        BOOL clipContainsSubject = [graph containsPoint:self.testPoint];
-        
-        // Clean up crossings so the graphs can be reused
-        [self removeCrossings];
-        [graph removeCrossings];
-        
-        if ( subjectContainsClip ) {
-            // Clip punches a clean (non-intersecting) hole in subject
-            FBBezierGraph *result = [FBBezierGraph bezierGraph];
-            [result addBezierGraph:self];
-            [result addBezierGraph:graph];
-            return result;
-        }
-        
-        if ( clipContainsSubject )
-            // We're subtracting out everything
-            return [FBBezierGraph bezierGraph];
-        
-        // No crossings, so nothing to subtract from subject
-        return self;
-    }
-    
-    [self markCrossingsAsEntryOrExitWithBezierGraph:graph markInside:NO];
-    [graph markCrossingsAsEntryOrExitWithBezierGraph:self markInside:YES];
-    
-    FBBezierGraph *result = [self bezierGraphFromIntersections];
-    [result round];
-    
-    // Clean up crossings so the graphs can be reused
-    [self removeCrossings];
-    [graph removeCrossings];
-    
-    return result;
-#endif
 }
 
-- (void) markCrossingsAsEntryOrExitWithBezierGraphForDifference:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside
+- (void) markCrossingsAsEntryOrExitWithBezierGraph:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside
 {
     for (FBBezierContour *contour in self.contours) {
         NSArray *intersectingContours = contour.intersectingContours;
@@ -381,7 +307,6 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
         }
     }
 }
-
 
 - (FBBezierGraph *) xorWithBezierGraph:(FBBezierGraph *)graph
 {
@@ -416,7 +341,7 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
         [contour round];
 }
 
-- (BOOL) insertCrossingsWithBezierGraph:(FBBezierGraph *)other
+- (void) insertCrossingsWithBezierGraph:(FBBezierGraph *)other
 {
     // Find all intersections and, if they cross the other graph, create crossings for them
     for (FBBezierContour *ourContour in self.contours) {
@@ -462,8 +387,6 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
  
     [self removeDuplicateCrossings];
     [other removeDuplicateCrossings];
-
-    return [self numberOfCrossings];
 }
 
 - (void) removeDuplicateCrossings
@@ -486,15 +409,6 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
             }
         }
     }
-}
-
-- (NSUInteger) numberOfCrossings
-{
-    NSUInteger count = 0;
-    for (FBBezierContour *ourContour in self.contours)
-        for (FBContourEdge *ourEdge in ourContour.edges)
-            count += [ourEdge.crossings count];
-    return count;
 }
 
 - (BOOL) doesEdge:(FBContourEdge *)edge1 crossEdge:(FBContourEdge *)edge2 atIntersection:(FBBezierIntersection *)intersection
@@ -569,29 +483,6 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
         _bounds = NSUnionRect(_bounds, contour.bounds);
     
     return _bounds;
-}
-
-- (BOOL) containsPoint:(NSPoint)testPoint
-{
-    // Create a test line from our point to somewhere outside our graph. We'll see how many times the test
-    //  line intersects edges of the graph. Based on the winding rule, if it's an odd number, we're inside
-    //  the graph, if even, outside.
-    NSPoint lineEndPoint = NSMakePoint(testPoint.x > NSMinX(self.bounds) ? NSMinX(self.bounds) - 10 : NSMaxX(self.bounds) + 10, testPoint.y); /* just move us outside the bounds of the graph */
-    FBBezierCurve *testCurve = [FBBezierCurve bezierCurveWithLineStartPoint:testPoint endPoint:lineEndPoint];
-    
-    NSUInteger intersectCount = 0;
-    for (FBBezierContour *contour in self.contours) {
-        for (FBContourEdge *edge in contour.edges) {
-            NSArray *intersections = [testCurve intersectionsWithBezierCurve:edge.curve];
-            for (FBBezierIntersection *intersection in intersections) {
-                if ( intersection.isTangent )
-                    continue;
-                intersectCount++;
-            }
-        }
-    }
-    
-    return (intersectCount % 2) == 1;
 }
 
 - (FBContourInside) contourInsides:(FBBezierContour *)testContour
@@ -905,16 +796,6 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
         [crossings removeObject:crossing];
 }
 
-- (void) markCrossingsAsEntryOrExitWithBezierGraph:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside
-{
-    for (FBBezierContour *contour in self.contours) {
-        NSArray *intersectingContours = contour.intersectingContours;
-        for (FBBezierContour *otherContour in intersectingContours)
-            [contour markCrossingsAsEntryOrExitWithContour:otherContour markInside:markInside];
-    }
-}
-
-
 - (FBEdgeCrossing *) firstUnprocessedCrossing
 {
     for (FBBezierContour *contour in _contours) {
@@ -1002,20 +883,6 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
 {
     [_contours addObject:contour];
     _bounds = NSZeroRect;
-}
-
-- (void) addBezierGraph:(FBBezierGraph *)graph
-{
-    for (FBBezierContour *contour in graph.contours)
-        [self addContour:[[contour copy] autorelease]];
-}
-
-- (NSPoint) testPoint
-{
-    if ( [_contours count] == 0 )
-        return NSZeroPoint;
-    FBBezierContour *contour = [_contours objectAtIndex:0];
-    return contour.testPoint;
 }
 
 - (NSArray *) nonintersectingContours
