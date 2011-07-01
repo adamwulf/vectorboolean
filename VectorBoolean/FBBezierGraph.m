@@ -590,7 +590,7 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
                 if ( intersection.isTangent )
                     continue;
                 
-                if ( intersection.parameter2 == 0.0 || intersection.parameter2 == 1.0 )
+                if ( intersection.isAtEndPointOfCurve2 )
                     return NO;
                 
                 // only examine those intersections outside of or on testContour
