@@ -278,15 +278,6 @@
 
 - (void) addCurvyShapeOverlappingRectangle
 {
-    NSBezierPath *curveyShape = [NSBezierPath bezierPath];
-    [curveyShape moveToPoint:NSMakePoint(335.000000, 203.000000)];
-    [curveyShape curveToPoint:NSMakePoint(335.000000, 200.000000) controlPoint1:NSMakePoint(335.000000, 202.000000) controlPoint2:NSMakePoint(335.000000, 201.000000)];
-    [curveyShape curveToPoint:NSMakePoint(270.000000, 90.000000) controlPoint1:NSMakePoint(335.000000, 153.000000) controlPoint2:NSMakePoint(309.000000, 111.000000)];
-    [curveyShape curveToPoint:NSMakePoint(240.000000, 145.000000) controlPoint1:NSMakePoint(252.000000, 102.000000) controlPoint2:NSMakePoint(240.000000, 122.000000)];
-    [curveyShape curveToPoint:NSMakePoint(305.000000, 210.000000) controlPoint1:NSMakePoint(240.000000, 181.000000) controlPoint2:NSMakePoint(269.000000, 210.000000)];
-    [curveyShape curveToPoint:NSMakePoint(335.000000, 203.000000) controlPoint1:NSMakePoint(316.000000, 210.000000) controlPoint2:NSMakePoint(326.000000, 207.000000)];
-    [_view.canvas addPath:curveyShape withColor:[NSColor blueColor]];
-
     NSBezierPath *rectangle = [NSBezierPath bezierPath];
     CGFloat top = 65.0 + 160.0 / 3.0;
     [rectangle moveToPoint:NSMakePoint(40, top)];
@@ -295,6 +286,15 @@
     [rectangle lineToPoint:NSMakePoint(40, 50)];
     [rectangle lineToPoint:NSMakePoint(40, top)];
     [_view.canvas addPath:rectangle withColor:[NSColor redColor]];
+    
+    NSBezierPath *curveyShape = [NSBezierPath bezierPath];
+    [curveyShape moveToPoint:NSMakePoint(335.000000, 203.000000)];
+    [curveyShape curveToPoint:NSMakePoint(335.000000, 200.000000) controlPoint1:NSMakePoint(335.000000, 202.000000) controlPoint2:NSMakePoint(335.000000, 201.000000)];
+    [curveyShape curveToPoint:NSMakePoint(270.000000, 90.000000) controlPoint1:NSMakePoint(335.000000, 153.000000) controlPoint2:NSMakePoint(309.000000, 111.000000)];
+    [curveyShape curveToPoint:NSMakePoint(240.000000, 145.000000) controlPoint1:NSMakePoint(252.000000, 102.000000) controlPoint2:NSMakePoint(240.000000, 122.000000)];
+    [curveyShape curveToPoint:NSMakePoint(305.000000, 210.000000) controlPoint1:NSMakePoint(240.000000, 181.000000) controlPoint2:NSMakePoint(269.000000, 210.000000)];
+    [curveyShape curveToPoint:NSMakePoint(335.000000, 203.000000) controlPoint1:NSMakePoint(316.000000, 210.000000) controlPoint2:NSMakePoint(326.000000, 207.000000)];
+    [_view.canvas addPath:curveyShape withColor:[NSColor blueColor]];
 }
 
 - (void) addRectangle:(NSRect)rect
