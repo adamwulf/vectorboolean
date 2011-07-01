@@ -463,9 +463,17 @@
 									<reference key="NSOnImage" ref="1033313550"/>
 									<reference key="NSMixedImage" ref="310636482"/>
 								</object>
-								<object class="NSMenuItem" id="892473285">
+								<object class="NSMenuItem" id="740527877">
 									<reference key="NSMenu" ref="930598111"/>
 									<string key="NSTitle">Rectangle w/hole Overlapping Rectangle w/hole</string>
+									<string key="NSKeyEquiv"/>
+									<int key="NSMnemonicLoc">2147483647</int>
+									<reference key="NSOnImage" ref="1033313550"/>
+									<reference key="NSMixedImage" ref="310636482"/>
+								</object>
+								<object class="NSMenuItem" id="387499246">
+									<reference key="NSMenu" ref="930598111"/>
+									<string key="NSTitle">Curve Overlapping Rectangle</string>
 									<string key="NSKeyEquiv"/>
 									<int key="NSMnemonicLoc">2147483647</int>
 									<reference key="NSOnImage" ref="1033313550"/>
@@ -1001,9 +1009,17 @@
 					<object class="IBActionConnection" key="connection">
 						<string key="label">onHoleOverlappingHole:</string>
 						<reference key="source" ref="1014"/>
-						<reference key="destination" ref="892473285"/>
+						<reference key="destination" ref="740527877"/>
 					</object>
 					<int key="connectionID">585</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">onCurvyShapeOverlappingRectangle:</string>
+						<reference key="source" ref="1014"/>
+						<reference key="destination" ref="387499246"/>
+					</object>
+					<int key="connectionID">587</int>
 				</object>
 			</object>
 			<object class="IBMutableOrderedSet" key="objectRecords">
@@ -1394,7 +1410,8 @@
 							<reference ref="21338714"/>
 							<reference ref="33431505"/>
 							<reference ref="94560581"/>
-							<reference ref="892473285"/>
+							<reference ref="740527877"/>
+							<reference ref="387499246"/>
 						</object>
 						<reference key="parent" ref="40719474"/>
 					</object>
@@ -1514,7 +1531,12 @@
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">584</int>
-						<reference key="object" ref="892473285"/>
+						<reference key="object" ref="740527877"/>
+						<reference key="parent" ref="930598111"/>
+					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">586</int>
+						<reference key="object" ref="387499246"/>
 						<reference key="parent" ref="930598111"/>
 					</object>
 				</object>
@@ -1624,6 +1646,7 @@
 					<string>580.IBPluginDependency</string>
 					<string>582.IBPluginDependency</string>
 					<string>584.IBPluginDependency</string>
+					<string>586.IBPluginDependency</string>
 					<string>72.IBPluginDependency</string>
 					<string>72.ImportedFromIB2</string>
 					<string>73.IBPluginDependency</string>
@@ -1755,6 +1778,7 @@
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
+					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
@@ -1794,7 +1818,7 @@
 				<reference key="dict.values" ref="0"/>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">585</int>
+			<int key="maxID">587</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -1821,6 +1845,7 @@
 							<string>onComplexShapes2:</string>
 							<string>onComplexShapes:</string>
 							<string>onConcentricContours:</string>
+							<string>onCurvyShapeOverlappingRectangle:</string>
 							<string>onDiamondInsideRectangle:</string>
 							<string>onDiamondOverlappingRectangle:</string>
 							<string>onDifference:</string>
@@ -1866,6 +1891,7 @@
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
+							<string>id</string>
 						</object>
 					</object>
 					<object class="NSMutableDictionary" key="actionInfosByName">
@@ -1880,6 +1906,7 @@
 							<string>onComplexShapes2:</string>
 							<string>onComplexShapes:</string>
 							<string>onConcentricContours:</string>
+							<string>onCurvyShapeOverlappingRectangle:</string>
 							<string>onDiamondInsideRectangle:</string>
 							<string>onDiamondOverlappingRectangle:</string>
 							<string>onDifference:</string>
@@ -1930,6 +1957,10 @@
 							</object>
 							<object class="IBActionInfo">
 								<string key="name">onConcentricContours:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">onCurvyShapeOverlappingRectangle:</string>
 								<string key="candidateClassName">id</string>
 							</object>
 							<object class="IBActionInfo">
@@ -2022,6 +2053,7 @@
 							<string>onComplexShapes2:</string>
 							<string>onComplexShapes:</string>
 							<string>onConcentricContours:</string>
+							<string>onCurvyShapeOverlappingRectangle:</string>
 							<string>onDiamondInsideRectangle:</string>
 							<string>onDiamondOverlappingRectangle:</string>
 							<string>onDifference:</string>
@@ -2067,6 +2099,7 @@
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
+							<string>id</string>
 						</object>
 					</object>
 					<object class="NSMutableDictionary" key="actionInfosByName">
@@ -2081,6 +2114,7 @@
 							<string>onComplexShapes2:</string>
 							<string>onComplexShapes:</string>
 							<string>onConcentricContours:</string>
+							<string>onCurvyShapeOverlappingRectangle:</string>
 							<string>onDiamondInsideRectangle:</string>
 							<string>onDiamondOverlappingRectangle:</string>
 							<string>onDifference:</string>
@@ -2131,6 +2165,10 @@
 							</object>
 							<object class="IBActionInfo">
 								<string key="name">onConcentricContours:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">onCurvyShapeOverlappingRectangle:</string>
 								<string key="candidateClassName">id</string>
 							</object>
 							<object class="IBActionInfo">
