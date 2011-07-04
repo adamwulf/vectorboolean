@@ -415,7 +415,7 @@ static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloa
             if ( intersectionPoint.x > range.maximum )
                 range.maximum = intersectionPoint.x;
         }
-        if ( FBAreValuesClose(startPoint.y, endPoint.y) && FBAreValuesClose(startPoint.y, bounds.minimum) && !FBAreValuesClose(bounds.minimum, bounds.maximum) )
+        if ( [convexHull count] == 2 && FBAreValuesClose(startPoint.y, endPoint.y) && FBAreValuesClose(startPoint.y, bounds.minimum) && !FBAreValuesClose(bounds.minimum, bounds.maximum) )
             range = FBRangeMake(0, 1);
         
         if ( LineIntersectsHorizontalLine(startPoint, endPoint, bounds.maximum, &intersectionPoint) ) {
@@ -424,7 +424,7 @@ static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloa
             if ( intersectionPoint.x > range.maximum )
                 range.maximum = intersectionPoint.x;
         }
-        if ( FBAreValuesClose(startPoint.y, endPoint.y) && FBAreValuesClose(startPoint.y, bounds.maximum) && !FBAreValuesClose(bounds.minimum, bounds.maximum) )
+        if ( [convexHull count] == 2 && FBAreValuesClose(startPoint.y, endPoint.y) && FBAreValuesClose(startPoint.y, bounds.maximum) && !FBAreValuesClose(bounds.minimum, bounds.maximum) )
             range = FBRangeMake(0, 1);
         
         // We want to be able to refine t even if the convex hull lies completely inside the bounds. This
@@ -526,13 +526,13 @@ static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloa
     // This is the Graham-Scan algorithm: http://en.wikipedia.org/wiki/Graham_scan
     NSMutableArray *points = [NSMutableArray arrayWithObjects:[NSValue valueWithPoint:_endPoint1], [NSValue valueWithPoint:_controlPoint1], [NSValue valueWithPoint:_controlPoint2], [NSValue valueWithPoint:_endPoint2], nil];
     
-    // Find point with lowest y value. If tied, the one with lowest x. Then swap the lowest value
+    // Find point with lowest y value. If tied, the one with highest x. Then swap the lowest value
     //  to the first index
     NSUInteger lowestIndex = 0;
     NSPoint lowestValue = [[points objectAtIndex:0] pointValue];
     for (NSUInteger i = 0; i < [points count]; i++) {
         NSPoint point = [[points objectAtIndex:i] pointValue];
-        if ( point.y < lowestValue.y || (point.y == lowestValue.y && point.x < lowestValue.x) ) {
+        if ( point.y < lowestValue.y || (point.y == lowestValue.y && point.x > lowestValue.x) ) {
             lowestIndex = i;
             lowestValue = point;
         }
@@ -540,6 +540,7 @@ static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloa
     [points exchangeObjectAtIndex:0 withObjectAtIndex:lowestIndex];
 
     // Sort the points based on the angle they form with the x-axis
+    NSMutableArray *pointsToDelete = [NSMutableArray arrayWithCapacity:4];
     [points sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
         NSPoint point1 = [obj1 pointValue];
         NSPoint point2 = [obj2 pointValue];
@@ -550,46 +551,45 @@ static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloa
         if ( NSEqualPoints(lowestValue, point2) )
             return NSOrderedDescending;
         
-        // We want to sort by the angle, so that the angles increase as we go along in the array.
-        //  However, the cosine is cheaper to calculate, although it decreases in value as the angle
-        //  increases (in the domain we care about). 
-        CGFloat distance1 = FBDistanceBetweenPoints(point1, lowestValue);
-        CGFloat cosine1 = (point1.x - lowestValue.x) / distance1;
-        CGFloat distance2 = FBDistanceBetweenPoints(point2, lowestValue);
-        CGFloat cosine2 = (point2.x - lowestValue.x) / distance2;
-        if ( CounterClockwiseTurn(lowestValue, point1, point2) == 0.0 ) {
+        CGFloat area = CounterClockwiseTurn(lowestValue, point1, point2);
+        if ( FBAreValuesClose(area, 0.0) ) {
+            CGFloat distance1 = FBDistanceBetweenPoints(point1, lowestValue);
+            CGFloat distance2 = FBDistanceBetweenPoints(point2, lowestValue);
             // The three points are colinear, so base it on distance instead
-            if ( distance1 < distance2 )
+            if ( distance1 < distance2 ) {
+                [pointsToDelete addObject:obj1];
                 return NSOrderedAscending;
-            else if ( distance1 > distance2 )
+            } else if ( distance1 > distance2 ) {
+                [pointsToDelete addObject:obj2];
                 return NSOrderedDescending;
-            return NSOrderedSame;
-        }
-        if ( cosine1 < cosine2 )
-            return NSOrderedDescending;
-        else if ( cosine1 > cosine2 )
-            return NSOrderedAscending;
-        return NSOrderedSame;
-    }];
-    
-    NSUInteger numberOfConvexHullPoints = 2;
-    for (NSUInteger i = 2; i < [points count]; i++) {
-        CGFloat area = CounterClockwiseTurn([[points objectAtIndex:numberOfConvexHullPoints - 2] pointValue], [[points objectAtIndex:numberOfConvexHullPoints - 1] pointValue], [[points objectAtIndex:i] pointValue]);
-        
-        if ( area == 0.0 )
-            numberOfConvexHullPoints--; // colinear is bad
-        else if ( area < 0.0 ) {
-            while (area <= 0.0 && numberOfConvexHullPoints > 2) {
-                numberOfConvexHullPoints--;
-                area = CounterClockwiseTurn([[points objectAtIndex:numberOfConvexHullPoints - 2] pointValue], [[points objectAtIndex:numberOfConvexHullPoints - 1] pointValue], [[points objectAtIndex:i] pointValue]);
             }
-        }
-                
-        [points exchangeObjectAtIndex:numberOfConvexHullPoints withObjectAtIndex:i];
-        numberOfConvexHullPoints++;
+            [pointsToDelete addObject:obj1];            
+            return NSOrderedSame;
+        } else if ( area < 0.0 )
+            return NSOrderedDescending;
+        //else if ( area > 0.0 )
+        return NSOrderedAscending;                    
+    }];
+    for (NSValue *value in pointsToDelete)
+        [points removeObject:value];
+    
+    NSMutableArray *results = [NSMutableArray arrayWithCapacity:4];
+    [results addObject:[points objectAtIndex:0]];
+    [results addObject:[points objectAtIndex:1]];
+    NSUInteger i = 2;
+    while ( i < [points count] ) {
+        NSPoint lastPoint = [[results lastObject] pointValue];
+        NSPoint nextToLastPoint = [[results objectAtIndex:[results count] - 2] pointValue];
+        NSPoint pointUnderConsideration = [[points objectAtIndex:i] pointValue];
+        CGFloat area = CounterClockwiseTurn(nextToLastPoint, lastPoint, pointUnderConsideration);
+        if ( area > 0.0 ) {
+            [results addObject:[points objectAtIndex:i]];
+            i++;
+        } else 
+            [results removeLastObject];
     }
     
-    return [points subarrayWithRange:NSMakeRange(0, numberOfConvexHullPoints)];
+    return results;    
 }
 
 - (BOOL) isPoint

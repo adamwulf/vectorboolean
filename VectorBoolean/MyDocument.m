@@ -51,7 +51,7 @@
 {
     self = [super init];
     if (self) {
-        _resetAction = @selector(addCircleOnRectangle);
+        _resetAction = @selector(addSomeOverlap);
     }
     return self;
 }
