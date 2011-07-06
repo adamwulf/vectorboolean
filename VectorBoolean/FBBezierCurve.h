@@ -8,6 +8,7 @@
 
 #import <Cocoa/Cocoa.h>
 
+// FBRange is a range of parameter (t)
 typedef struct FBRange {
     CGFloat minimum;
     CGFloat maximum;
@@ -19,6 +20,8 @@ extern CGFloat FBRangeGetSize(FBRange range);
 extern CGFloat FBRangeAverage(FBRange range);
 extern CGFloat FBRangeScaleNormalizedValue(FBRange range, CGFloat value);
 
+// FBBezierCurve is one cubic 2D bezier curve. It represents one segment of a bezier path, and is where
+//  the intersection calculation happens
 @interface FBBezierCurve : NSObject {
     NSPoint _endPoint1;
     NSPoint _controlPoint1;

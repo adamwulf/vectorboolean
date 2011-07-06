@@ -76,6 +76,7 @@ static NSRect BoxFrame(NSPoint point)
         [path fill];
     }    
     
+    // Draw on the end and control points
     if ( _showPoints ) {
         for (NSDictionary *object in _paths) {
             NSBezierPath *path = [object objectForKey:@"path"];
@@ -96,20 +97,13 @@ static NSRect BoxFrame(NSPoint point)
         }
     }
 
+    // If we have exactly two objects, show where they intersect
     if ( _showIntersections && [_paths count] == 2 ) {
-
         NSBezierPath *path1 = [[_paths objectAtIndex:0] objectForKey:@"path"];
         NSBezierPath *path2 = [[_paths objectAtIndex:1] objectForKey:@"path"];
         NSArray *curves1 = [FBBezierCurve bezierCurvesFromBezierPath:path1];
         NSArray *curves2 = [FBBezierCurve bezierCurvesFromBezierPath:path2];
         
-#if 0
-        FBBezierCurve *curve1 = [curves1 objectAtIndex:13];
-        FBBezierCurve *curve2 = [curves2 objectAtIndex:4];
-        NSArray *intersections = [curve1 intersectionsWithBezierCurve:curve2];
-        for (FBBezierIntersection *intersection in intersections)
-            NSLog(@"intersection at %f, %f", intersection.location.x, intersection.location.y);
-#else
         for (FBBezierCurve *curve1 in curves1) {
             for (FBBezierCurve *curve2 in curves2) {
                 NSArray *intersections = [curve1 intersectionsWithBezierCurve:curve2];
@@ -123,7 +117,6 @@ static NSRect BoxFrame(NSPoint point)
                 }
             }
         }
-#endif
     }
 }
 
