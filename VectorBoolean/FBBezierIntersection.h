@@ -10,6 +10,10 @@
 
 @class FBBezierCurve;
 
+// FBBezierIntersection stores where two bezier curves intersect. Initially it just stores
+//  the curves and the parameter values where they intersect. It can lazily compute
+//  the 2D point where they intersect, the left and right parts of the curves relative to
+//  the intersection point, if the intersection is tangent. 
 @interface FBBezierIntersection : NSObject {
     NSPoint _location;
     FBBezierCurve *_curve1;
@@ -39,6 +43,8 @@
 @property (readonly) FBBezierCurve *curve2LeftBezier;
 @property (readonly) FBBezierCurve *curve2RightBezier;
 
+// Intersections at the end points of curves have to be handled carefully, so here
+//  are some convience methods to determine if that's the case.
 @property (readonly, getter = isAtStartOfCurve1) BOOL atStartOfCurve1;
 @property (readonly, getter = isAtStopOfCurve1) BOOL atStopOfCurve1;
 @property (readonly, getter = isAtStartOfCurve2) BOOL atStartOfCurve2;

@@ -49,6 +49,7 @@
 
 - (void) addCrossing:(FBEdgeCrossing *)crossing
 {
+    // Make sure the crossing can make it back to us, and keep all the crossings sorted
     crossing.edge = self;
     [_crossings addObject:crossing];
     [self sortCrossings];
@@ -56,6 +57,7 @@
 
 - (void) removeCrossing:(FBEdgeCrossing *)crossing
 {
+    // Keep the crossings sorted
     crossing.edge = nil;
     [_crossings removeObject:crossing];
     [self sortCrossings];
@@ -63,6 +65,7 @@
 
 - (void) sortCrossings
 {
+    // Sort by the "order" of the crossing, then assign indices so next and previous work correctly.
     [_crossings sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
         FBEdgeCrossing *crossing1 = obj1;
         FBEdgeCrossing *crossing2 = obj2;

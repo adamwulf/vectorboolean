@@ -13,12 +13,6 @@
 #import "FBDebug.h"
 #import "FBBezierIntersection.h"
 
-@interface FBBezierContour ()
-
-- (BOOL) testPoint:(NSPoint *)point onRay:(FBBezierCurve *)ray;
-
-@end
-
 @implementation FBBezierContour
 
 @synthesize edges=_edges;
@@ -43,6 +37,7 @@
 
 - (void) addCurve:(FBBezierCurve *)curve
 {
+    // Add the curve by wrapping it in an edge
     if ( curve == nil )
         return;
     FBContourEdge *edge = [[[FBContourEdge alloc] initWithBezierCurve:curve contour:self] autorelease];
@@ -53,7 +48,8 @@
 
 - (void) addCurveFrom:(FBEdgeCrossing *)startCrossing to:(FBEdgeCrossing *)endCrossing
 {
-    // First construct the curve
+    // First construct the curve that we're going to add, by seeing which crossing
+    //  is nil. If the crossing isn't given go to the end of the edge on that side.
     FBBezierCurve *curve = nil;
     if ( startCrossing == nil && endCrossing != nil ) {
         // From start to endCrossing
@@ -70,6 +66,8 @@
 
 - (void) addReverseCurve:(FBBezierCurve *)curve
 {
+    // Just reverse the points on the curve. Need to do this to ensure the end point from one edge, matches the start
+    //  on the next edge.
     if ( curve == nil )
         return;
     FBBezierCurve *reverseCurve = [FBBezierCurve bezierCurveWithEndPoint1:curve.endPoint2 controlPoint1:curve.controlPoint2 controlPoint2:curve.controlPoint1 endPoint2:curve.endPoint1];
@@ -78,7 +76,8 @@
 
 - (void) addReverseCurveFrom:(FBEdgeCrossing *)startCrossing to:(FBEdgeCrossing *)endCrossing
 {
-    // First construct the curve
+    // First construct the curve that we're going to add, by seeing which crossing
+    //  is nil. If the crossing isn't given go to the end of the edge on that side.
     FBBezierCurve *curve = nil;
     if ( startCrossing == nil && endCrossing != nil ) {
         // From start to endCrossing
@@ -95,13 +94,15 @@
 
 - (NSRect) bounds
 {
+    // Cache the bounds to save time
     if ( !NSEqualRects(_bounds, NSZeroRect) )
         return _bounds;
     
+    // If no edges, no bounds
     if ( [_edges count] == 0 )
         return NSZeroRect;
     
-    // Start with the first point
+    // Start with the first point to set the topLeft and bottom right points
     FBContourEdge *firstEdge = [_edges objectAtIndex:0];
     NSPoint topLeft = firstEdge.curve.endPoint1;
     NSPoint bottomRight = topLeft;
@@ -133,93 +134,10 @@
     return edge.curve.endPoint1;
 }
 
-- (NSPoint) testPoint
-{
-    if ( [_edges count] == 0 )
-        return NSZeroPoint;
-    
-    static const CGFloat FBRayOverlap = 10.0;
-    
-    NSUInteger count = MAX(ceilf(NSWidth(self.bounds)), ceilf(NSHeight(self.bounds)));
-    for (NSUInteger fraction = 2; fraction <= count; fraction++) {
-        CGFloat verticalSpacing = NSHeight(self.bounds) / (CGFloat)fraction;
-        for (CGFloat y = NSMinY(self.bounds) + verticalSpacing; y <= NSMaxY(self.bounds); y += verticalSpacing) {
-            FBBezierCurve *ray = [FBBezierCurve bezierCurveWithLineStartPoint:NSMakePoint(NSMinX(self.bounds) - FBRayOverlap, y) endPoint:NSMakePoint(NSMaxX(self.bounds) + FBRayOverlap, y)];
-            NSPoint testPoint = NSZeroPoint;
-            if ( [self testPoint:&testPoint onRay:ray] )
-                return testPoint;
-        }
-        
-        CGFloat horizontalSpacing = NSWidth(self.bounds) / (CGFloat)fraction;
-        for (CGFloat x = NSMinX(self.bounds) + horizontalSpacing; x <= NSMaxX(self.bounds); x += horizontalSpacing) {
-            FBBezierCurve *ray = [FBBezierCurve bezierCurveWithLineStartPoint:NSMakePoint(x, NSMinY(self.bounds) - FBRayOverlap) endPoint:NSMakePoint(x, NSMaxY(self.bounds) + FBRayOverlap)];
-            NSPoint testPoint = NSZeroPoint;
-            if ( [self testPoint:&testPoint onRay:ray] )
-                return testPoint;            
-        }
-    }
-    
-    return NSZeroPoint; // we're hosed
-}
-
-- (BOOL) testPoint:(NSPoint *)point onRay:(FBBezierCurve *)ray
-{
-    static const CGFloat FBMinimumIntersectionDistance = 2.0;
-    
-    BOOL horizontalRay = ray.endPoint1.y == ray.endPoint2.y; // ray has to be a vertical or horizontal line
-
-    // First, find all the intersections and sort them
-    NSMutableArray *intersections = [NSMutableArray arrayWithCapacity:10];
-    for (FBContourEdge *edge in _edges) 
-        [intersections addObjectsFromArray:[ray intersectionsWithBezierCurve:edge.curve]];
-    if ( [intersections count] < 2 )
-        return NO;
-    [intersections sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
-        FBBezierIntersection *intersection1 = obj1;
-        FBBezierIntersection *intersection2 = obj2;
-        if ( horizontalRay ) {
-            if ( intersection1.location.x < intersection2.location.x )
-                return NSOrderedAscending;
-            else if ( intersection1.location.x > intersection2.location.x )
-                return NSOrderedDescending;
-            else
-                return NSOrderedSame;
-        }
-        
-        if ( intersection1.location.y < intersection2.location.y )
-            return NSOrderedAscending;
-        else if ( intersection1.location.y > intersection2.location.y )
-            return NSOrderedDescending;
-        return NSOrderedSame;
-    }];
-    
-    
-    // Walk the intersections looking for when the ray crosses inside of the contour
-    for (NSUInteger i = 0; i < ([intersections count] - 1); i += 2) {
-        // Between these two intersections is "inside" the contour
-        FBBezierIntersection *firstIntersection = [intersections objectAtIndex:i];
-        FBBezierIntersection *secondIntersection = [intersections objectAtIndex:i + 1];
-        
-        // We don't want a point on the edge, so make sure there is a minimum distance between them
-        CGFloat distance = horizontalRay ? secondIntersection.location.x - firstIntersection.location.x : secondIntersection.location.y - firstIntersection.location.y;
-        if ( distance < FBMinimumIntersectionDistance )
-            continue;
-        
-        // We have a winner
-        if ( horizontalRay )
-            *point = NSMakePoint((secondIntersection.location.x + firstIntersection.location.x) / 2.0, firstIntersection.location.y);
-        else
-            *point = NSMakePoint(firstIntersection.location.x, (secondIntersection.location.y + firstIntersection.location.y) / 2.0);
-        return YES;
-    }
-    
-    return NO;
-}
-
 - (BOOL) containsPoint:(NSPoint)testPoint
 {
     // Create a test line from our point to somewhere outside our graph. We'll see how many times the test
-    //  line intersects edges of the graph. Based on the winding rule, if it's an odd number, we're inside
+    //  line intersects edges of the graph. Based on the even/odd rule, if it's an odd number, we're inside
     //  the graph, if even, outside.
     NSPoint lineEndPoint = NSMakePoint(testPoint.x > NSMinX(self.bounds) ? NSMinX(self.bounds) - 10 : NSMaxX(self.bounds) + 10, testPoint.y); /* just move us outside the bounds of the graph */
     FBBezierCurve *testCurve = [FBBezierCurve bezierCurveWithLineStartPoint:testPoint endPoint:lineEndPoint];
@@ -239,17 +157,22 @@
 
 - (void) markCrossingsAsEntryOrExitWithContour:(FBBezierContour *)otherContour markInside:(BOOL)markInside
 {
+    // Go through and mark all the crossings with the given contour as "entry" or "exit". This 
+    //  determines what part of ths contour is outputted. 
+    
     // When marking we need to start at a point that is clearly either inside or outside
-    //  the other graph.
+    //  the other graph, otherwise we could mark the crossings exactly opposite of what
+    //  they're supposed to be.
     FBContourEdge *startEdge = [self.edges objectAtIndex:0];
     FBContourEdge *stopValue = startEdge;
     while ( startEdge.isStartShared ) {
         startEdge = startEdge.next;
         if ( startEdge == stopValue )
-            break; // for safety
+            break; // for safety. But if we're here, we could be hosed
     }
     
-    // Calculate the first entry value
+    // Calculate the first entry value. We need to determine if the edge we're starting
+    //  on is inside or outside the otherContour.
     BOOL contains = [otherContour containsPoint:startEdge.curve.endPoint1];
     BOOL isEntry = markInside ? !contains : contains;
     
@@ -262,7 +185,7 @@
             if ( crossing.counterpart.edge.contour != otherContour )
                 continue;
             crossing.entry = isEntry;
-            isEntry = !isEntry; // toggle
+            isEntry = !isEntry; // toggle.
         }
         
         edge = edge.next;
@@ -271,12 +194,14 @@
 
 - (void) round
 {
+    // Go through and round all the end points to integral value
     for (FBContourEdge *edge in _edges)
         [edge round];
 }
 
 - (NSArray *) intersectingContours
 {
+    // Go and find all the unique contours that intersect this specific contour
     NSMutableArray *contours = [NSMutableArray arrayWithCapacity:3];
     for (FBContourEdge *edge in _edges) {
         NSArray *intersectingEdges = edge.intersectingEdges;
