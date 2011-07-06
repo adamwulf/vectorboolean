@@ -739,6 +739,7 @@ static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloa
 
 - (void) round
 {
+    // Round the end and control points to the nearest integral value.
     _endPoint1 = FBRoundPoint(_endPoint1);
     _controlPoint1 = FBRoundPoint(_controlPoint1);
     _controlPoint2 = FBRoundPoint(_controlPoint2);
