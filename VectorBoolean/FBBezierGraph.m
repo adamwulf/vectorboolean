@@ -164,11 +164,14 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
                     break;
                     
                 case NSLineToBezierPathElement: {
-                    // Convert lines to bezier curves as well. Just set control point to be in the line formed
-                    //  by the end points
-                    [contour addCurve:[FBBezierCurve bezierCurveWithLineStartPoint:lastPoint endPoint:element.point]];
-                    
-                    lastPoint = element.point;
+                    // [MO] skip degenerate line segments
+                    if (!NSEqualPoints(element.point, lastPoint)) {
+                        // Convert lines to bezier curves as well. Just set control point to be in the line formed
+                        //  by the end points
+                        [contour addCurve:[FBBezierCurve bezierCurveWithLineStartPoint:lastPoint endPoint:element.point]];
+                        
+                        lastPoint = element.point;
+                    }
                     break;
                 }
                     
@@ -179,7 +182,22 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
                     break;
                     
                 case NSClosePathBezierPathElement:
-                    lastPoint = NSZeroPoint;
+                    // [MO] attempt to close the bezier contour by
+                    // mapping closepaths to equivalent lineto operations,
+                    // though as with our NSLineToBezierPathElement processing,
+                    // we check so as not to add degenerate line segments which 
+                    // blow up the clipping code.
+                    
+                    if ([[contour edges] count]) {
+                        FBContourEdge *firstEdge = [[contour edges] objectAtIndex:0];
+                        NSPoint        firstPoint = [[firstEdge curve] endPoint1];
+                        
+                        // Skip degenerate line segments
+                        if (!CGPointEqualToPoint(lastPoint, firstPoint)) {
+                            [contour addCurve:[FBBezierCurve bezierCurveWithLineStartPoint:lastPoint endPoint:firstPoint]];
+                        }
+                    }
+                    lastPoint = CGPointZero;
                     break;
             }
         }

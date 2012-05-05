@@ -151,10 +151,10 @@
 - (void) addCircleOverlappingCircle
 {
     NSBezierPath *circle = [NSBezierPath bezierPath];
-    [self addCircleAtPoint:NSMakePoint(210, 110) withRadius:100 toPath:circle];
+    [self addCircleAtPoint:NSMakePoint(355, 240) withRadius:125 toPath:circle];
     [_view.canvas addPath:circle withColor:[NSColor blueColor]];
     
-    [self addCircleAtPoint:NSMakePoint(355, 240) withRadius:125];
+    [self addCircleAtPoint:NSMakePoint(210, 110) withRadius:100];
 }
 
 - (void) addComplexShapes
@@ -327,11 +327,7 @@
 
 - (void) addRectangle:(NSRect)rect toPath:(NSBezierPath *)rectangle
 {
-    [rectangle moveToPoint:NSMakePoint(NSMinX(rect), NSMinY(rect))];
-    [rectangle lineToPoint:NSMakePoint(NSMaxX(rect), NSMinY(rect))];
-    [rectangle lineToPoint:NSMakePoint(NSMaxX(rect), NSMaxY(rect))];
-    [rectangle lineToPoint:NSMakePoint(NSMinX(rect), NSMaxY(rect))];
-    [rectangle lineToPoint:NSMakePoint(NSMinX(rect), NSMinY(rect))];
+    [rectangle appendBezierPathWithRect:rect];
 }
 
 - (void) addCircleAtPoint:(NSPoint)center withRadius:(CGFloat)radius toPath:(NSBezierPath *)circle
