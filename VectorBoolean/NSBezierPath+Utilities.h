@@ -25,4 +25,10 @@ typedef struct NSBezierElement {
 - (void) fb_appendPath:(NSBezierPath *)path;
 - (void) fb_appendElement:(NSBezierElement)element;
 
++ (NSBezierPath *) circleAtPoint:(NSPoint)point;
++ (NSBezierPath *) rectAtPoint:(NSPoint)point;
++ (NSBezierPath *) triangleAtPoint:(NSPoint)point direction:(NSPoint)tangent;
++ (NSBezierPath *) smallCircleAtPoint:(NSPoint)point;
++ (NSBezierPath *) smallRectAtPoint:(NSPoint)point;
+
 @end

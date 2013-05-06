@@ -17,6 +17,7 @@
 @synthesize counterpart=_counterpart;
 @synthesize entry=_entry;
 @synthesize processed=_processed;
+@synthesize selfCrossing=_selfCrossing;
 @synthesize index=_index;
 
 + (id) crossingWithIntersection:(FBBezierIntersection *)intersection
@@ -126,10 +127,11 @@
 
 - (NSString *) description
 {
-    return [NSString stringWithFormat:@"<%@: isEntry = %d, isProcessed = %d, intersection = %@>", 
+    return [NSString stringWithFormat:@"<%@: isEntry = %@, isProcessed = %@, isSelfIntersecting = %@, intersection = %@>", 
             NSStringFromClass([self class]),
-            (int)_entry,
-            (int)_processed,
+            _entry ? @"yes" : @"no",
+            _processed ? @"yes" : @"no",
+            _selfCrossing ? @"yes" : @"no",
             [_intersection description]
             ];
 }

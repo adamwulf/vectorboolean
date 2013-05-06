@@ -13,73 +13,12 @@
 #import "FBContourEdge.h"
 #import "FBBezierIntersection.h"
 #import "FBEdgeCrossing.h"
+#import "FBContourOverlap.h"
 #import "FBDebug.h"
 #import "Geometry.h"
 #import <math.h>
 
-//////////////////////////////////////////////////////////////////////////
-// Helper methods for angles
-//
-static const CGFloat FB2PI = 2.0 * M_PI;
 
-// Normalize the angle between 0 and 2pi
-static CGFloat NormalizeAngle(CGFloat value)
-{
-    while ( value < 0.0 )
-        value += FB2PI;
-    while ( value >= FB2PI )
-        value -= FB2PI;
-    return value;
-}
-
-// Compute the polar angle from the cartesian point
-static CGFloat PolarAngle(NSPoint point)
-{
-    CGFloat value = 0.0;
-    if ( point.x > 0.0 )
-        value = atanf(point.y / point.x);
-    else if ( point.x < 0.0 ) {
-        if ( point.y >= 0.0 )
-            value = atanf(point.y / point.x) + M_PI;
-        else
-            value = atanf(point.y / point.x) - M_PI;
-    } else {
-        if ( point.y > 0.0 )
-            value =  M_PI_2;
-        else if ( point.y < 0.0 )
-            value =  -M_PI_2;
-        else
-            value = 0.0;
-    }
-    return NormalizeAngle(value);
-}
-
-//////////////////////////////////////////////////////////////////////////
-// Angle Range structure provides a simple way to store angle ranges
-//  and determine if a specific angle falls within. 
-//
-typedef struct FBAngleRange {
-    CGFloat minimum;
-    CGFloat maximum;
-} FBAngleRange;
-
-static FBAngleRange FBAngleRangeMake(CGFloat minimum, CGFloat maximum)
-{
-    FBAngleRange range = { minimum, maximum };
-    return range;
-}
-
-static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
-{
-    if ( range.minimum <= range.maximum )
-        return angle > range.minimum && angle < range.maximum;
-    
-    // The range wraps around 0. See if the angle falls in the first half
-    if ( angle > range.minimum && angle <= FB2PI )
-        return YES;
-    
-    return angle >= 0.0 && angle < range.maximum;
-}
 
 //////////////////////////////////////////////////////////////////////////
 // FBBezierGraph
@@ -96,32 +35,37 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
 @interface FBBezierGraph ()
 
 - (void) removeDuplicateCrossings;
-- (BOOL) doesEdge:(FBContourEdge *)edge1 crossEdge:(FBContourEdge *)edge2 atIntersection:(FBBezierIntersection *)intersection;
 - (void) insertCrossingsWithBezierGraph:(FBBezierGraph *)other;
 - (FBEdgeCrossing *) firstUnprocessedCrossing;
 - (void) markCrossingsAsEntryOrExitWithBezierGraph:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside;
 - (FBBezierGraph *) bezierGraphFromIntersections;
 - (void) removeCrossings;
+- (void) removeOverlaps;
+
+- (void) insertSelfCrossings;
+- (void) removeSelfCrossings;
+
+- (void) unionEquivalentNonintersectingContours:(NSMutableArray *)ourNonintersectingContours withContours:(NSMutableArray *)theirNonintersectingContours results:(NSMutableArray *)results;
+- (void) intersectEquivalentNonintersectingContours:(NSMutableArray *)ourNonintersectingContours withContours:(NSMutableArray *)theirNonintersectingContours results:(NSMutableArray *)results;
+- (void) differenceEquivalentNonintersectingContours:(NSMutableArray *)ourNonintersectingContours withContours:(NSMutableArray *)theirNonintersectingContours results:(NSMutableArray *)results;
 
 - (void) addContour:(FBBezierContour *)contour;
-- (void) round;
 - (FBContourInside) contourInsides:(FBBezierContour *)contour;
 
 - (NSArray *) nonintersectingContours;
 - (BOOL) containsContour:(FBBezierContour *)contour;
-- (FBBezierContour *) containerForContour:(FBBezierContour *)testContour;
 - (BOOL) eliminateContainers:(NSMutableArray *)containers thatDontContainContour:(FBBezierContour *)testContour usingRay:(FBBezierCurve *)ray;
 - (BOOL) findBoundsOfContour:(FBBezierContour *)testContour onRay:(FBBezierCurve *)ray minimum:(NSPoint *)testMinimum maximum:(NSPoint *)testMaximum;
 - (void) removeContoursThatDontContain:(NSMutableArray *)crossings;
 - (BOOL) findCrossingsOnContainers:(NSArray *)containers onRay:(FBBezierCurve *)ray beforeMinimum:(NSPoint)testMinimum afterMaximum:(NSPoint)testMaximum crossingsBefore:(NSMutableArray *)crossingsBeforeMinimum crossingsAfter:(NSMutableArray *)crossingsAfterMaximum;
 - (void) removeCrossings:(NSMutableArray *)crossings forContours:(NSArray *)containersToRemove;
 - (void) removeContourCrossings:(NSMutableArray *)crossings1 thatDontAppearIn:(NSMutableArray *)crossings2;
-- (NSArray *) minimumCrossings:(NSArray *)crossings onRay:(FBBezierCurve *)ray;
-- (NSArray *) maximumCrossings:(NSArray *)crossings onRay:(FBBezierCurve *)ray;
 - (NSArray *) contoursFromCrossings:(NSArray *)crossings;
 - (NSUInteger) numberOfTimesContour:(FBBezierContour *)contour appearsInCrossings:(NSArray *)crossings;
 
-@property (readonly) NSArray *contours;
+- (void) debuggingInsertCrossingsWithBezierGraph:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside markOtherInside:(BOOL)markOtherInside;
+
+//@property (readonly) NSArray *contours;
 @property (readonly) NSRect bounds;
 
 @end
@@ -147,7 +91,9 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     if ( self != nil ) {
         // A bezier graph is made up of contours, which are closed paths of curves. Anytime we
         //  see a move to in the NSBezierPath, that's a new contour.
+		
         NSPoint lastPoint = NSZeroPoint;
+		BOOL	wasClosed = NO;
         _contours = [[NSMutableArray alloc] initWithCapacity:2];
             
         FBBezierContour *contour = nil;
@@ -156,13 +102,22 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
             
             switch (element.kind) {
                 case NSMoveToBezierPathElement:
-                    // Start a new contour
+				{
+                    // if previous contour wasn't closed, close it
+					
+					if( !wasClosed && contour != nil )
+						[contour close];
+					
+					wasClosed = NO;
+										
+					// Start a new contour
                     contour = [[[FBBezierContour alloc] init] autorelease];
                     [self addContour:contour];
                     
                     lastPoint = element.point;
                     break;
-                    
+				}
+					
                 case NSLineToBezierPathElement: {
                     // [MO] skip degenerate line segments
                     if (!NSEqualPoints(element.point, lastPoint)) {
@@ -176,11 +131,17 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
                 }
                     
                 case NSCurveToBezierPathElement:
-                    [contour addCurve:[FBBezierCurve bezierCurveWithEndPoint1:lastPoint controlPoint1:element.controlPoints[0] controlPoint2:element.controlPoints[1] endPoint2:element.point]];
+				{
+                    // GPC: skip degenerate case where all points are equal
+					
+					if( NSEqualPoints( element.point, lastPoint ) && NSEqualPoints( element.point, element.controlPoints[0] ) && NSEqualPoints( element.point, element.controlPoints[1] ))
+						continue;
+
+					[contour addCurve:[FBBezierCurve bezierCurveWithEndPoint1:lastPoint controlPoint1:element.controlPoints[0] controlPoint2:element.controlPoints[1] endPoint2:element.point]];
                     
                     lastPoint = element.point;
                     break;
-                    
+				}   
                 case NSClosePathBezierPathElement:
                     // [MO] attempt to close the bezier contour by
                     // mapping closepaths to equivalent lineto operations,
@@ -193,16 +154,21 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
                         NSPoint        firstPoint = [[firstEdge curve] endPoint1];
                         
                         // Skip degenerate line segments
-                        if (!CGPointEqualToPoint(lastPoint, firstPoint)) {
+                        if (!NSEqualPoints(lastPoint, firstPoint))
+						{
                             [contour addCurve:[FBBezierCurve bezierCurveWithLineStartPoint:lastPoint endPoint:firstPoint]];
+							wasClosed = YES;
                         }
                     }
-                    lastPoint = CGPointZero;
+                    lastPoint = NSZeroPoint;
                     break;
             }
         }
-        
-        // Go through and mark each contour if its a hole or filled region
+
+		if( !wasClosed && contour != nil )
+			[contour close];
+
+		// Go through and mark each contour if its a hole or filled region
         for (contour in _contours)
             contour.inside = [self contourInsides:contour];
     }
@@ -254,24 +220,30 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     // First insert FBEdgeCrossings into both graphs where the graphs
     //  cross.
     [self insertCrossingsWithBezierGraph:graph];
+    [self insertSelfCrossings];
+    [graph insertSelfCrossings];
     
     // Handle the parts of the graphs that intersect first. Mark the parts
     //  of the graphs that are outside the other for the final result.
     [self markCrossingsAsEntryOrExitWithBezierGraph:graph markInside:NO];
     [graph markCrossingsAsEntryOrExitWithBezierGraph:self markInside:NO];
 
+    [self removeSelfCrossings];
+    [graph removeSelfCrossings];
+
     // Walk the crossings and actually compute the final result for the intersecting parts
     FBBezierGraph *result = [self bezierGraphFromIntersections];
-    [result round]; // decimal values make things messy, so round in case the result is used as input elsewhere, like XOR
-    
+
     // Finally, process the contours that don't cross anything else. They're either
     //  completely contained in another contour, or disjoint.
-    NSArray *ourNonintersectingContours = [self nonintersectingContours];
-    NSArray *theirNonintersectinContours = [graph nonintersectingContours];
-    // Since we're doing a union, assume all the non-crossing contours are in, and remove
-    //  by exception when they're contained by another contour.
+    NSMutableArray *ourNonintersectingContours = [[[self nonintersectingContours] mutableCopy] autorelease];
+    NSMutableArray *theirNonintersectinContours = [[[graph nonintersectingContours] mutableCopy] autorelease];
     NSMutableArray *finalNonintersectingContours = [[ourNonintersectingContours mutableCopy] autorelease];
     [finalNonintersectingContours addObjectsFromArray:theirNonintersectinContours];
+    [self unionEquivalentNonintersectingContours:ourNonintersectingContours withContours:theirNonintersectinContours results:finalNonintersectingContours];
+    
+    // Since we're doing a union, assume all the non-crossing contours are in, and remove
+    //  by exception when they're contained by another contour.
     for (FBBezierContour *ourContour in ourNonintersectingContours) {
         // If the other graph contains our contour, it's redundant and we can just remove it
         BOOL clipContainsSubject = [graph containsContour:ourContour];
@@ -288,35 +260,70 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     // Append the final nonintersecting contours
     for (FBBezierContour *contour in finalNonintersectingContours)
         [result addContour:contour];
-    
+
     // Clean up crossings so the graphs can be reused, e.g. XOR will reuse graphs.
     [self removeCrossings];
     [graph removeCrossings];
-    
+    [self removeOverlaps];
+    [graph removeOverlaps];
+
     return result;
+}
+
+- (void) unionEquivalentNonintersectingContours:(NSMutableArray *)ourNonintersectingContours withContours:(NSMutableArray *)theirNonintersectingContours results:(NSMutableArray *)results
+{
+    for (NSUInteger ourIndex = 0; ourIndex < [ourNonintersectingContours count]; ourIndex++) {
+        FBBezierContour *ourContour = [ourNonintersectingContours objectAtIndex:ourIndex];
+        for (NSUInteger theirIndex = 0; theirIndex < [theirNonintersectingContours count]; theirIndex++) {
+            FBBezierContour *theirContour = [theirNonintersectingContours objectAtIndex:theirIndex];
+            
+            if ( ![ourContour isEquivalent:theirContour] )
+                continue;
+        
+            if ( ourContour.inside == theirContour.inside ) {
+                // Redundant, so just remove one of them from the results
+                [results removeObject:theirContour];
+            } else {
+                // One is a hole, one is a fill, so they cancel each other out. Remove both from the results
+                [results removeObject:theirContour];
+                [results removeObject:ourContour];
+            }
+            
+            // Remove both from the inputs so they aren't processed later
+            [theirNonintersectingContours removeObjectAtIndex:theirIndex];
+            [ourNonintersectingContours removeObjectAtIndex:ourIndex];
+            ourIndex--;
+            break;
+        }
+    }
 }
 
 - (FBBezierGraph *) intersectWithBezierGraph:(FBBezierGraph *)graph
 {
     // First insert FBEdgeCrossings into both graphs where the graphs cross.
     [self insertCrossingsWithBezierGraph:graph];
-    
+    [self insertSelfCrossings];
+    [graph insertSelfCrossings];
+
     // Handle the parts of the graphs that intersect first. Mark the parts
     //  of the graphs that are inside the other for the final result.
     [self markCrossingsAsEntryOrExitWithBezierGraph:graph markInside:YES];
     [graph markCrossingsAsEntryOrExitWithBezierGraph:self markInside:YES];
     
+    [self removeSelfCrossings];
+    [graph removeSelfCrossings];
+
     // Walk the crossings and actually compute the final result for the intersecting parts
     FBBezierGraph *result = [self bezierGraphFromIntersections];
-    [result round]; // decimal values make things messy, so round in case the result is used as input elsewhere, like XOR
     
     // Finally, process the contours that don't cross anything else. They're either
     //  completely contained in another contour, or disjoint.
-    NSArray *ourNonintersectingContours = [self nonintersectingContours];
-    NSArray *theirNonintersectinContours = [graph nonintersectingContours];
+    NSMutableArray *ourNonintersectingContours = [[[self nonintersectingContours] mutableCopy] autorelease];
+    NSMutableArray *theirNonintersectinContours = [[[graph nonintersectingContours] mutableCopy] autorelease];
+    NSMutableArray *finalNonintersectingContours = [NSMutableArray arrayWithCapacity:[ourNonintersectingContours count] + [theirNonintersectinContours count]];
+    [self intersectEquivalentNonintersectingContours:ourNonintersectingContours withContours:theirNonintersectinContours results:finalNonintersectingContours];
     // Since we're doing an intersect, assume that most of these non-crossing contours shouldn't be in
     //  the final result.
-    NSMutableArray *finalNonintersectingContours = [NSMutableArray arrayWithCapacity:[ourNonintersectingContours count] + [theirNonintersectinContours count]];
     for (FBBezierContour *ourContour in ourNonintersectingContours) {
         // If their graph contains ourContour, then the two graphs intersect (logical AND) at ourContour, so
         //  add it to the final result.
@@ -339,31 +346,72 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     // Clean up crossings so the graphs can be reused, e.g. XOR will reuse graphs.
     [self removeCrossings];
     [graph removeCrossings];
-    
+    [self removeOverlaps];
+    [graph removeOverlaps];
+
     return result;
+}
+
+- (void) intersectEquivalentNonintersectingContours:(NSMutableArray *)ourNonintersectingContours withContours:(NSMutableArray *)theirNonintersectingContours results:(NSMutableArray *)results
+{
+    for (NSUInteger ourIndex = 0; ourIndex < [ourNonintersectingContours count]; ourIndex++) {
+        FBBezierContour *ourContour = [ourNonintersectingContours objectAtIndex:ourIndex];
+        for (NSUInteger theirIndex = 0; theirIndex < [theirNonintersectingContours count]; theirIndex++) {
+            FBBezierContour *theirContour = [theirNonintersectingContours objectAtIndex:theirIndex];
+            
+            if ( ![ourContour isEquivalent:theirContour] )
+                continue;
+            
+            if ( ourContour.inside == theirContour.inside ) {
+                // Redundant, so just add one of them to our results
+                [results addObject:ourContour];
+            } else {
+                // One is a hole, one is a fill, so the hole cancels the fill. Add the hole to the results
+                if ( theirContour.inside == FBContourInsideHole ) {
+                    // theirContour is the hole, so add it
+                    [results addObject:theirContour];
+                } else {
+                    // ourContour is the hole, so add it
+                    [results addObject:ourContour];
+                }
+            }
+            
+            // Remove both from the inputs so they aren't processed later
+            [theirNonintersectingContours removeObjectAtIndex:theirIndex];
+            [ourNonintersectingContours removeObjectAtIndex:ourIndex];
+            ourIndex--;
+            break;
+        }
+    }
 }
 
 - (FBBezierGraph *) differenceWithBezierGraph:(FBBezierGraph *)graph
 {
     // First insert FBEdgeCrossings into both graphs where the graphs cross.
     [self insertCrossingsWithBezierGraph:graph];
-    
+    [self insertSelfCrossings];
+    [graph insertSelfCrossings];
+
     // Handle the parts of the graphs that intersect first. We're subtracting
     //  graph from outselves. Mark the outside parts of ourselves, and the inside
     //  parts of them for the final result.
     [self markCrossingsAsEntryOrExitWithBezierGraph:graph markInside:NO];
     [graph markCrossingsAsEntryOrExitWithBezierGraph:self markInside:YES];
     
+    [self removeSelfCrossings];
+    [graph removeSelfCrossings];
+
     // Walk the crossings and actually compute the final result for the intersecting parts
     FBBezierGraph *result = [self bezierGraphFromIntersections];
-    [result round]; // decimal values make things messy, so round in case the result is used as input elsewhere, like XOR
     
     // Finally, process the contours that don't cross anything else. They're either
     //  completely contained in another contour, or disjoint.
-    NSArray *ourNonintersectingContours = [self nonintersectingContours];
-    NSArray *theirNonintersectinContours = [graph nonintersectingContours];
-    // We're doing an subtraction, so assume none of the contours should be in the final result
+    NSMutableArray *ourNonintersectingContours = [[[self nonintersectingContours] mutableCopy] autorelease];
+    NSMutableArray *theirNonintersectinContours = [[[graph nonintersectingContours] mutableCopy] autorelease];
     NSMutableArray *finalNonintersectingContours = [NSMutableArray arrayWithCapacity:[ourNonintersectingContours count] + [theirNonintersectinContours count]];
+    [self differenceEquivalentNonintersectingContours:ourNonintersectingContours withContours:theirNonintersectinContours results:finalNonintersectingContours];
+    
+    // We're doing an subtraction, so assume none of the contours should be in the final result
     for (FBBezierContour *ourContour in ourNonintersectingContours) {
         // If ourContour isn't subtracted away (contained by) the other graph, it should stick around,
         //  so add it to our final result.
@@ -385,8 +433,40 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     // Clean up crossings so the graphs can be reused
     [self removeCrossings];
     [graph removeCrossings];
-    
+    [self removeOverlaps];
+    [graph removeOverlaps];
+
     return result;  
+}
+
+- (void) differenceEquivalentNonintersectingContours:(NSMutableArray *)ourNonintersectingContours withContours:(NSMutableArray *)theirNonintersectingContours results:(NSMutableArray *)results
+{
+    for (NSUInteger ourIndex = 0; ourIndex < [ourNonintersectingContours count]; ourIndex++) {
+        FBBezierContour *ourContour = [ourNonintersectingContours objectAtIndex:ourIndex];
+        for (NSUInteger theirIndex = 0; theirIndex < [theirNonintersectingContours count]; theirIndex++) {
+            FBBezierContour *theirContour = [theirNonintersectingContours objectAtIndex:theirIndex];
+            
+            if ( ![ourContour isEquivalent:theirContour] )
+                continue;
+            
+            if ( ourContour.inside != theirContour.inside ) {
+                // Trying to subtract a hole from a fill or vice versa does nothing, so add the original to the results
+                [results addObject:ourContour];
+            } else if ( ourContour.inside == FBContourInsideHole && theirContour.inside == FBContourInsideHole ) {
+                // Subtracting a hole from a hole is redundant, so just add one of them to the results
+                [results addObject:ourContour];
+            } else {
+                // Both are fills, and subtracting a fill from a fill removes both. So add neither to the results
+                //  Intentionally do nothing for this case.
+            }
+            
+            // Remove both from the inputs so they aren't processed later
+            [theirNonintersectingContours removeObjectAtIndex:theirIndex];
+            [ourNonintersectingContours removeObjectAtIndex:ourIndex];
+            ourIndex--;
+            break;
+        }
+    }
 }
 
 - (void) markCrossingsAsEntryOrExitWithBezierGraph:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside
@@ -431,26 +511,25 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     NSBezierPath *path = [NSBezierPath bezierPath];
     [path setWindingRule:NSEvenOddWindingRule];
 
-    for (FBBezierContour *contour in _contours) {
+    for (FBBezierContour *contour in _contours) 
+	{
         BOOL firstPoint = YES;        
-        for (FBContourEdge *edge in contour.edges) {
+        for (FBContourEdge *edge in contour.edges)
+		{
             if ( firstPoint ) {
                 [path moveToPoint:edge.curve.endPoint1];
                 firstPoint = NO;
             }
             
-            [path curveToPoint:edge.curve.endPoint2 controlPoint1:edge.curve.controlPoint1 controlPoint2:edge.curve.controlPoint2];
+			if( edge.curve.isStraightLine)
+				[path lineToPoint:edge.curve.endPoint2];
+			else
+				[path curveToPoint:edge.curve.endPoint2 controlPoint1:edge.curve.controlPoint1 controlPoint2:edge.curve.controlPoint2];
         }
+		[path closePath];	// GPC: close each contour
     }
     
     return path;
-}
-
-- (void) round
-{
-    // Round off all end and control points to integral values
-    for (FBBezierContour *contour in _contours)
-        [contour round];
 }
 
 - (void) insertCrossingsWithBezierGraph:(FBBezierGraph *)other
@@ -458,33 +537,30 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     // Find all intersections and, if they cross the other graph, create crossings for them, and insert
     //  them into each graph's edges.
     for (FBBezierContour *ourContour in self.contours) {
-        for (FBContourEdge *ourEdge in ourContour.edges) {
-            for (FBBezierContour *theirContour in other.contours) {
-                for (FBContourEdge *theirEdge in theirContour.edges) {
+        for (FBBezierContour *theirContour in other.contours) {
+            FBContourOverlap *overlap = [FBContourOverlap contourOverlap];
+
+            for (FBContourEdge *ourEdge in ourContour.edges) {
+               for (FBContourEdge *theirEdge in theirContour.edges) {
                     // Find all intersections between these two edges (curves)
-                    NSArray *intersections = [ourEdge.curve intersectionsWithBezierCurve:theirEdge.curve];
+                    FBBezierIntersectRange *intersectRange = nil;
+                    NSArray *intersections = [ourEdge.curve intersectionsWithBezierCurve:theirEdge.curve overlapRange:&intersectRange];
                     for (FBBezierIntersection *intersection in intersections) {
                         // If this intersection happens at one of the ends of the edges, then mark
                         //  that on the edge. We do this here because not all intersections create
                         //  crossings, but we still need to know when the intersections fall on end points
                         //  later on in the algorithm.
-                        if ( intersection.isAtStartOfCurve1 ) {
+                        if ( intersection.isAtStartOfCurve1 )
                             ourEdge.startShared = YES;
-                            ourEdge.previous.stopShared = YES;
-                        } else if ( intersection.isAtStopOfCurve1 ) {
-                            ourEdge.stopShared = YES;
+                        else if ( intersection.isAtStopOfCurve1 )
                             ourEdge.next.startShared = YES;
-                        }
-                        if ( intersection.isAtStartOfCurve2 ) {
+                        if ( intersection.isAtStartOfCurve2 )
                             theirEdge.startShared = YES;
-                            theirEdge.previous.stopShared = YES;
-                        } else if ( intersection.isAtStopOfCurve2 ) {
-                            theirEdge.stopShared = YES;
+                        else if ( intersection.isAtStopOfCurve2 )
                             theirEdge.next.startShared = YES;
-                        }
 
                         // Don't add a crossing unless one edge actually crosses the other
-                        if ( ![self doesEdge:ourEdge crossEdge:theirEdge atIntersection:intersection] )
+                        if ( ![ourEdge crossesEdge:theirEdge atIntersection:intersection] )
                             continue;
 
                         // Add crossings to both graphs for this intersection, and point them at each other
@@ -495,11 +571,29 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
                         [ourEdge addCrossing:ourCrossing];
                         [theirEdge addCrossing:theirCrossing];
                     }
+                    if ( intersectRange != nil )
+                        [overlap addOverlap:intersectRange forEdge1:ourEdge edge2:theirEdge];
+                } // end theirEdges                
+            } //end ourEdges
+            
+            // At this point we've found all intersections/overlaps between ourContour and theirContour
+            
+            // Determine if the overlaps constitute crossings
+            if ( ![overlap isComplete] ) {
+                // The contours aren't equivalent so see if they're crossings
+                for (FBEdgeOverlapRun *run in overlap.runs) {
+                    if ( ![run isCrossing] ) 
+                        continue;
+                    
+                    // The two ends of the overlap run should serve as crossings
+                    [run addCrossings];
                 }
             }
             
-        }
-    }
+            [ourContour addOverlap:overlap];
+            [theirContour addOverlap:overlap];
+        } // end theirContours
+    } // end ourContours
  
     // Remove duplicate crossings that can happen at end points of edges
     [self removeDuplicateCrossings];
@@ -528,6 +622,63 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
             }
         }
     }
+}
+
+- (void) insertSelfCrossings
+{
+    // Find all intersections and, if they cross other contours in this graph, create crossings for them, and insert
+    //  them into each contour's edges.
+    NSMutableArray *remainingContours = [[self.contours mutableCopy] autorelease];
+    while ( [remainingContours count] > 0 ) {
+        FBBezierContour *firstContour = [remainingContours lastObject];
+        for (FBBezierContour *secondContour in remainingContours) {
+            // We don't handle self-intersections on the contour this way, so skip them here
+            if ( firstContour == secondContour )
+                continue;
+
+            // Compare all the edges between these two contours looking for crossings
+            for (FBContourEdge *firstEdge in firstContour.edges) {
+                for (FBContourEdge *secondEdge in secondContour.edges) {
+                    // Find all intersections between these two edges (curves)
+                    NSArray *intersections = [firstEdge.curve intersectionsWithBezierCurve:secondEdge.curve];
+                    for (FBBezierIntersection *intersection in intersections) {
+                        // If this intersection happens at one of the ends of the edges, then mark
+                        //  that on the edge. We do this here because not all intersections create
+                        //  crossings, but we still need to know when the intersections fall on end points
+                        //  later on in the algorithm.
+                        if ( intersection.isAtStartOfCurve1 )
+                            firstEdge.startShared = YES;
+                        else if ( intersection.isAtStopOfCurve1 )
+                            firstEdge.next.startShared = YES;
+                        if ( intersection.isAtStartOfCurve2 )
+                            secondEdge.startShared = YES;
+                        else if ( intersection.isAtStopOfCurve2 )
+                            secondEdge.next.startShared = YES;
+                        
+                        // Don't add a crossing unless one edge actually crosses the other
+                        if ( ![firstEdge crossesEdge:secondEdge atIntersection:intersection] )
+                            continue;
+                        
+                        // Add crossings to both graphs for this intersection, and point them at each other
+                        FBEdgeCrossing *firstCrossing = [FBEdgeCrossing crossingWithIntersection:intersection];
+                        FBEdgeCrossing *secondCrossing = [FBEdgeCrossing crossingWithIntersection:intersection];
+                        firstCrossing.selfCrossing = YES;
+                        secondCrossing.selfCrossing = YES;
+                        firstCrossing.counterpart = secondCrossing;
+                        secondCrossing.counterpart = firstCrossing;
+                        [firstEdge addCrossing:firstCrossing];
+                        [secondEdge addCrossing:secondCrossing];
+                    }
+                }
+            }
+        }
+        
+        // We just compared this contour to all the others, so we don't need to do it again
+        [remainingContours removeLastObject]; // do this at the end of the loop when we're done with it
+    }
+    
+    // Remove duplicate crossings that can happen at end points of edges
+    [self removeDuplicateCrossings];
 }
 
 - (BOOL) doesEdge:(FBContourEdge *)edge1 crossEdge:(FBContourEdge *)edge2 atIntersection:(FBBezierIntersection *)intersection
@@ -613,6 +764,7 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     return _bounds;
 }
 
+
 - (FBContourInside) contourInsides:(FBBezierContour *)testContour
 {
     // Determine if this contour, which should reside in this graph, is a filled region or
@@ -623,37 +775,112 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     
     // Create the line from the first point in the contour to outside the graph
     NSPoint testPoint = testContour.firstPoint;
+	
     NSPoint lineEndPoint = NSMakePoint(testPoint.x > NSMinX(self.bounds) ? NSMinX(self.bounds) - 10 : NSMaxX(self.bounds) + 10, testPoint.y); /* just move us outside the bounds of the graph */
     FBBezierCurve *testCurve = [FBBezierCurve bezierCurveWithLineStartPoint:testPoint endPoint:lineEndPoint];
+    FBBezierContour *testCurveContour = [FBBezierContour bezierContourWithCurve:testCurve];
+    FBContourEdge *testEdge = [testCurveContour.edges objectAtIndex:0];
 
     NSUInteger intersectCount = 0;
     for (FBBezierContour *contour in self.contours) {
         if ( contour == testContour )
-            continue; // don't test self intersections
+            continue; // don't test self intersections 
+
+        // Check for self-intersections between this contour and other contours in the same graph
+        //  If there are intersections, then don't consider the intersecting contour for the purpose
+        //  of determining if we are "filled" or a "hole"
+        BOOL intersectsWithThisContour = NO;
         for (FBContourEdge *edge in contour.edges) {
-            NSArray *intersections = [testCurve intersectionsWithBezierCurve:edge.curve];
-            for (FBBezierIntersection *intersection in intersections) {
-                if ( intersection.isTangent ) // don't count tangents
-                    continue;
-                intersectCount++;
+            for (FBContourEdge *testEdge in testContour.edges) {
+                NSArray *intersections = [testEdge.curve intersectionsWithBezierCurve:edge.curve];
+                if ( [intersections count] > 0 ) {
+                    intersectsWithThisContour = YES;
+                    break;
+                }
             }
         }
+        if ( intersectsWithThisContour )
+            continue; // skip it
+        
+        intersectCount += [contour numberOfIntersectionsWithRay:testEdge];
+    }
+    return (intersectCount & 1) == 1 ? FBContourInsideHole : FBContourInsideFilled;
+}
+
+- (NSBezierPath *) debugPathForContainmentOfContour:(FBBezierContour *)testContour
+{
+    NSBezierPath *path = [NSBezierPath bezierPath];
+    
+    // Create the line from the first point in the contour to outside the graph
+    NSPoint testPoint = testContour.firstPoint;
+	
+    NSPoint lineEndPoint = NSMakePoint(testPoint.x > NSMinX(self.bounds) ? NSMinX(self.bounds) - 10 : NSMaxX(self.bounds) + 10, testPoint.y); /* just move us outside the bounds of the graph */
+    FBBezierCurve *testCurve = [FBBezierCurve bezierCurveWithLineStartPoint:testPoint endPoint:lineEndPoint];
+    FBBezierContour *testCurveContour = [FBBezierContour bezierContourWithCurve:testCurve];
+    FBContourEdge *testEdge = [testCurveContour.edges objectAtIndex:0];
+
+    NSUInteger intersectCount = 0;
+    for (FBBezierContour *contour in self.contours) {
+        if ( contour == testContour )
+            continue; // don't test self intersections 
+        
+        // Check for self-intersections between this contour and other contours in the same graph
+        //  If there are intersections, then don't consider the intersecting contour for the purpose
+        //  of determining if we are "filled" or a "hole"
+        BOOL intersectsWithThisContour = NO;
+        for (FBContourEdge *edge in contour.edges) {
+            for (FBContourEdge *testEdge in testContour.edges) {
+                NSArray *intersections = [testEdge.curve intersectionsWithBezierCurve:edge.curve];
+                if ( [intersections count] > 0 ) {
+                    intersectsWithThisContour = YES;
+                    break;
+                }
+            }
+        }
+        if ( intersectsWithThisContour )
+            continue; // skip it
+        
+        // Count how many times we intersect with this particular contour
+        NSArray *intersections = [contour intersectionsWithRay:testEdge];
+        for (FBBezierIntersection *intersection in intersections) {
+            [path appendBezierPath:[NSBezierPath circleAtPoint:intersection.location]];
+        }
+        intersectCount += [intersections count];
     }
 
-    return (intersectCount % 2) == 1 ? FBContourInsideHole : FBContourInsideFilled;
+    // add the contour's entire path to make it easy to see which one owns which crossings (these can be colour-coded when drawing the paths)
+	[path appendBezierPath:[testCurve bezierPath]];
+	
+	// if this countour is flagged as "inside", the debug path is shown dashed, otherwise solid
+	if ( (intersectCount & 1) == 1 ) {
+        CGFloat dashes[] = { 2, 3 };
+		[path setLineDash:dashes count:2 phase:0];
+    }
+
+    return path;
 }
 
+
+- (NSBezierPath *) debugPathForJointsOfContour:(FBBezierContour *)testContour
+{
+    NSBezierPath *path = [NSBezierPath bezierPath];
+
+    for (FBContourEdge *edge in testContour.edges) {
+        if ( !edge.curve.isStraightLine ) {
+            [path moveToPoint:edge.curve.endPoint1];
+            [path lineToPoint:edge.curve.controlPoint1];
+            [path appendBezierPath:[NSBezierPath smallCircleAtPoint:edge.curve.controlPoint1]];
+            [path moveToPoint:edge.curve.endPoint2];
+            [path lineToPoint:edge.curve.controlPoint2];
+            [path appendBezierPath:[NSBezierPath smallCircleAtPoint:edge.curve.controlPoint2]];            
+        }
+        [path appendBezierPath:[NSBezierPath smallRectAtPoint:edge.curve.endPoint2]];
+    }    
+
+    return path;
+}
 
 - (BOOL) containsContour:(FBBezierContour *)testContour
-{
-    // Determine if the test contour is inside a filled region of self or not. We do this by
-    //  see which, if any, of our contours contains the test contour. If one does, we contain
-    //  it only if the contour is filled (a hole would mean the test contour outside of us).
-    FBBezierContour *container = [self containerForContour:testContour];
-    return container != nil && container.inside == FBContourInsideFilled;
-}
-
-- (FBBezierContour *) containerForContour:(FBBezierContour *)testContour
 {
     // Determine the container, if any, for the test contour. We do this by casting a ray from one end of the graph to the other,
     //  and recording the intersections before and after the test contour. If the ray intersects with a contour an odd number of 
@@ -674,7 +901,7 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     // Each time through the loop we split the test contour into any increasing amount of pieces
     //  (halves, thirds, quarters, etc) and send a ray along the boundaries. In order to increase
     //  our changes of eliminate all but 1 of the contours, we do both horizontal and vertical rays.
-    NSUInteger count = MAX(ceilf(NSWidth(testContour.bounds)), ceilf(NSHeight(testContour.bounds)));
+    NSUInteger count = MAX(ceil(NSWidth(testContour.bounds)), ceil(NSHeight(testContour.bounds)));
     for (NSUInteger fraction = 2; fraction <= count; fraction++) {
         BOOL didEliminate = NO;
         
@@ -702,17 +929,17 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
         
         // If we've eliminated all the contours, then nothing contains the test contour, and we're done
         if ( [containers count] == 0 )
-            return nil;
+            return NO;
         // We were able to eliminate someone, and we're down to one, so we're done. If the eliminateContainers: method
         //  failed, we can't make any assumptions about the contains, so just let it go again.
-        if ( didEliminate && [containers count] == 1 )
-            return [containers objectAtIndex:0];
+        if ( didEliminate ) 
+            return ([containers count] & 1) == 1;
     }
 
     // This is a curious case, because by now we've sent rays that went through every integral cordinate of the test contour.
     //  Despite that eliminateContainers: failed each time, meaning one container has a shared edge for each ray test. It is likely
     //  that contour is equal (the same) as the test contour. Return nil, because if it is equal, it doesn't contain.
-    return nil;
+    return NO;
 }
 
 - (BOOL) findBoundsOfContour:(FBBezierContour *)testContour onRay:(FBBezierCurve *)ray minimum:(NSPoint *)testMinimum maximum:(NSPoint *)testMaximum
@@ -828,82 +1055,6 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     return count;
 }
 
-- (NSArray *) minimumCrossings:(NSArray *)crossings onRay:(FBBezierCurve *)ray
-{
-    // Find the crossings with the minimum x or y values. If it's a horizontal ray
-    //  pick the minimum x values, if vertical, minimum y values. It's possible
-    //  to return more than one crossing if they share the minimum value.
-    
-    if ( [crossings count] == 0 )
-        return [NSArray array];
-    
-    BOOL horizontalRay = ray.endPoint1.y == ray.endPoint2.y; // ray has to be a vertical or horizontal line
-    
-    // Start with the first crossing as the minimum value to compare all others with
-    NSMutableArray *minimums = [NSMutableArray arrayWithCapacity:[crossings count]];
-    FBEdgeCrossing *firstCrossing = [crossings objectAtIndex:0];
-    NSPoint minimum = firstCrossing.location;
-    for (FBEdgeCrossing *crossing in crossings) {
-        // If the current value is less than the minimum, replace it. If it is equal
-        //  to the minimum value, add it to the array.
-        if ( horizontalRay ) {
-            if ( crossing.location.x < minimum.x ) {
-                minimum = crossing.location;
-                [minimums removeAllObjects];
-                [minimums addObject:crossing];
-            } else if ( crossing.location.x == minimum.x ) 
-                [minimums addObject:crossing];                
-        } else {
-            if ( crossing.location.y < minimum.y ) {
-                minimum = crossing.location;
-                [minimums removeAllObjects];
-                [minimums addObject:crossing];
-            } else if ( crossing.location.y == minimum.y ) 
-                [minimums addObject:crossing];
-        }
-    }
-    
-    return minimums;
-}
-
-- (NSArray *) maximumCrossings:(NSArray *)crossings onRay:(FBBezierCurve *)ray
-{
-    // Find the crossings with the maximum x or y values. If it's a horizontal ray
-    //  pick the maximum x values, if vertical, maximum y values. It's possible
-    //  to return more than one crossing if they share the maximum value.
-
-    if ( [crossings count] == 0 )
-        return [NSArray array];
-    
-    BOOL horizontalRay = ray.endPoint1.y == ray.endPoint2.y; // ray has to be a vertical or horizontal line
-    
-    // Start with the first crossing as the maximum value to compare all others with
-    NSMutableArray *maximums = [NSMutableArray arrayWithCapacity:[crossings count]];
-    FBEdgeCrossing *firstCrossing = [crossings objectAtIndex:0];
-    NSPoint maximum = firstCrossing.location;
-    for (FBEdgeCrossing *crossing in crossings) {
-        // If the current value is greater than the maximum, replace it. If it is equal
-        //  to the maximum value, add it to the array.
-       if ( horizontalRay ) {
-            if ( crossing.location.x > maximum.x ) {
-                maximum = crossing.location;
-                [maximums removeAllObjects];
-                [maximums addObject:crossing];
-            } else if ( crossing.location.x == maximum.x ) 
-                [maximums addObject:crossing];                
-        } else {
-            if ( crossing.location.y > maximum.y ) {
-                maximum = crossing.location;
-                [maximums removeAllObjects];
-                [maximums addObject:crossing];
-            } else if ( crossing.location.y == maximum.y ) 
-                [maximums addObject:crossing];
-        }
-    }
-    
-    return maximums;
-}
-
 - (BOOL) eliminateContainers:(NSMutableArray *)containers thatDontContainContour:(FBBezierContour *)testContour usingRay:(FBBezierCurve *)ray
 {
     // This method attempts to eliminate all or all but one of the containers that might contain test contour, using the ray specified.
@@ -926,11 +1077,7 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
     //  they can't contain test contour.
     [self removeContoursThatDontContain:crossingsBeforeMinimum];
     [self removeContoursThatDontContain:crossingsAfterMaximum];
-    
-    // Find the container(s) that are the closest to the test contour, while still being outside it
-    [crossingsBeforeMinimum setArray:[self maximumCrossings:crossingsBeforeMinimum onRay:ray]];
-    [crossingsAfterMaximum setArray:[self minimumCrossings:crossingsAfterMaximum onRay:ray]];
-    
+        
     // Remove containers that appear only on one side
     [self removeContourCrossings:crossingsBeforeMinimum thatDontAppearIn:crossingsAfterMaximum];
     [self removeContourCrossings:crossingsAfterMaximum thatDontAppearIn:crossingsBeforeMinimum];
@@ -1109,6 +1256,23 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
             [edge removeAllCrossings];
 }
 
+- (void) removeSelfCrossings
+{
+    for (FBBezierContour *contour in _contours)
+        for (FBContourEdge *edge in contour.edges) {
+            NSArray *crossings = [[edge.crossings copy] autorelease];
+            for (FBEdgeCrossing *crossing in crossings)
+                if ( crossing.isSelfCrossing )
+                    [crossing removeFromEdge];
+        }
+}
+
+- (void) removeOverlaps
+{
+    for (FBBezierContour *contour in _contours)
+        [contour removeAllOverlaps];
+}
+
 - (void) addContour:(FBBezierContour *)contour
 {
     // Add a contour to ouselves, and force the bounds to be recalculated
@@ -1125,6 +1289,60 @@ static BOOL FBAngleRangeContainsAngle(FBAngleRange range, CGFloat angle)
             [contours addObject:contour];
     }
     return contours;
+}
+
+- (void) debuggingInsertCrossingsForUnionWithBezierGraph:(FBBezierGraph *)otherGraph
+{
+    [self debuggingInsertCrossingsWithBezierGraph:otherGraph markInside:NO markOtherInside:NO];
+}
+
+- (void) debuggingInsertCrossingsForIntersectWithBezierGraph:(FBBezierGraph *)otherGraph
+{
+    [self debuggingInsertCrossingsWithBezierGraph:otherGraph markInside:YES markOtherInside:YES];
+}
+
+- (void) debuggingInsertCrossingsForDifferenceWithBezierGraph:(FBBezierGraph *)otherGraph
+{
+    [self debuggingInsertCrossingsWithBezierGraph:otherGraph markInside:NO markOtherInside:YES];
+}
+
+- (void) debuggingInsertCrossingsWithBezierGraph:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside markOtherInside:(BOOL)markOtherInside
+{
+    // First insert FBEdgeCrossings into both graphs where the graphs cross.
+    [self insertCrossingsWithBezierGraph:otherGraph];
+    [self insertSelfCrossings];
+    [otherGraph insertSelfCrossings];
+    
+    // Handle the parts of the graphs that intersect first. Mark the parts
+    //  of the graphs that are inside the other for the final result.
+    [self markCrossingsAsEntryOrExitWithBezierGraph:otherGraph markInside:markInside];
+    [otherGraph markCrossingsAsEntryOrExitWithBezierGraph:self markInside:markOtherInside];
+    
+    [self removeSelfCrossings];
+    [otherGraph removeSelfCrossings];
+}
+
+- (void) debuggingInsertIntersectionsWithBezierGraph:(FBBezierGraph *)otherGraph
+{
+    for (FBBezierContour *ourContour in self.contours) {
+        for (FBContourEdge *ourEdge in ourContour.edges) {
+            for (FBBezierContour *theirContour in otherGraph.contours) {
+                for (FBContourEdge *theirEdge in theirContour.edges) {
+                    // Find all intersections between these two edges (curves)
+                    FBBezierIntersectRange *intersectRange = nil;
+                    NSArray *intersections = [ourEdge.curve intersectionsWithBezierCurve:theirEdge.curve overlapRange:&intersectRange];
+                    for (FBBezierIntersection *intersection in intersections) {                        
+                        FBEdgeCrossing *ourCrossing = [FBEdgeCrossing crossingWithIntersection:intersection];
+                        FBEdgeCrossing *theirCrossing = [FBEdgeCrossing crossingWithIntersection:intersection];
+                        ourCrossing.counterpart = theirCrossing;
+                        theirCrossing.counterpart = ourCrossing;
+                        [ourEdge addCrossing:ourCrossing];
+                        [theirEdge addCrossing:theirCrossing];
+                    }
+                }                
+            }
+        }
+    }
 }
 
 - (NSString *) description

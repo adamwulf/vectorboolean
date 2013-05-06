@@ -7,7 +7,10 @@
 //
 
 #import "NSBezierPath+Utilities.h"
+#import "Geometry.h"
 
+static const CGFloat FBDebugPointSize = 10.0;
+static const CGFloat FBDebugSmallPointSize = 3.0;
 
 @implementation NSBezierPath (FBUtilities)
 
@@ -95,6 +98,50 @@
             [self closePath];
             break;
     }
+}
+
++ (NSBezierPath *) circleAtPoint:(NSPoint)point
+{
+	NSRect rect = NSMakeRect(point.x - FBDebugPointSize * 0.5, point.y - FBDebugPointSize * 0.5, FBDebugPointSize, FBDebugPointSize);
+		
+	return [self bezierPathWithOvalInRect:rect];
+}
+
++ (NSBezierPath *) rectAtPoint:(NSPoint)point
+{
+	NSRect rect = NSMakeRect(point.x - FBDebugPointSize * 0.5 * 1.3, point.y - FBDebugPointSize * 0.5 * 1.3, FBDebugPointSize * 1.3, FBDebugPointSize * 1.3);
+		
+	return [self bezierPathWithRect:rect];
+}
+
++ (NSBezierPath *) smallCircleAtPoint:(NSPoint)point
+{
+	NSRect rect = NSMakeRect(point.x - FBDebugSmallPointSize * 0.5, point.y - FBDebugSmallPointSize * 0.5, FBDebugSmallPointSize, FBDebugSmallPointSize);
+    
+	return [self bezierPathWithOvalInRect:rect];
+}
+
++ (NSBezierPath *) smallRectAtPoint:(NSPoint)point
+{
+	NSRect rect = NSMakeRect(point.x - FBDebugSmallPointSize * 0.5, point.y - FBDebugSmallPointSize * 0.5, FBDebugSmallPointSize, FBDebugSmallPointSize);
+    
+	return [self bezierPathWithRect:rect];
+}
+
++ (NSBezierPath *) triangleAtPoint:(NSPoint)point direction:(NSPoint)tangent
+{
+    NSPoint endPoint = FBAddPoint(point, FBScalePoint(tangent, FBDebugPointSize * 1.5));
+    NSPoint normal1 = FBLineNormal(point, endPoint);
+    NSPoint normal2 = NSMakePoint(-normal1.x, -normal1.y);
+    NSPoint basePoint1 = FBAddPoint(point, FBScalePoint(normal1, FBDebugPointSize * 0.5));
+    NSPoint basePoint2 = FBAddPoint(point, FBScalePoint(normal2, FBDebugPointSize * 0.5));
+    NSBezierPath *path = [NSBezierPath bezierPath];
+    [path moveToPoint:basePoint1];
+    [path lineToPoint:endPoint];
+    [path lineToPoint:basePoint2];
+    [path lineToPoint:basePoint1];
+    [path closePath];
+    return path;
 }
 
 @end

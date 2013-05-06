@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A106B9711737496A00697FF3 /* FBBezierIntersectRange.m in Sources */ = {isa = PBXBuildFile; fileRef = A106B96E1737496A00697FF3 /* FBBezierIntersectRange.m */; };
+		A106B9721737496A00697FF3 /* FBContourOverlap.m in Sources */ = {isa = PBXBuildFile; fileRef = A106B9701737496A00697FF3 /* FBContourOverlap.m */; };
 		A11131E513960B9D00C9395C /* NSBezierPath+Boolean.m in Sources */ = {isa = PBXBuildFile; fileRef = A11131E413960B9D00C9395C /* NSBezierPath+Boolean.m */; };
 		A192AB53139D843C00AF40BA /* FBBezierCurve.m in Sources */ = {isa = PBXBuildFile; fileRef = A192AB52139D843B00AF40BA /* FBBezierCurve.m */; };
 		A192AB56139D863A00AF40BA /* FBBezierIntersection.m in Sources */ = {isa = PBXBuildFile; fileRef = A192AB55139D863900AF40BA /* FBBezierIntersection.m */; };
@@ -29,6 +31,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A106B96D1737496A00697FF3 /* FBBezierIntersectRange.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBBezierIntersectRange.h; sourceTree = "<group>"; };
+		A106B96E1737496A00697FF3 /* FBBezierIntersectRange.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBBezierIntersectRange.m; sourceTree = "<group>"; };
+		A106B96F1737496A00697FF3 /* FBContourOverlap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBContourOverlap.h; sourceTree = "<group>"; };
+		A106B9701737496A00697FF3 /* FBContourOverlap.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBContourOverlap.m; sourceTree = "<group>"; };
 		A11131E313960B9D00C9395C /* NSBezierPath+Boolean.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSBezierPath+Boolean.h"; sourceTree = "<group>"; };
 		A11131E413960B9D00C9395C /* NSBezierPath+Boolean.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSBezierPath+Boolean.m"; sourceTree = "<group>"; };
 		A192AB51139D843B00AF40BA /* FBBezierCurve.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBBezierCurve.h; sourceTree = "<group>"; };
@@ -136,6 +142,10 @@
 				A192AB52139D843B00AF40BA /* FBBezierCurve.m */,
 				A192AB54139D863900AF40BA /* FBBezierIntersection.h */,
 				A192AB55139D863900AF40BA /* FBBezierIntersection.m */,
+				A106B96D1737496A00697FF3 /* FBBezierIntersectRange.h */,
+				A106B96E1737496A00697FF3 /* FBBezierIntersectRange.m */,
+				A106B96F1737496A00697FF3 /* FBContourOverlap.h */,
+				A106B9701737496A00697FF3 /* FBContourOverlap.m */,
 				A1A3D0A513A9BCB800678AA9 /* FBBezierGraph.h */,
 				A1A3D0A613A9BCB900678AA9 /* FBBezierGraph.m */,
 				A1A3D0A913A9CE0E00678AA9 /* FBBezierContour.h */,
@@ -243,6 +253,8 @@
 				A1A3D0AE13A9CE3D00678AA9 /* FBContourEdge.m in Sources */,
 				A1A3D0B113A9CE5400678AA9 /* FBEdgeCrossing.m in Sources */,
 				A1A3D0B413AC0F3600678AA9 /* FBDebug.m in Sources */,
+				A106B9711737496A00697FF3 /* FBBezierIntersectRange.m in Sources */,
+				A106B9721737496A00697FF3 /* FBContourOverlap.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

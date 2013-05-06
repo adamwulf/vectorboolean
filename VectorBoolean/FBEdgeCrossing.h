@@ -22,6 +22,7 @@
     FBEdgeCrossing *_counterpart;
     BOOL _entry;
     BOOL _processed;
+    BOOL _selfCrossing;
     NSUInteger _index;
 }
 
@@ -35,6 +36,7 @@
 @property (readonly) CGFloat order;
 @property (getter = isEntry) BOOL entry;
 @property (getter = isProcessed) BOOL processed;
+@property (getter = isSelfCrossing) BOOL selfCrossing;
 @property NSUInteger index;
 
 // An easy way to iterate crossings. It doesn't wrap when it reaches the end.

@@ -9,7 +9,11 @@
 #import "FBContourEdge.h"
 #import "FBEdgeCrossing.h"
 #import "FBBezierContour.h"
+#import "FBBezierIntersection.h"
+#import "FBBezierCurve.h"
+#import "Geometry.h"
 #import "FBDebug.h"
+
 
 @interface FBContourEdge ()
 
@@ -24,7 +28,6 @@
 @synthesize index=_index;
 @synthesize contour=_contour;
 @synthesize startShared=_startShared;
-@synthesize stopShared=_stopShared;
 
 - (id) initWithBezierCurve:(FBBezierCurve *)curve contour:(FBBezierContour *)contour
 {
@@ -105,6 +108,21 @@
 {
     NSMutableArray *edges = [NSMutableArray arrayWithCapacity:[_crossings count]];
     for (FBEdgeCrossing *crossing in _crossings) {
+        if ( crossing.isSelfCrossing )
+            continue; // Right now skip over self intersecting crossings
+        FBContourEdge *intersectingEdge = crossing.counterpart.edge;
+        if ( ![edges containsObject:intersectingEdge] )
+            [edges addObject:intersectingEdge];
+    }
+    return edges;
+}
+
+- (NSArray *) selfIntersectingEdges
+{
+    NSMutableArray *edges = [NSMutableArray arrayWithCapacity:[_crossings count]];
+    for (FBEdgeCrossing *crossing in _crossings) {
+        if ( !crossing.isSelfCrossing )
+            continue; // Only want the self intersecting crossings
         FBContourEdge *intersectingEdge = crossing.counterpart.edge;
         if ( ![edges containsObject:intersectingEdge] )
             [edges addObject:intersectingEdge];
@@ -126,9 +144,52 @@
     return [_crossings objectAtIndex:[_crossings count] - 1];    
 }
 
-- (void) round
+- (BOOL) crossesEdge:(FBContourEdge *)edge2 atIntersection:(FBBezierIntersection *)intersection
 {
-    [_curve round];
+    // If it's tangent, then it doesn't cross
+    if ( intersection.isTangent ) 
+        return NO;
+    // If the intersect happens in the middle of both curves, then it definitely crosses, so we can just return yes. Most
+    //  intersections will fall into this category.
+    if ( !intersection.isAtEndPointOfCurve )
+        return YES;
+    
+    // The intersection happens at the end of one of the edges, meaning we'll have to look at the next
+    //  edge in sequence to see if it crosses or not. We'll do that by computing the four tangents at the exact
+    //  point the intersection takes place. We'll compute the polar angle for each of the tangents. If the
+    //  angles of self split the angles of edge2 (i.e. they alternate when sorted), then the edges cross. If
+    //  any of the angles are equal or if the angles group up, then the edges don't cross.
+    
+    // Calculate the four tangents: The two tangents moving away from the intersection point on self, the two tangents
+    //  moving away from the intersection point on edge2.
+    NSPoint edge1Tangents[] = { NSZeroPoint, NSZeroPoint };
+    NSPoint edge2Tangents[] = { NSZeroPoint, NSZeroPoint };
+    if ( intersection.isAtStartOfCurve1 ) {
+        FBContourEdge *otherEdge1 = self.previous;
+        edge1Tangents[0] = FBSubtractPoint(otherEdge1.curve.controlPoint2, otherEdge1.curve.endPoint2);
+        edge1Tangents[1] = FBSubtractPoint(self.curve.controlPoint1, self.curve.endPoint1);
+    } else if ( intersection.isAtStopOfCurve1 ) {
+        FBContourEdge *otherEdge1 = self.next;
+        edge1Tangents[0] = FBSubtractPoint(self.curve.controlPoint2, self.curve.endPoint2);
+        edge1Tangents[1] = FBSubtractPoint(otherEdge1.curve.controlPoint1, otherEdge1.curve.endPoint1);
+    } else {
+        edge1Tangents[0] = FBSubtractPoint(intersection.curve1LeftBezier.controlPoint2, intersection.curve1LeftBezier.endPoint2);
+        edge1Tangents[1] = FBSubtractPoint(intersection.curve1RightBezier.controlPoint1, intersection.curve1RightBezier.endPoint1);
+    }
+    if ( intersection.isAtStartOfCurve2 ) {
+        FBContourEdge *otherEdge2 = edge2.previous;
+        edge2Tangents[0] = FBSubtractPoint(otherEdge2.curve.controlPoint2, otherEdge2.curve.endPoint2);
+        edge2Tangents[1] = FBSubtractPoint(edge2.curve.controlPoint1, edge2.curve.endPoint1);
+    } else if ( intersection.isAtStopOfCurve2 ) {
+        FBContourEdge *otherEdge2 = edge2.next;
+        edge2Tangents[0] = FBSubtractPoint(edge2.curve.controlPoint2, edge2.curve.endPoint2);
+        edge2Tangents[1] = FBSubtractPoint(otherEdge2.curve.controlPoint1, otherEdge2.curve.endPoint1);
+    } else {
+        edge2Tangents[0] = FBSubtractPoint(intersection.curve2LeftBezier.controlPoint2, intersection.curve2LeftBezier.endPoint2);
+        edge2Tangents[1] = FBSubtractPoint(intersection.curve2RightBezier.controlPoint1, intersection.curve2RightBezier.endPoint1);
+    }
+    
+    return FBTangentsCross(edge1Tangents, edge2Tangents);
 }
 
 - (NSString *) description

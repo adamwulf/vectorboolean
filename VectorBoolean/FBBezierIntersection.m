@@ -10,6 +10,9 @@
 #import "FBBezierCurve.h"
 #import "Geometry.h"
 
+static const CGFloat FBPointCloseThreshold = 1e-7;
+const CGFloat FBParameterCloseThreshold = 1e-5;
+
 @interface FBBezierIntersection ()
 
 - (void) computeCurve1;
@@ -72,7 +75,6 @@
     [self computeCurve1];
     [self computeCurve2];
 
-    static const CGFloat FBPointCloseThreshold = 1e-7;
     
     // Compute the tangents at the intersection. 
     NSPoint curve1LeftTangent = FBNormalizePoint(FBSubtractPoint(_curve1LeftBezier.controlPoint2, _curve1LeftBezier.endPoint2));
@@ -110,12 +112,12 @@
 
 - (BOOL) isAtStartOfCurve1
 {
-    return FBAreValuesClose(_parameter1, 0.0);
+    return FBAreValuesCloseWithOptions(_parameter1, 0.0, FBParameterCloseThreshold);
 }
 
 - (BOOL) isAtStopOfCurve1
 {
-    return FBAreValuesClose(_parameter1, 1.0);
+    return FBAreValuesCloseWithOptions(_parameter1, 1.0, FBParameterCloseThreshold);
 }
 
 - (BOOL) isAtEndPointOfCurve1
@@ -125,12 +127,12 @@
 
 - (BOOL) isAtStartOfCurve2
 {
-    return FBAreValuesClose(_parameter2, 0.0);
+    return FBAreValuesCloseWithOptions(_parameter2, 0.0, FBParameterCloseThreshold);
 }
 
 - (BOOL) isAtStopOfCurve2
 {
-    return FBAreValuesClose(_parameter2, 1.0);
+    return FBAreValuesCloseWithOptions(_parameter2, 1.0, FBParameterCloseThreshold);
 }
 
 - (BOOL) isAtEndPointOfCurve2
@@ -169,10 +171,11 @@
 
 - (NSString *) description
 {
-    return [NSString stringWithFormat:@"<%@: location = (%f, %f), isTangent = %d>", 
+    return [NSString stringWithFormat:@"<%@: location = (%f, %f), param1 = %f, param2 = %f, isTangent = %@>", 
             NSStringFromClass([self class]),
             self.location.x, self.location.y,
-            (int)self.isTangent];
+            self.parameter1, self.parameter2,
+            self.isTangent ? @"yes" : @"no"];
 }
 
 @end

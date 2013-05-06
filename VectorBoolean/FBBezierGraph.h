@@ -8,6 +8,8 @@
 
 #import <Cocoa/Cocoa.h>
 
+@class FBBezierContour;
+
 // FBBezierGraph is more or less an exploded version of an NSBezierPath, and
 //  the two can be converted between easily. FBBezierGraph allows boolean
 //  operations to be performed by allowing the curves to be annotated with
@@ -27,5 +29,14 @@
 - (FBBezierGraph *) xorWithBezierGraph:(FBBezierGraph *)graph;
 
 - (NSBezierPath *) bezierPath;
+
+@property (readonly) NSArray* contours;
+
+- (void) debuggingInsertCrossingsForUnionWithBezierGraph:(FBBezierGraph *)otherGraph;
+- (void) debuggingInsertCrossingsForIntersectWithBezierGraph:(FBBezierGraph *)otherGraph;
+- (void) debuggingInsertCrossingsForDifferenceWithBezierGraph:(FBBezierGraph *)otherGraph;
+- (void) debuggingInsertIntersectionsWithBezierGraph:(FBBezierGraph *)otherGraph;
+- (NSBezierPath *) debugPathForContainmentOfContour:(FBBezierContour *)contour;
+- (NSBezierPath *) debugPathForJointsOfContour:(FBBezierContour *)testContour;
 
 @end
