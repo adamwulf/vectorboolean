@@ -7,6 +7,21 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6689420117DD01D800B846A2 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6689420017DD01D800B846A2 /* XCTest.framework */; };
+		6689420717DD01D800B846A2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 6689420517DD01D800B846A2 /* InfoPlist.strings */; };
+		6689420917DD01D800B846A2 /* VectorBoolean_Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6689420817DD01D800B846A2 /* VectorBoolean_Tests.m */; };
+		6689421017DD01F300B846A2 /* Geometry.m in Sources */ = {isa = PBXBuildFile; fileRef = A192AB58139D8D6000AF40BA /* Geometry.m */; };
+		6689421117DD01F300B846A2 /* NSBezierPath+Boolean.m in Sources */ = {isa = PBXBuildFile; fileRef = A11131E413960B9D00C9395C /* NSBezierPath+Boolean.m */; };
+		6689421217DD01F300B846A2 /* NSBezierPath+Utilities.m in Sources */ = {isa = PBXBuildFile; fileRef = A1C48B5E1395FAE20043E2C7 /* NSBezierPath+Utilities.m */; };
+		6689421317DD01F300B846A2 /* FBBezierCurve.m in Sources */ = {isa = PBXBuildFile; fileRef = A192AB52139D843B00AF40BA /* FBBezierCurve.m */; };
+		6689421417DD01F300B846A2 /* FBBezierIntersection.m in Sources */ = {isa = PBXBuildFile; fileRef = A192AB55139D863900AF40BA /* FBBezierIntersection.m */; };
+		6689421517DD01F300B846A2 /* FBBezierIntersectRange.m in Sources */ = {isa = PBXBuildFile; fileRef = A106B96E1737496A00697FF3 /* FBBezierIntersectRange.m */; };
+		6689421617DD01F300B846A2 /* FBContourOverlap.m in Sources */ = {isa = PBXBuildFile; fileRef = A106B9701737496A00697FF3 /* FBContourOverlap.m */; };
+		6689421717DD01F300B846A2 /* FBBezierGraph.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A3D0A613A9BCB900678AA9 /* FBBezierGraph.m */; };
+		6689421817DD01F300B846A2 /* FBBezierContour.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A3D0AA13A9CE0F00678AA9 /* FBBezierContour.m */; };
+		6689421917DD01F300B846A2 /* FBContourEdge.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A3D0AD13A9CE3B00678AA9 /* FBContourEdge.m */; };
+		6689421A17DD01F300B846A2 /* FBEdgeCrossing.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A3D0B013A9CE5200678AA9 /* FBEdgeCrossing.m */; };
+		6689421B17DD01F300B846A2 /* FBDebug.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A3D0B313AC0F3100678AA9 /* FBDebug.m */; };
 		A106B9711737496A00697FF3 /* FBBezierIntersectRange.m in Sources */ = {isa = PBXBuildFile; fileRef = A106B96E1737496A00697FF3 /* FBBezierIntersectRange.m */; };
 		A106B9721737496A00697FF3 /* FBContourOverlap.m in Sources */ = {isa = PBXBuildFile; fileRef = A106B9701737496A00697FF3 /* FBContourOverlap.m */; };
 		A11131E513960B9D00C9395C /* NSBezierPath+Boolean.m in Sources */ = {isa = PBXBuildFile; fileRef = A11131E413960B9D00C9395C /* NSBezierPath+Boolean.m */; };
@@ -30,7 +45,23 @@
 		A1C48B68139602820043E2C7 /* Canvas.m in Sources */ = {isa = PBXBuildFile; fileRef = A1C48B67139602810043E2C7 /* Canvas.m */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		6689420B17DD01D800B846A2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A1C48B2A1395FA370043E2C7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A1C48B321395FA380043E2C7;
+			remoteInfo = VectorBoolean;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		668941FF17DD01D800B846A2 /* VectorBoolean Tests.xctest */ = {isa = PBXFileReference; explicitFileType = folder; includeInIndex = 0; path = "VectorBoolean Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6689420017DD01D800B846A2 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
+		6689420417DD01D800B846A2 /* VectorBoolean Tests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "VectorBoolean Tests-Info.plist"; sourceTree = "<group>"; };
+		6689420617DD01D800B846A2 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		6689420817DD01D800B846A2 /* VectorBoolean_Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VectorBoolean_Tests.m; sourceTree = "<group>"; };
+		6689420A17DD01D800B846A2 /* VectorBoolean Tests-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "VectorBoolean Tests-Prefix.pch"; sourceTree = "<group>"; };
 		A106B96D1737496A00697FF3 /* FBBezierIntersectRange.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBBezierIntersectRange.h; sourceTree = "<group>"; };
 		A106B96E1737496A00697FF3 /* FBBezierIntersectRange.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBBezierIntersectRange.m; sourceTree = "<group>"; };
 		A106B96F1737496A00697FF3 /* FBContourOverlap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBContourOverlap.h; sourceTree = "<group>"; };
@@ -76,6 +107,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		668941FC17DD01D800B846A2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6689420117DD01D800B846A2 /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A1C48B301395FA380043E2C7 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -87,10 +126,30 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		6689420217DD01D800B846A2 /* VectorBoolean Tests */ = {
+			isa = PBXGroup;
+			children = (
+				6689420817DD01D800B846A2 /* VectorBoolean_Tests.m */,
+				6689420317DD01D800B846A2 /* Supporting Files */,
+			);
+			path = "VectorBoolean Tests";
+			sourceTree = "<group>";
+		};
+		6689420317DD01D800B846A2 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				6689420417DD01D800B846A2 /* VectorBoolean Tests-Info.plist */,
+				6689420517DD01D800B846A2 /* InfoPlist.strings */,
+				6689420A17DD01D800B846A2 /* VectorBoolean Tests-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
 		A1C48B281395FA370043E2C7 = {
 			isa = PBXGroup;
 			children = (
 				A1C48B3D1395FA390043E2C7 /* VectorBoolean */,
+				6689420217DD01D800B846A2 /* VectorBoolean Tests */,
 				A1C48B361395FA380043E2C7 /* Frameworks */,
 				A1C48B341395FA380043E2C7 /* Products */,
 			);
@@ -100,6 +159,7 @@
 			isa = PBXGroup;
 			children = (
 				A1C48B331395FA380043E2C7 /* VectorBoolean.app */,
+				668941FF17DD01D800B846A2 /* VectorBoolean Tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -108,6 +168,7 @@
 			isa = PBXGroup;
 			children = (
 				A1C48B371395FA380043E2C7 /* Cocoa.framework */,
+				6689420017DD01D800B846A2 /* XCTest.framework */,
 				A1C48B391395FA390043E2C7 /* Other Frameworks */,
 			);
 			name = Frameworks;
@@ -178,6 +239,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		668941FE17DD01D800B846A2 /* VectorBoolean Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6689420D17DD01D800B846A2 /* Build configuration list for PBXNativeTarget "VectorBoolean Tests" */;
+			buildPhases = (
+				668941FB17DD01D800B846A2 /* Sources */,
+				668941FC17DD01D800B846A2 /* Frameworks */,
+				668941FD17DD01D800B846A2 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6689420C17DD01D800B846A2 /* PBXTargetDependency */,
+			);
+			name = "VectorBoolean Tests";
+			productName = "VectorBoolean Tests";
+			productReference = 668941FF17DD01D800B846A2 /* VectorBoolean Tests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		A1C48B321395FA380043E2C7 /* VectorBoolean */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A1C48B541395FA390043E2C7 /* Build configuration list for PBXNativeTarget "VectorBoolean" */;
@@ -202,6 +281,11 @@
 			isa = PBXProject;
 			attributes = {
 				ORGANIZATIONNAME = "Fortunate Bear, LLC";
+				TargetAttributes = {
+					668941FE17DD01D800B846A2 = {
+						TestTargetID = A1C48B321395FA380043E2C7;
+					};
+				};
 			};
 			buildConfigurationList = A1C48B2D1395FA370043E2C7 /* Build configuration list for PBXProject "VectorBoolean" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -216,11 +300,20 @@
 			projectRoot = "";
 			targets = (
 				A1C48B321395FA380043E2C7 /* VectorBoolean */,
+				668941FE17DD01D800B846A2 /* VectorBoolean Tests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		668941FD17DD01D800B846A2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6689420717DD01D800B846A2 /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A1C48B311395FA380043E2C7 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -235,6 +328,26 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		668941FB17DD01D800B846A2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6689420917DD01D800B846A2 /* VectorBoolean_Tests.m in Sources */,
+				6689421017DD01F300B846A2 /* Geometry.m in Sources */,
+				6689421117DD01F300B846A2 /* NSBezierPath+Boolean.m in Sources */,
+				6689421217DD01F300B846A2 /* NSBezierPath+Utilities.m in Sources */,
+				6689421317DD01F300B846A2 /* FBBezierCurve.m in Sources */,
+				6689421417DD01F300B846A2 /* FBBezierIntersection.m in Sources */,
+				6689421517DD01F300B846A2 /* FBBezierIntersectRange.m in Sources */,
+				6689421617DD01F300B846A2 /* FBContourOverlap.m in Sources */,
+				6689421717DD01F300B846A2 /* FBBezierGraph.m in Sources */,
+				6689421817DD01F300B846A2 /* FBBezierContour.m in Sources */,
+				6689421917DD01F300B846A2 /* FBContourEdge.m in Sources */,
+				6689421A17DD01F300B846A2 /* FBEdgeCrossing.m in Sources */,
+				6689421B17DD01F300B846A2 /* FBDebug.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A1C48B2F1395FA380043E2C7 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -260,7 +373,23 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		6689420C17DD01D800B846A2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A1C48B321395FA380043E2C7 /* VectorBoolean */;
+			targetProxy = 6689420B17DD01D800B846A2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin PBXVariantGroup section */
+		6689420517DD01D800B846A2 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				6689420617DD01D800B846A2 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
 		A1C48B401395FA390043E2C7 /* InfoPlist.strings */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -296,6 +425,87 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		6689420E17DD01D800B846A2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/VectorBoolean.app/Contents/MacOS/VectorBoolean";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = NO;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(inherited)",
+				);
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "VectorBoolean Tests/VectorBoolean Tests-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				INFOPLIST_FILE = "VectorBoolean Tests/VectorBoolean Tests-Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUNDLE_LOADER)";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Debug;
+		};
+		6689420F17DD01D800B846A2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/VectorBoolean.app/Contents/MacOS/VectorBoolean";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = NO;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(inherited)",
+				);
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "VectorBoolean Tests/VectorBoolean Tests-Prefix.pch";
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				INFOPLIST_FILE = "VectorBoolean Tests/VectorBoolean Tests-Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUNDLE_LOADER)";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Release;
+		};
 		A1C48B521395FA390043E2C7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -361,6 +571,14 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		6689420D17DD01D800B846A2 /* Build configuration list for PBXNativeTarget "VectorBoolean Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6689420E17DD01D800B846A2 /* Debug */,
+				6689420F17DD01D800B846A2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
 		A1C48B2D1395FA370043E2C7 /* Build configuration list for PBXProject "VectorBoolean" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
