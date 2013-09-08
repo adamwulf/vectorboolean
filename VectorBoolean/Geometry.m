@@ -8,7 +8,7 @@
 
 #import "Geometry.h"
 
-static const CGFloat FBPointClosenessThreshold = 1e-10;
+static const CGFloat FBPointClosenessThreshold = 1e-3;
 
 
 CGFloat FBDistanceBetweenPoints(CGPoint point1, CGPoint point2)

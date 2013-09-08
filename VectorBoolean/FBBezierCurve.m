@@ -966,7 +966,7 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
 {
     // If the two end points are close together, then we're a point. Ignore the control
     //  points.
-    static const CGFloat FBClosenessThreshold = 1e-5;
+    static const CGFloat FBClosenessThreshold = 1e-3;
     
     return FBArePointsCloseWithOptions(_endPoint1, _endPoint2, FBClosenessThreshold) 
         && FBArePointsCloseWithOptions(_endPoint1, _controlPoint1, FBClosenessThreshold) 
