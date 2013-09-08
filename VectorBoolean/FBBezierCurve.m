@@ -7,10 +7,11 @@
 //
 
 #import "FBBezierCurve.h"
-#import "NSBezierPath+Utilities.h"
+#import "UIBezierPath+Utilities.h"
 #import "Geometry.h"
 #import "FBBezierIntersection.h"
 #import "FBBezierIntersectRange.h"
+#import "DrawKit-iOS.h"
 
 //////////////////////////////////////////////////////////////////////////////////
 // Normalized lines
@@ -25,7 +26,7 @@ typedef struct FBNormalizedLine {
 //  See:    http://softsurfer.com/Archive/algorithm_0102/algorithm_0102.htm#Distance%20to%20an%20Infinite%20Line
 //          http://www.cs.mtu.edu/~shene/COURSES/cs3621/NOTES/geometry/basic.html
 //
-static FBNormalizedLine FBNormalizedLineMake(NSPoint point1, NSPoint point2)
+static FBNormalizedLine FBNormalizedLineMake(CGPoint point1, CGPoint point2)
 {
     FBNormalizedLine line = { point1.y - point2.y, point2.x - point1.x, point1.x * point2.y - point2.x * point1.y };
     CGFloat distance = sqrt(line.b * line.b + line.a * line.a);
@@ -42,7 +43,7 @@ static FBNormalizedLine FBNormalizedLineMake(NSPoint point1, NSPoint point2)
     return line;
 }
 
-static CGFloat FBNormalizedLineDistanceFromPoint(FBNormalizedLine line, NSPoint point)
+static CGFloat FBNormalizedLineDistanceFromPoint(FBNormalizedLine line, CGPoint point)
 {
     return line.a * point.x + line.b * point.y + line.c;
 }
@@ -54,7 +55,7 @@ static CGFloat FBNormalizedLineDistanceFromPoint(FBNormalizedLine line, NSPoint 
 
 // The three points are a counter-clockwise turn if the return value is greater than 0,
 //  clockwise if less than 0, or colinear if 0.
-static CGFloat CounterClockwiseTurn(NSPoint point1, NSPoint point2, NSPoint point3)
+static CGFloat CounterClockwiseTurn(CGPoint point1, CGPoint point2, CGPoint point3)
 {
     // We're calculating the signed area of the triangle formed by the three points. Well,
     //  almost the area of the triangle -- we'd need to divide by 2. But since we only
@@ -64,7 +65,7 @@ static CGFloat CounterClockwiseTurn(NSPoint point1, NSPoint point2, NSPoint poin
 }
 
 // Calculate if and where the given line intersects the horizontal line at y.
-static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, CGFloat y, NSPoint *intersectPoint)
+static BOOL LineIntersectsHorizontalLine(CGPoint startPoint, CGPoint endPoint, CGFloat y, CGPoint *intersectPoint)
 {
     // Do a quick test to see if y even falls on the startPoint,endPoint line
     CGFloat minY = MIN(startPoint.y, endPoint.y);
@@ -74,16 +75,16 @@ static BOOL LineIntersectsHorizontalLine(NSPoint startPoint, NSPoint endPoint, C
     
     // There's an intersection here somewhere
     if ( startPoint.x == endPoint.x )
-        *intersectPoint = NSMakePoint(startPoint.x, y);
+        *intersectPoint = CGPointMake(startPoint.x, y);
     else {
         CGFloat slope = (endPoint.y - startPoint.y) / (endPoint.x - startPoint.x);
-        *intersectPoint = NSMakePoint((y - startPoint.y) / slope + startPoint.x, y);
+        *intersectPoint = CGPointMake((y - startPoint.y) / slope + startPoint.x, y);
     }
     
     return YES;
 }
 
-static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloat parameter, NSPoint *leftCurve, NSPoint *rightCurve)
+static CGPoint BezierWithPoints(NSUInteger degree, CGPoint *bezierPoints, CGFloat parameter, CGPoint *leftCurve, CGPoint *rightCurve)
 {
     // Calculate a point on the bezier curve passed in, specifically the point at parameter.
     //  We're using De Casteljau's algorithm, which not only calculates the point at parameter
@@ -97,7 +98,7 @@ static NSPoint BezierWithPoints(NSUInteger degree, NSPoint *bezierPoints, CGFloa
     // degree is the order of the bezier path, which will be cubic (3) most of the time.
     
     // With this algorithm we start out with the points in the bezier path. 
-    NSPoint points[4] = {}; // we assume we'll never get more than a cubic bezier
+    CGPoint points[4] = {}; // we assume we'll never get more than a cubic bezier
     for (NSUInteger i = 0; i <= degree; i++)
         points[i] = bezierPoints[i];
     
@@ -239,7 +240,7 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
 - (NSArray *) convexHull;
 - (FBBezierCurve *) bezierClipWithBezierCurve:(FBBezierCurve *)curve original:(FBBezierCurve *)originalCurve rangeOfOriginal:(FBRange *)originalRange intersects:(BOOL *)intersects;
 - (NSArray *) intersectionsWithBezierCurve:(FBBezierCurve *)curve usRange:(FBRange *)usRange themRange:(FBRange *)themRange originalUs:(FBBezierCurve *)originalUs originalThem:(FBBezierCurve *)originalThem overlapRange:(FBBezierIntersectRange **)intersectRange depth:(NSUInteger)depth;
-- (CGFloat) refineParameter:(CGFloat)parameter forPoint:(NSPoint)point;
+- (CGFloat) refineParameter:(CGFloat)parameter forPoint:(CGPoint)point;
 
 @property (readonly, getter = isPoint) BOOL point;
 
@@ -253,23 +254,24 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
 @synthesize endPoint2=_endPoint2;
 @synthesize isStraightLine = _isStraightLine;
 
-+ (NSArray *) bezierCurvesFromBezierPath:(NSBezierPath *)path
++ (NSArray *) bezierCurvesFromBezierPath:(UIBezierPath *)path
 {
     // Helper method to easily convert a bezier path into an array of FBBezierCurves. Very straight forward,
     //  only lines are a special case.
     
-    NSPoint lastPoint = NSZeroPoint;
+    CGPoint lastPoint = CGPointZero;
     NSMutableArray *bezierCurves = [NSMutableArray arrayWithCapacity:[path elementCount]];
     
     for (NSUInteger i = 0; i < [path elementCount]; i++) {
-        NSBezierElement element = [path fb_elementAtIndex:i];
+        UIBezierElement element = [path fb_elementAtIndex:i];
         
         switch (element.kind) {
-            case NSMoveToBezierPathElement:
+                
+            case kCGPathElementMoveToPoint:
                 lastPoint = element.point;
                 break;
                 
-            case NSLineToBezierPathElement: {
+            case kCGPathElementAddLineToPoint: {
                 // Convert lines to bezier curves as well. Just set control point to be in the line formed
                 //  by the end points
                 [bezierCurves addObject:[FBBezierCurve bezierCurveWithLineStartPoint:lastPoint endPoint:element.point]];
@@ -278,14 +280,16 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
                 break;
             }
                 
-            case NSCurveToBezierPathElement:
+            case kCGPathElementAddCurveToPoint:
                 [bezierCurves addObject:[FBBezierCurve bezierCurveWithEndPoint1:lastPoint controlPoint1:element.controlPoints[0] controlPoint2:element.controlPoints[1] endPoint2:element.point]];
                 
                 lastPoint = element.point;
                 break;
                 
-            case NSClosePathBezierPathElement:
-                lastPoint = NSZeroPoint;
+            case kCGPathElementCloseSubpath:
+                lastPoint = CGPointZero;
+                break;
+            default:
                 break;
         }
     }
@@ -293,17 +297,17 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
     return bezierCurves;
 }
 
-+ (id) bezierCurveWithLineStartPoint:(NSPoint)startPoint endPoint:(NSPoint)endPoint
++ (id) bezierCurveWithLineStartPoint:(CGPoint)startPoint endPoint:(CGPoint)endPoint
 {
     return [[[FBBezierCurve alloc] initWithLineStartPoint:startPoint endPoint:endPoint] autorelease];
 }
 
-+ (id) bezierCurveWithEndPoint1:(NSPoint)endPoint1 controlPoint1:(NSPoint)controlPoint1 controlPoint2:(NSPoint)controlPoint2 endPoint2:(NSPoint)endPoint2
++ (id) bezierCurveWithEndPoint1:(CGPoint)endPoint1 controlPoint1:(CGPoint)controlPoint1 controlPoint2:(CGPoint)controlPoint2 endPoint2:(CGPoint)endPoint2
 {
     return [[[FBBezierCurve alloc] initWithEndPoint1:endPoint1 controlPoint1:controlPoint1 controlPoint2:controlPoint2 endPoint2:endPoint2] autorelease];
 }
 
-- (id) initWithEndPoint1:(NSPoint)endPoint1 controlPoint1:(NSPoint)controlPoint1 controlPoint2:(NSPoint)controlPoint2 endPoint2:(NSPoint)endPoint2
+- (id) initWithEndPoint1:(CGPoint)endPoint1 controlPoint1:(CGPoint)controlPoint1 controlPoint2:(CGPoint)controlPoint2 endPoint2:(CGPoint)endPoint2
 {
     self = [super init];
     
@@ -317,7 +321,7 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
     return self;
 }
 
-- (id) initWithLineStartPoint:(NSPoint)startPoint endPoint:(NSPoint)endPoint
+- (id) initWithLineStartPoint:(CGPoint)startPoint endPoint:(CGPoint)endPoint
 {
     self = [super init];
     
@@ -327,7 +331,7 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
         //  end points, it'll be a line. But for consistency sake, we put the control points inside
         //  the end points, 1/3 of the total distance away from their respective end point.
         CGFloat distance = FBDistanceBetweenPoints(startPoint, endPoint);
-        NSPoint leftTangent = FBNormalizePoint(FBSubtractPoint(endPoint, startPoint));
+        CGPoint leftTangent = FBNormalizePoint(FBSubtractPoint(endPoint, startPoint));
         _controlPoint1 = FBAddPoint(startPoint, FBUnitScalePoint(leftTangent, distance / 3.0));
         _controlPoint2 = FBAddPoint(startPoint, FBUnitScalePoint(leftTangent, 2.0 * distance / 3.0));
         _endPoint1 = startPoint;
@@ -522,7 +526,7 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
     }
     if ( FBRangeHasConverged(*usRange, places) && !FBRangeHasConverged(*themRange, places) ) {
         // Refine the them range since it didn't converge
-        NSPoint intersectionPoint = [originalUs pointAtParameter:FBRangeAverage(*usRange) leftBezierCurve:nil rightBezierCurve:nil];
+        CGPoint intersectionPoint = [originalUs pointAtParameter:FBRangeAverage(*usRange) leftBezierCurve:nil rightBezierCurve:nil];
         CGFloat refinedParameter = FBRangeAverage(*themRange); // Although the range didn't converge, it should be a reasonable approximation which is all Newton needs
         for (NSUInteger i = 0; i < 3; i++) {
             refinedParameter = [originalThem refineParameter:refinedParameter forPoint:intersectionPoint];
@@ -533,7 +537,7 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
         hadConverged = NO;
     } else if ( !FBRangeHasConverged(*usRange, places) && FBRangeHasConverged(*themRange, places) ) {
         // Refine the us range since it didn't converge
-        NSPoint intersectionPoint = [originalThem pointAtParameter:FBRangeAverage(*themRange) leftBezierCurve:nil rightBezierCurve:nil];
+        CGPoint intersectionPoint = [originalThem pointAtParameter:FBRangeAverage(*themRange) leftBezierCurve:nil rightBezierCurve:nil];
         CGFloat refinedParameter = FBRangeAverage(*usRange); // Although the range didn't converge, it should be a reasonable approximation which is all Newton needs
         for (NSUInteger i = 0; i < 3; i++) {
             refinedParameter = [originalUs refineParameter:refinedParameter forPoint:intersectionPoint];
@@ -545,8 +549,8 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
     }
     if ( !hadConverged ) {
         // Since one of them didn't converge, we need to make sure they actually intersect. Compute the point from both and compare
-        NSPoint intersectionPoint = [originalUs pointAtParameter:FBRangeAverage(*usRange) leftBezierCurve:nil rightBezierCurve:nil];
-        NSPoint checkPoint = [originalThem pointAtParameter:FBRangeAverage(*themRange) leftBezierCurve:nil rightBezierCurve:nil];
+        CGPoint intersectionPoint = [originalUs pointAtParameter:FBRangeAverage(*usRange) leftBezierCurve:nil rightBezierCurve:nil];
+        CGPoint checkPoint = [originalThem pointAtParameter:FBRangeAverage(*themRange) leftBezierCurve:nil rightBezierCurve:nil];
         if ( !FBArePointsCloseWithOptions(intersectionPoint, checkPoint, 1e-3) )
             return [NSArray array];
     }
@@ -629,9 +633,9 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
 - (FBNormalizedLine) perpendicularFatLineBounds:(FBRange *)range
 {
     // Create a fat line that's perpendicular to the line created by the two end points.
-    NSPoint normal = FBLineNormal(_endPoint1, _endPoint2);
-    NSPoint startPoint = FBLineMidpoint(_endPoint1, _endPoint2);
-    NSPoint endPoint = FBAddPoint(startPoint, normal);
+    CGPoint normal = FBLineNormal(_endPoint1, _endPoint2);
+    CGPoint startPoint = FBLineMidpoint(_endPoint1, _endPoint2);
+    CGPoint endPoint = FBAddPoint(startPoint, normal);
     FBNormalizedLine line = FBNormalizedLineMake(startPoint, endPoint);
     
     // Compute the bounds of the fat line. The fat line bounds should entirely encompass the
@@ -665,7 +669,7 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
     //  inside of it.
     
     // First calculate bezier curve points distance from the fat line that's clipping us
-    FBBezierCurve *distanceBezier = [FBBezierCurve bezierCurveWithEndPoint1:NSMakePoint(0, FBNormalizedLineDistanceFromPoint(fatLine, _endPoint1)) controlPoint1:NSMakePoint(1.0/3.0, FBNormalizedLineDistanceFromPoint(fatLine, _controlPoint1)) controlPoint2:NSMakePoint(2.0/3.0, FBNormalizedLineDistanceFromPoint(fatLine, _controlPoint2)) endPoint2:NSMakePoint(1.0, FBNormalizedLineDistanceFromPoint(fatLine, _endPoint2))];
+    FBBezierCurve *distanceBezier = [FBBezierCurve bezierCurveWithEndPoint1:CGPointMake(0, FBNormalizedLineDistanceFromPoint(fatLine, _endPoint1)) controlPoint1:CGPointMake(1.0/3.0, FBNormalizedLineDistanceFromPoint(fatLine, _controlPoint1)) controlPoint2:CGPointMake(2.0/3.0, FBNormalizedLineDistanceFromPoint(fatLine, _controlPoint2)) endPoint2:CGPointMake(1.0, FBNormalizedLineDistanceFromPoint(fatLine, _endPoint2))];
     NSArray *convexHull = [distanceBezier convexHull]; // the convex hull can be anywhere from 2 to 4 points.
     
     // Find intersections of convex hull with the fat line bounds
@@ -673,9 +677,9 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
     for (NSUInteger i = 0; i < [convexHull count]; i++) {
         // Pull out the current line on the convex hull
         NSUInteger indexOfNext = i < ([convexHull count] - 1) ? i + 1 : 0;
-        NSPoint startPoint = [[convexHull objectAtIndex:i] pointValue];
-        NSPoint endPoint = [[convexHull objectAtIndex:indexOfNext] pointValue];
-        NSPoint intersectionPoint = NSZeroPoint;
+        CGPoint startPoint = [[convexHull objectAtIndex:i] CGPointValue];
+        CGPoint endPoint = [[convexHull objectAtIndex:indexOfNext] CGPointValue];
+        CGPoint intersectionPoint = CGPointZero;
         
         // See if the segment of the convex hull intersects with the minimum fat line bounds
         if ( LineIntersectsHorizontalLine(startPoint, endPoint, bounds.minimum, &intersectionPoint) ) {
@@ -761,16 +765,16 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
 
 
 
-- (NSPoint) pointAtParameter:(CGFloat)parameter leftBezierCurve:(FBBezierCurve **)leftBezierCurve rightBezierCurve:(FBBezierCurve **)rightBezierCurve
+- (CGPoint) pointAtParameter:(CGFloat)parameter leftBezierCurve:(FBBezierCurve **)leftBezierCurve rightBezierCurve:(FBBezierCurve **)rightBezierCurve
 {    
     // This method is a simple wrapper around the BezierWithPoints() helper function. It computes the 2D point at the given parameter,
     //  and (optionally) the resulting curves that splitting at the parameter would create.
     
-    NSPoint points[4] = { _endPoint1, _controlPoint1, _controlPoint2, _endPoint2 };
-    NSPoint leftCurve[4] = {};
-    NSPoint rightCurve[4] = {};
+    CGPoint points[4] = { _endPoint1, _controlPoint1, _controlPoint2, _endPoint2 };
+    CGPoint leftCurve[4] = {};
+    CGPoint rightCurve[4] = {};
 
-    NSPoint point = BezierWithPoints(3, points, parameter, leftCurve, rightCurve);
+    CGPoint point = BezierWithPoints(3, points, parameter, leftCurve, rightCurve);
     
     if ( leftBezierCurve != nil ) {
         *leftBezierCurve = [FBBezierCurve bezierCurveWithEndPoint1:leftCurve[0] controlPoint1:leftCurve[1] controlPoint2:leftCurve[2] endPoint2:leftCurve[3]];
@@ -783,7 +787,7 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
     return point;
 }
 
-- (CGFloat) refineParameter:(CGFloat)parameter forPoint:(NSPoint)point
+- (CGFloat) refineParameter:(CGFloat)parameter forPoint:(CGPoint)point
 {
     // Use Newton's Method to refine our parameter. In general, that formula is:
     //
@@ -800,29 +804,29 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
     //  f'(parameter) = (Q(parameter) - point) * Q''(parameter) + Q'(parameter) * Q'(parameter)
     //
     
-    NSPoint bezierPoints[4] = {_endPoint1, _controlPoint1, _controlPoint2, _endPoint2};
+    CGPoint bezierPoints[4] = {_endPoint1, _controlPoint1, _controlPoint2, _endPoint2};
     
     // Compute Q(parameter)
-    NSPoint qAtParameter = BezierWithPoints(3, bezierPoints, parameter, nil, nil);
+    CGPoint qAtParameter = BezierWithPoints(3, bezierPoints, parameter, nil, nil);
     
     // Compute Q'(parameter)
-    NSPoint qPrimePoints[3] = {};
+    CGPoint qPrimePoints[3] = {};
     for (NSUInteger i = 0; i < 3; i++) {
         qPrimePoints[i].x = (bezierPoints[i + 1].x - bezierPoints[i].x) * 3.0;
         qPrimePoints[i].y = (bezierPoints[i + 1].y - bezierPoints[i].y) * 3.0;
     }
-    NSPoint qPrimeAtParameter = BezierWithPoints(2, qPrimePoints, parameter, nil, nil);
+    CGPoint qPrimeAtParameter = BezierWithPoints(2, qPrimePoints, parameter, nil, nil);
     
     // Compute Q''(parameter)
-    NSPoint qPrimePrimePoints[2] = {};
+    CGPoint qPrimePrimePoints[2] = {};
     for (NSUInteger i = 0; i < 2; i++) {
         qPrimePrimePoints[i].x = (qPrimePoints[i + 1].x - qPrimePoints[i].x) * 2.0;
         qPrimePrimePoints[i].y = (qPrimePoints[i + 1].y - qPrimePoints[i].y) * 2.0;        
     }
-    NSPoint qPrimePrimeAtParameter = BezierWithPoints(1, qPrimePrimePoints, parameter, nil, nil);
+    CGPoint qPrimePrimeAtParameter = BezierWithPoints(1, qPrimePrimePoints, parameter, nil, nil);
     
     // Compute f(parameter) and f'(parameter)
-    NSPoint qMinusPoint = FBSubtractPoint(qAtParameter, point);
+    CGPoint qMinusPoint = FBSubtractPoint(qAtParameter, point);
     CGFloat fAtParameter = FBDotMultiplyPoint(qMinusPoint, qPrimeAtParameter);
     CGFloat fPrimeAtParameter = FBDotMultiplyPoint(qMinusPoint, qPrimePrimeAtParameter) + FBDotMultiplyPoint(qPrimeAtParameter, qPrimeAtParameter);
     
@@ -861,13 +865,13 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
     //  and     http://softsurfer.com/Archive/algorithm_0109/algorithm_0109.htm
     
     // Start with all the end and control points in any order.
-    NSMutableArray *points = [NSMutableArray arrayWithObjects:[NSValue valueWithPoint:_endPoint1], [NSValue valueWithPoint:_controlPoint1], [NSValue valueWithPoint:_controlPoint2], [NSValue valueWithPoint:_endPoint2], nil];
+    NSMutableArray *points = [NSMutableArray arrayWithObjects:[NSValue valueWithCGPoint:_endPoint1], [NSValue valueWithCGPoint:_controlPoint1], [NSValue valueWithCGPoint:_controlPoint2], [NSValue valueWithCGPoint:_endPoint2], nil];
 
     // First, find the point that is on the bottom right, and move it to the first position in our array.
     NSUInteger lowestIndex = 0;
-    NSPoint lowestValue = [[points objectAtIndex:0] pointValue];
+    CGPoint lowestValue = [[points objectAtIndex:0] CGPointValue];
     for (NSUInteger i = 0; i < [points count]; i++) {
-        NSPoint point = [[points objectAtIndex:i] pointValue];
+        CGPoint point = [[points objectAtIndex:i] CGPointValue];
         if ( point.y < lowestValue.y || (FBAreValuesClose(point.y, lowestValue.y) && point.x > lowestValue.x) ) {
             lowestIndex = i;
             lowestValue = point;
@@ -879,13 +883,13 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
     //  Remember any redundant (i.e. colinear) points so we can remove them later.
     NSMutableArray *pointsToDelete = [NSMutableArray arrayWithCapacity:4];
     [points sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
-        NSPoint point1 = [obj1 pointValue];
-        NSPoint point2 = [obj2 pointValue];
+        CGPoint point1 = [obj1 CGPointValue];
+        CGPoint point2 = [obj2 CGPointValue];
         
         // Special case: Our pivot value (lowestValue, at index 0) should stay at the lowest
-        if ( NSEqualPoints(lowestValue, point1) )
+        if ( CGPointEqualToPoint(lowestValue, point1) )
             return NSOrderedAscending;
-        if ( NSEqualPoints(lowestValue, point2) )
+        if ( CGPointEqualToPoint(lowestValue, point2) )
             return NSOrderedDescending;
         
         // We don't care about the actual angle value, just their values relative to each other.
@@ -935,9 +939,9 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
     [results addObject:[points objectAtIndex:1]];
     NSUInteger i = 2;
     while ( i < [points count] ) {
-        NSPoint lastPoint = [[results lastObject] pointValue];
-        NSPoint nextToLastPoint = [[results objectAtIndex:[results count] - 2] pointValue];
-        NSPoint pointUnderConsideration = [[points objectAtIndex:i] pointValue];
+        CGPoint lastPoint = [[results lastObject] CGPointValue];
+        CGPoint nextToLastPoint = [[results objectAtIndex:[results count] - 2] CGPointValue];
+        CGPoint pointUnderConsideration = [[points objectAtIndex:i] CGPointValue];
         CGFloat area = CounterClockwiseTurn(nextToLastPoint, lastPoint, pointUnderConsideration);
         if ( area > 0.0 ) {
             // Turning left is good, so keep going
@@ -969,12 +973,12 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
         && FBArePointsCloseWithOptions(_endPoint1, _controlPoint2, FBClosenessThreshold);
 }
 
-- (NSRect) bounds
+- (CGRect) bounds
 {    
     // Start with the end points
-    NSPoint topLeft = [self pointAtParameter:0 leftBezierCurve:nil rightBezierCurve:nil];
-    NSPoint bottomRight = topLeft;
-    NSPoint lastPoint = [self pointAtParameter:1 leftBezierCurve:nil rightBezierCurve:nil];
+    CGPoint topLeft = [self pointAtParameter:0 leftBezierCurve:nil rightBezierCurve:nil];
+    CGPoint bottomRight = topLeft;
+    CGPoint lastPoint = [self pointAtParameter:1 leftBezierCurve:nil rightBezierCurve:nil];
     FBExpandBoundsByPoint(&topLeft, &bottomRight, lastPoint);
     
     // Find the roots, which should be the extremities
@@ -984,7 +988,7 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
         if ( t < 0 || t > 1 )
             continue;
         
-        NSPoint location = [self pointAtParameter:t leftBezierCurve:nil rightBezierCurve:nil];
+        CGPoint location = [self pointAtParameter:t leftBezierCurve:nil rightBezierCurve:nil];
         FBExpandBoundsByPoint(&topLeft, &bottomRight, location);
     }
     
@@ -994,18 +998,18 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
         if ( t < 0 || t > 1 )
             continue;
         
-        NSPoint location = [self pointAtParameter:t leftBezierCurve:nil rightBezierCurve:nil];
+        CGPoint location = [self pointAtParameter:t leftBezierCurve:nil rightBezierCurve:nil];
         FBExpandBoundsByPoint(&topLeft, &bottomRight, location);
     }
     
-    return NSMakeRect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
+    return CGRectMake(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
 }
 
-- (NSBezierPath *) bezierPath
+- (UIBezierPath *) bezierPath
 {
-    NSBezierPath *path = [NSBezierPath bezierPath];
+    UIBezierPath *path = [UIBezierPath bezierPath];
     [path moveToPoint:_endPoint1];
-    [path curveToPoint:_endPoint2 controlPoint1:_controlPoint1 controlPoint2:_controlPoint2];
+    [path addCurveToPoint:_endPoint2 controlPoint1:_controlPoint1 controlPoint2:_controlPoint2];
     return path;
 }
 

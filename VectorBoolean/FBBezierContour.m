@@ -14,12 +14,12 @@
 #import "FBDebug.h"
 #import "Geometry.h"
 #import "FBBezierIntersection.h"
-#import "NSBezierPath+Utilities.h"
+#import "UIBezierPath+Utilities.h"
 
 @interface FBBezierContour ()
 
 - (FBContourEdge *) startEdge;
-- (BOOL) contourAndSelfIntersectingContoursContainPoint:(NSPoint)point;
+- (BOOL) contourAndSelfIntersectingContoursContainPoint:(CGPoint)point;
 - (void) addSelfIntersectingContoursToArray:(NSMutableArray *)contours originalContour:(FBBezierContour *)originalContour;
 
 @property (readonly) NSArray *selfIntersectingContours;
@@ -65,7 +65,7 @@
     FBContourEdge *edge = [[[FBContourEdge alloc] initWithBezierCurve:curve contour:self] autorelease];
     edge.index = [_edges count];
     [_edges addObject:edge];
-    _bounds = NSZeroRect; // force the bounds to be recalculated
+    _bounds = CGRectZero; // force the bounds to be recalculated
 	[_bezPathCache release];
 	_bezPathCache = nil;
 }
@@ -116,20 +116,20 @@
     [self addReverseCurve:curve];
 }
 
-- (NSRect) bounds
+- (CGRect) bounds
 {
     // Cache the bounds to save time
-    if ( !NSEqualRects(_bounds, NSZeroRect) )
+    if ( !CGRectEqualToRect(_bounds, CGRectZero) )
         return _bounds;
     
     // If no edges, no bounds
     if ( [_edges count] == 0 )
-        return NSZeroRect;
+        return CGRectZero;
     
-    NSRect totalBounds = NSZeroRect;    
+    CGRect totalBounds = CGRectZero;    
     for (FBContourEdge *edge in _edges) {
-        NSRect bounds = edge.curve.bounds;
-        if ( NSEqualRects(totalBounds, NSZeroRect) )
+        CGRect bounds = edge.curve.bounds;
+        if ( CGRectEqualToRect(totalBounds, CGRectZero) )
             totalBounds = bounds;
         else
             totalBounds = FBUnionRect(totalBounds, bounds);
@@ -140,21 +140,21 @@
     return _bounds;
 }
 
-- (NSPoint) firstPoint
+- (CGPoint) firstPoint
 {
     if ( [_edges count] == 0 )
-        return NSZeroPoint;
+        return CGPointZero;
 
     FBContourEdge *edge = [_edges objectAtIndex:0];
     return edge.curve.endPoint1;
 }
 
-- (BOOL) containsPoint:(NSPoint)testPoint
+- (BOOL) containsPoint:(CGPoint)testPoint
 {
 	// Create a test line from our point to somewhere outside our graph. We'll see how many times the test
     //  line intersects edges of the graph. Based on the even/odd rule, if it's an odd number, we're inside
     //  the graph, if even, outside.
-    NSPoint lineEndPoint = NSMakePoint(testPoint.x > NSMinX(self.bounds) ? NSMinX(self.bounds) - 10 : NSMaxX(self.bounds) + 10, testPoint.y); /* just move us outside the bounds of the graph */
+    CGPoint lineEndPoint = CGPointMake(testPoint.x > CGRectGetMinX(self.bounds) ? CGRectGetMinX(self.bounds) - 10 : CGRectGetMaxX(self.bounds) + 10, testPoint.y); /* just move us outside the bounds of the graph */
     FBBezierCurve *testCurve = [FBBezierCurve bezierCurveWithLineStartPoint:testPoint endPoint:lineEndPoint];
     FBBezierContour *testContour = [FBBezierContour bezierContourWithCurve:testCurve];
     FBContourEdge *testEdge = [testContour.edges objectAtIndex:0];
@@ -229,7 +229,7 @@
     //  the other graph, otherwise we could mark the crossings exactly opposite of what
     //  they're supposed to be.
     FBContourEdge *startEdge = [self startEdge];
-    NSPoint startPoint = startEdge.curve.endPoint1;
+    CGPoint startPoint = startEdge.curve.endPoint1;
         
     // Calculate the first entry value. We need to determine if the edge we're starting
     //  on is inside or outside the otherContour.
@@ -253,7 +253,7 @@
     } while ( edge != startEdge );
 }
 
-- (BOOL) contourAndSelfIntersectingContoursContainPoint:(NSPoint)point
+- (BOOL) contourAndSelfIntersectingContoursContainPoint:(CGPoint)point
 {
     NSUInteger containerCount = 0;
     if ( [self containsPoint:point] )
@@ -266,10 +266,10 @@
     return (containerCount & 1) != 0;
 }
 
-- (NSBezierPath*) bezierPath		// GPC: added
+- (UIBezierPath*) bezierPath		// GPC: added
 {
 	if ( _bezPathCache == nil ) {
-		NSBezierPath* path = [NSBezierPath bezierPath];
+		UIBezierPath* path = [UIBezierPath bezierPath];
 		BOOL firstPoint = YES;        
 		
 		for ( FBContourEdge *edge in self.edges ) {
@@ -279,13 +279,13 @@
 			}
 			
 			if ( edge.curve.isStraightLine )
-				[path lineToPoint:edge.curve.endPoint2];
+				[path addLineToPoint:edge.curve.endPoint2];
 			else
-				[path curveToPoint:edge.curve.endPoint2 controlPoint1:edge.curve.controlPoint1 controlPoint2:edge.curve.controlPoint2];
+				[path addCurveToPoint:edge.curve.endPoint2 controlPoint1:edge.curve.controlPoint1 controlPoint2:edge.curve.controlPoint2];
 		}
 		
 		[path closePath];
-		[path setWindingRule:NSEvenOddWindingRule];
+        path.usesEvenOddFillRule = YES;
 		_bezPathCache = [path retain];
     }
 	
@@ -320,7 +320,7 @@
 
 - (FBContourDirection) direction
 {
-	NSPoint lastPoint = NSZeroPoint, currentPoint = NSZeroPoint;
+	CGPoint lastPoint = CGPointZero, currentPoint = CGPointZero;
 	BOOL firstPoint = YES;
 	CGFloat	a = 0.0;
 	
@@ -416,21 +416,21 @@
 {
     return [NSString stringWithFormat:@"<%@: bounds = (%f, %f)(%f, %f) edges = %@>", 
             NSStringFromClass([self class]),
-            NSMinX(self.bounds), NSMinY(self.bounds),
-            NSWidth(self.bounds), NSHeight(self.bounds),
+            CGRectGetMinX(self.bounds), CGRectGetMinY(self.bounds),
+            CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds),
             FBArrayDescription(_edges)
             ];
 }
 
 
 
-- (NSBezierPath *) debugPathForIntersectionType:(NSInteger)itersectionType
+- (UIBezierPath *) debugPathForIntersectionType:(NSInteger)itersectionType
 {
 	// returns a path consisting of small circles placed at the intersections that match <ti>
 	// this allows the internal state of a contour to be rapidly visualized so that bugs with
 	// boolean ops are easier to spot at a glance
 	
-	NSBezierPath *path = [NSBezierPath bezierPath];
+	UIBezierPath *path = [UIBezierPath bezierPath];
 	
 	for ( FBContourEdge* edge in _edges ) {
 		for ( FBEdgeCrossing* crossing in [edge crossings] ) {
@@ -450,17 +450,17 @@
 			}
 			
 			// if the crossing is flagged as "entry", show a circle, otherwise a rectangle
-			[path appendBezierPath:crossing.isEntry? [NSBezierPath circleAtPoint:crossing.location] : [NSBezierPath rectAtPoint:crossing.location]];
+			[path appendPath:crossing.isEntry? [UIBezierPath circleAtPoint:crossing.location] : [UIBezierPath rectAtPoint:crossing.location]];
 		}
 	}
 	
     // Add the start point and direction for marking
     FBContourEdge *startEdge = [self startEdge];
-    NSPoint startEdgeTangent = FBNormalizePoint(FBSubtractPoint(startEdge.curve.controlPoint1, startEdge.curve.endPoint1));
-    [path appendBezierPath:[NSBezierPath triangleAtPoint:startEdge.curve.endPoint1 direction:startEdgeTangent]];
+    CGPoint startEdgeTangent = FBNormalizePoint(FBSubtractPoint(startEdge.curve.controlPoint1, startEdge.curve.endPoint1));
+    [path appendPath:[UIBezierPath triangleAtPoint:startEdge.curve.endPoint1 direction:startEdgeTangent]];
     
 	// add the contour's entire path to make it easy to see which one owns which crossings (these can be colour-coded when drawing the paths)
-	[path appendBezierPath:[self bezierPath]];
+	[path appendPath:[self bezierPath]];
 	
 	// if this countour is flagged as "inside", the debug path is shown dashed, otherwise solid
 	if ( self.inside == FBContourInsideHole ) {

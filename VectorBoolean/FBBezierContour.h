@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 @class FBBezierCurve;
 @class FBEdgeCrossing;
@@ -30,10 +31,10 @@ FBContourDirection;
 //  can be filled or represent a hole in another contour.
 @interface FBBezierContour : NSObject<NSCopying> {
     NSMutableArray*	_edges;
-    NSRect			_bounds;
+    CGRect			_bounds;
     FBContourInside _inside;
     NSMutableArray  *_overlaps;
-	NSBezierPath*	_bezPathCache;	// GPC: added
+	UIBezierPath*	_bezPathCache;	// GPC: added
 }
 
 + (id) bezierContourWithCurve:(FBBezierCurve *)curve;
@@ -48,10 +49,10 @@ FBContourDirection;
 
 - (NSArray *) intersectionsWithRay:(FBContourEdge *)testEdge;
 - (NSUInteger) numberOfIntersectionsWithRay:(FBContourEdge *)testEdge;
-- (BOOL) containsPoint:(NSPoint)point;
+- (BOOL) containsPoint:(CGPoint)point;
 - (void) markCrossingsAsEntryOrExitWithContour:(FBBezierContour *)otherContour markInside:(BOOL)markInside;
 
-- (NSBezierPath*)		bezierPath;		// GPC: added
+- (UIBezierPath*)		bezierPath;		// GPC: added
 - (void)				close;			// GPC: added
 
 - (FBBezierContour*)	reversedContour;	// GPC: added
@@ -63,12 +64,12 @@ FBContourDirection;
 - (BOOL) isEquivalent:(FBBezierContour *)other;
 
 @property (readonly) NSArray *edges;
-@property (readonly) NSRect bounds;
-@property (readonly) NSPoint firstPoint;
+@property (readonly) CGRect bounds;
+@property (readonly) CGPoint firstPoint;
 @property FBContourInside inside;
 @property (readonly) NSArray *intersectingContours;
 
 
-- (NSBezierPath*) debugPathForIntersectionType:(NSInteger) ti;
+- (UIBezierPath*) debugPathForIntersectionType:(NSInteger) ti;
 
 @end

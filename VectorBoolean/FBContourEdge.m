@@ -162,8 +162,8 @@
     
     // Calculate the four tangents: The two tangents moving away from the intersection point on self, the two tangents
     //  moving away from the intersection point on edge2.
-    NSPoint edge1Tangents[] = { NSZeroPoint, NSZeroPoint };
-    NSPoint edge2Tangents[] = { NSZeroPoint, NSZeroPoint };
+    CGPoint edge1Tangents[] = { CGPointZero, CGPointZero };
+    CGPoint edge2Tangents[] = { CGPointZero, CGPointZero };
     if ( intersection.isAtStartOfCurve1 ) {
         FBContourEdge *otherEdge1 = self.previous;
         edge1Tangents[0] = FBSubtractPoint(otherEdge1.curve.controlPoint2, otherEdge1.curve.endPoint2);

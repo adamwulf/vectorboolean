@@ -8,7 +8,7 @@
 
 #import "FBBezierGraph.h"
 #import "FBBezierCurve.h"
-#import "NSBezierPath+Utilities.h"
+#import "UIBezierPath+Utilities.h"
 #import "FBBezierContour.h"
 #import "FBContourEdge.h"
 #import "FBBezierIntersection.h"
@@ -16,6 +16,7 @@
 #import "FBContourOverlap.h"
 #import "FBDebug.h"
 #import "Geometry.h"
+#import "DrawKit-iOS.h"
 #import <math.h>
 
 
@@ -55,9 +56,9 @@
 - (NSArray *) nonintersectingContours;
 - (BOOL) containsContour:(FBBezierContour *)contour;
 - (BOOL) eliminateContainers:(NSMutableArray *)containers thatDontContainContour:(FBBezierContour *)testContour usingRay:(FBBezierCurve *)ray;
-- (BOOL) findBoundsOfContour:(FBBezierContour *)testContour onRay:(FBBezierCurve *)ray minimum:(NSPoint *)testMinimum maximum:(NSPoint *)testMaximum;
+- (BOOL) findBoundsOfContour:(FBBezierContour *)testContour onRay:(FBBezierCurve *)ray minimum:(CGPoint *)testMinimum maximum:(CGPoint *)testMaximum;
 - (void) removeContoursThatDontContain:(NSMutableArray *)crossings;
-- (BOOL) findCrossingsOnContainers:(NSArray *)containers onRay:(FBBezierCurve *)ray beforeMinimum:(NSPoint)testMinimum afterMaximum:(NSPoint)testMaximum crossingsBefore:(NSMutableArray *)crossingsBeforeMinimum crossingsAfter:(NSMutableArray *)crossingsAfterMaximum;
+- (BOOL) findCrossingsOnContainers:(NSArray *)containers onRay:(FBBezierCurve *)ray beforeMinimum:(CGPoint)testMinimum afterMaximum:(CGPoint)testMaximum crossingsBefore:(NSMutableArray *)crossingsBeforeMinimum crossingsAfter:(NSMutableArray *)crossingsAfterMaximum;
 - (void) removeCrossings:(NSMutableArray *)crossings forContours:(NSArray *)containersToRemove;
 - (void) removeContourCrossings:(NSMutableArray *)crossings1 thatDontAppearIn:(NSMutableArray *)crossings2;
 - (NSArray *) contoursFromCrossings:(NSArray *)crossings;
@@ -66,7 +67,7 @@
 - (void) debuggingInsertCrossingsWithBezierGraph:(FBBezierGraph *)otherGraph markInside:(BOOL)markInside markOtherInside:(BOOL)markOtherInside;
 
 //@property (readonly) NSArray *contours;
-@property (readonly) NSRect bounds;
+@property (readonly) CGRect bounds;
 
 @end
 
@@ -74,7 +75,7 @@
 
 @synthesize contours=_contours;
 
-+ (id) bezierGraphWithBezierPath:(NSBezierPath *)path
++ (id) bezierGraphWithBezierPath:(UIBezierPath *)path
 {
     return [[[FBBezierGraph alloc] initWithBezierPath:path] autorelease];
 }
@@ -84,24 +85,24 @@
     return [[[FBBezierGraph alloc] init] autorelease];
 }
 
-- (id) initWithBezierPath:(NSBezierPath *)path
+- (id) initWithBezierPath:(UIBezierPath *)path
 {
     self = [super init];
     
     if ( self != nil ) {
         // A bezier graph is made up of contours, which are closed paths of curves. Anytime we
-        //  see a move to in the NSBezierPath, that's a new contour.
+        //  see a move to in the UIBezierPath, that's a new contour.
 		
-        NSPoint lastPoint = NSZeroPoint;
+        CGPoint lastPoint = CGPointZero;
 		BOOL	wasClosed = NO;
         _contours = [[NSMutableArray alloc] initWithCapacity:2];
             
         FBBezierContour *contour = nil;
         for (NSUInteger i = 0; i < [path elementCount]; i++) {
-            NSBezierElement element = [path fb_elementAtIndex:i];
+            UIBezierElement element = [path fb_elementAtIndex:i];
             
             switch (element.kind) {
-                case NSMoveToBezierPathElement:
+                case kCGPathElementMoveToPoint:
 				{
                     // if previous contour wasn't closed, close it
 					
@@ -118,9 +119,9 @@
                     break;
 				}
 					
-                case NSLineToBezierPathElement: {
+                case kCGPathElementAddLineToPoint: {
                     // [MO] skip degenerate line segments
-                    if (!NSEqualPoints(element.point, lastPoint)) {
+                    if (!CGPointEqualToPoint(element.point, lastPoint)) {
                         // Convert lines to bezier curves as well. Just set control point to be in the line formed
                         //  by the end points
                         [contour addCurve:[FBBezierCurve bezierCurveWithLineStartPoint:lastPoint endPoint:element.point]];
@@ -130,11 +131,11 @@
                     break;
                 }
                     
-                case NSCurveToBezierPathElement:
+                case kCGPathElementAddCurveToPoint:
 				{
                     // GPC: skip degenerate case where all points are equal
 					
-					if( NSEqualPoints( element.point, lastPoint ) && NSEqualPoints( element.point, element.controlPoints[0] ) && NSEqualPoints( element.point, element.controlPoints[1] ))
+					if( CGPointEqualToPoint( element.point, lastPoint ) && CGPointEqualToPoint( element.point, element.controlPoints[0] ) && CGPointEqualToPoint( element.point, element.controlPoints[1] ))
 						continue;
 
 					[contour addCurve:[FBBezierCurve bezierCurveWithEndPoint1:lastPoint controlPoint1:element.controlPoints[0] controlPoint2:element.controlPoints[1] endPoint2:element.point]];
@@ -142,25 +143,27 @@
                     lastPoint = element.point;
                     break;
 				}   
-                case NSClosePathBezierPathElement:
+                case kCGPathElementCloseSubpath:
                     // [MO] attempt to close the bezier contour by
                     // mapping closepaths to equivalent lineto operations,
-                    // though as with our NSLineToBezierPathElement processing,
+                    // though as with our kCGPathElementAddLineToPoint processing,
                     // we check so as not to add degenerate line segments which 
                     // blow up the clipping code.
                     
                     if ([[contour edges] count]) {
                         FBContourEdge *firstEdge = [[contour edges] objectAtIndex:0];
-                        NSPoint        firstPoint = [[firstEdge curve] endPoint1];
+                        CGPoint        firstPoint = [[firstEdge curve] endPoint1];
                         
                         // Skip degenerate line segments
-                        if (!NSEqualPoints(lastPoint, firstPoint))
+                        if (!CGPointEqualToPoint(lastPoint, firstPoint))
 						{
                             [contour addCurve:[FBBezierCurve bezierCurveWithLineStartPoint:lastPoint endPoint:firstPoint]];
 							wasClosed = YES;
                         }
                     }
-                    lastPoint = NSZeroPoint;
+                    lastPoint = CGPointZero;
+                    break;
+                default:
                     break;
             }
         }
@@ -501,15 +504,15 @@
     return [allParts differenceWithBezierGraph:intersectingParts];
 }
 
-- (NSBezierPath *) bezierPath
+- (UIBezierPath *) bezierPath
 {
     // Convert this graph into a bezier path. This is straightforward, each contour
     //  starting with a move to and each subsequent edge being translated by doing
     //  a curve to.
     // Be sure to mark the winding rule as even odd, or interior contours (holes)
     //  won't get filled/left alone properly.
-    NSBezierPath *path = [NSBezierPath bezierPath];
-    [path setWindingRule:NSEvenOddWindingRule];
+    UIBezierPath *path = [UIBezierPath bezierPath];
+    path.usesEvenOddFillRule = YES;
 
     for (FBBezierContour *contour in _contours) 
 	{
@@ -522,9 +525,9 @@
             }
             
 			if( edge.curve.isStraightLine)
-				[path lineToPoint:edge.curve.endPoint2];
+				[path addLineToPoint:edge.curve.endPoint2];
 			else
-				[path curveToPoint:edge.curve.endPoint2 controlPoint1:edge.curve.controlPoint1 controlPoint2:edge.curve.controlPoint2];
+				[path addCurveToPoint:edge.curve.endPoint2 controlPoint1:edge.curve.controlPoint1 controlPoint2:edge.curve.controlPoint2];
         }
 		[path closePath];	// GPC: close each contour
     }
@@ -699,8 +702,8 @@
     
     // Calculate the four tangents: The two tangents moving away from the intersection point on edge1, the two tangents
     //  moving away from the intersection point on edge2.
-    NSPoint edge1Tangents[] = { NSZeroPoint, NSZeroPoint };
-    NSPoint edge2Tangents[] = { NSZeroPoint, NSZeroPoint };
+    CGPoint edge1Tangents[] = { CGPointZero, CGPointZero };
+    CGPoint edge2Tangents[] = { CGPointZero, CGPointZero };
     if ( intersection.isAtStartOfCurve1 ) {
         FBContourEdge *otherEdge1 = edge1.previous;
         edge1Tangents[0] = FBSubtractPoint(otherEdge1.curve.controlPoint2, otherEdge1.curve.endPoint2);
@@ -750,16 +753,16 @@
     return rangeCount1 == 1 && rangeCount2 == 1;
 }
 
-- (NSRect) bounds
+- (CGRect) bounds
 {
     // Compute the bounds of the graph by unioning together the bounds of the individual contours
-    if ( !NSEqualRects(_bounds, NSZeroRect) )
+    if ( !CGRectEqualToRect(_bounds, CGRectZero) )
         return _bounds;
     if ( [_contours count] == 0 )
-        return NSZeroRect;
+        return CGRectZero;
     
     for (FBBezierContour *contour in _contours)
-        _bounds = NSUnionRect(_bounds, contour.bounds);
+        _bounds = CGRectUnion(_bounds, contour.bounds);
     
     return _bounds;
 }
@@ -774,9 +777,9 @@
     //  Otherwise it's "outside" of the graph and creates a filled region.
     
     // Create the line from the first point in the contour to outside the graph
-    NSPoint testPoint = testContour.firstPoint;
+    CGPoint testPoint = testContour.firstPoint;
 	
-    NSPoint lineEndPoint = NSMakePoint(testPoint.x > NSMinX(self.bounds) ? NSMinX(self.bounds) - 10 : NSMaxX(self.bounds) + 10, testPoint.y); /* just move us outside the bounds of the graph */
+    CGPoint lineEndPoint = CGPointMake(testPoint.x > CGRectGetMinX(self.bounds) ? CGRectGetMinX(self.bounds) - 10 : CGRectGetMaxX(self.bounds) + 10, testPoint.y); /* just move us outside the bounds of the graph */
     FBBezierCurve *testCurve = [FBBezierCurve bezierCurveWithLineStartPoint:testPoint endPoint:lineEndPoint];
     FBBezierContour *testCurveContour = [FBBezierContour bezierContourWithCurve:testCurve];
     FBContourEdge *testEdge = [testCurveContour.edges objectAtIndex:0];
@@ -807,14 +810,14 @@
     return (intersectCount & 1) == 1 ? FBContourInsideHole : FBContourInsideFilled;
 }
 
-- (NSBezierPath *) debugPathForContainmentOfContour:(FBBezierContour *)testContour
+- (UIBezierPath *) debugPathForContainmentOfContour:(FBBezierContour *)testContour
 {
-    NSBezierPath *path = [NSBezierPath bezierPath];
+    UIBezierPath *path = [UIBezierPath bezierPath];
     
     // Create the line from the first point in the contour to outside the graph
-    NSPoint testPoint = testContour.firstPoint;
+    CGPoint testPoint = testContour.firstPoint;
 	
-    NSPoint lineEndPoint = NSMakePoint(testPoint.x > NSMinX(self.bounds) ? NSMinX(self.bounds) - 10 : NSMaxX(self.bounds) + 10, testPoint.y); /* just move us outside the bounds of the graph */
+    CGPoint lineEndPoint = CGPointMake(testPoint.x > CGRectGetMinX(self.bounds) ? CGRectGetMinX(self.bounds) - 10 : CGRectGetMaxX(self.bounds) + 10, testPoint.y); /* just move us outside the bounds of the graph */
     FBBezierCurve *testCurve = [FBBezierCurve bezierCurveWithLineStartPoint:testPoint endPoint:lineEndPoint];
     FBBezierContour *testCurveContour = [FBBezierContour bezierContourWithCurve:testCurve];
     FBContourEdge *testEdge = [testCurveContour.edges objectAtIndex:0];
@@ -843,13 +846,13 @@
         // Count how many times we intersect with this particular contour
         NSArray *intersections = [contour intersectionsWithRay:testEdge];
         for (FBBezierIntersection *intersection in intersections) {
-            [path appendBezierPath:[NSBezierPath circleAtPoint:intersection.location]];
+            [path appendPath:[UIBezierPath circleAtPoint:intersection.location]];
         }
         intersectCount += [intersections count];
     }
 
     // add the contour's entire path to make it easy to see which one owns which crossings (these can be colour-coded when drawing the paths)
-	[path appendBezierPath:[testCurve bezierPath]];
+	[path appendPath:[testCurve bezierPath]];
 	
 	// if this countour is flagged as "inside", the debug path is shown dashed, otherwise solid
 	if ( (intersectCount & 1) == 1 ) {
@@ -861,20 +864,20 @@
 }
 
 
-- (NSBezierPath *) debugPathForJointsOfContour:(FBBezierContour *)testContour
+- (UIBezierPath *) debugPathForJointsOfContour:(FBBezierContour *)testContour
 {
-    NSBezierPath *path = [NSBezierPath bezierPath];
+    UIBezierPath *path = [UIBezierPath bezierPath];
 
     for (FBContourEdge *edge in testContour.edges) {
         if ( !edge.curve.isStraightLine ) {
             [path moveToPoint:edge.curve.endPoint1];
-            [path lineToPoint:edge.curve.controlPoint1];
-            [path appendBezierPath:[NSBezierPath smallCircleAtPoint:edge.curve.controlPoint1]];
+            [path addLineToPoint:edge.curve.controlPoint1];
+            [path appendPath:[UIBezierPath smallCircleAtPoint:edge.curve.controlPoint1]];
             [path moveToPoint:edge.curve.endPoint2];
-            [path lineToPoint:edge.curve.controlPoint2];
-            [path appendBezierPath:[NSBezierPath smallCircleAtPoint:edge.curve.controlPoint2]];            
+            [path addLineToPoint:edge.curve.controlPoint2];
+            [path appendPath:[UIBezierPath smallCircleAtPoint:edge.curve.controlPoint2]];            
         }
-        [path appendBezierPath:[NSBezierPath smallRectAtPoint:edge.curve.endPoint2]];
+        [path appendPath:[UIBezierPath smallRectAtPoint:edge.curve.endPoint2]];
     }    
 
     return path;
@@ -901,15 +904,15 @@
     // Each time through the loop we split the test contour into any increasing amount of pieces
     //  (halves, thirds, quarters, etc) and send a ray along the boundaries. In order to increase
     //  our changes of eliminate all but 1 of the contours, we do both horizontal and vertical rays.
-    NSUInteger count = MAX(ceil(NSWidth(testContour.bounds)), ceil(NSHeight(testContour.bounds)));
+    NSUInteger count = MAX(ceil(CGRectGetWidth(testContour.bounds)), ceil(CGRectGetHeight(testContour.bounds)));
     for (NSUInteger fraction = 2; fraction <= count; fraction++) {
         BOOL didEliminate = NO;
         
         // Send the horizontal rays through the test contour and (possibly) through parts of the graph
-        CGFloat verticalSpacing = NSHeight(testContour.bounds) / (CGFloat)fraction;
-        for (CGFloat y = NSMinY(testContour.bounds) + verticalSpacing; y < NSMaxY(testContour.bounds); y += verticalSpacing) {
+        CGFloat verticalSpacing = CGRectGetHeight(testContour.bounds) / (CGFloat)fraction;
+        for (CGFloat y = CGRectGetMinY(testContour.bounds) + verticalSpacing; y < CGRectGetMaxY(testContour.bounds); y += verticalSpacing) {
             // Construct a line that will reach outside both ends of both the test contour and graph
-            FBBezierCurve *ray = [FBBezierCurve bezierCurveWithLineStartPoint:NSMakePoint(MIN(NSMinX(self.bounds), NSMinX(testContour.bounds)) - FBRayOverlap, y) endPoint:NSMakePoint(MAX(NSMaxX(self.bounds), NSMaxX(testContour.bounds)) + FBRayOverlap, y)];
+            FBBezierCurve *ray = [FBBezierCurve bezierCurveWithLineStartPoint:CGPointMake(MIN(CGRectGetMinX(self.bounds), CGRectGetMinX(testContour.bounds)) - FBRayOverlap, y) endPoint:CGPointMake(MAX(CGRectGetMaxX(self.bounds), CGRectGetMaxX(testContour.bounds)) + FBRayOverlap, y)];
             // Eliminate any contours that aren't containers. It's possible for this method to fail, so check the return
             BOOL eliminated = [self eliminateContainers:containers thatDontContainContour:testContour usingRay:ray];
             if ( eliminated )
@@ -917,10 +920,10 @@
         }
 
         // Send the vertical rays through the test contour and (possibly) through parts of the graph
-        CGFloat horizontalSpacing = NSWidth(testContour.bounds) / (CGFloat)fraction;
-        for (CGFloat x = NSMinX(testContour.bounds) + horizontalSpacing; x < NSMaxX(testContour.bounds); x += horizontalSpacing) {
+        CGFloat horizontalSpacing = CGRectGetWidth(testContour.bounds) / (CGFloat)fraction;
+        for (CGFloat x = CGRectGetMinX(testContour.bounds) + horizontalSpacing; x < CGRectGetMaxX(testContour.bounds); x += horizontalSpacing) {
             // Construct a line that will reach outside both ends of both the test contour and graph
-            FBBezierCurve *ray = [FBBezierCurve bezierCurveWithLineStartPoint:NSMakePoint(x, MIN(NSMinY(self.bounds), NSMinY(testContour.bounds)) - FBRayOverlap) endPoint:NSMakePoint(x, MAX(NSMaxY(self.bounds), NSMaxY(testContour.bounds)) + FBRayOverlap)];
+            FBBezierCurve *ray = [FBBezierCurve bezierCurveWithLineStartPoint:CGPointMake(x, MIN(CGRectGetMinY(self.bounds), CGRectGetMinY(testContour.bounds)) - FBRayOverlap) endPoint:CGPointMake(x, MAX(CGRectGetMaxY(self.bounds), CGRectGetMaxY(testContour.bounds)) + FBRayOverlap)];
             // Eliminate any contours that aren't containers. It's possible for this method to fail, so check the return
             BOOL eliminated = [self eliminateContainers:containers thatDontContainContour:testContour usingRay:ray];
             if ( eliminated )
@@ -942,7 +945,7 @@
     return NO;
 }
 
-- (BOOL) findBoundsOfContour:(FBBezierContour *)testContour onRay:(FBBezierCurve *)ray minimum:(NSPoint *)testMinimum maximum:(NSPoint *)testMaximum
+- (BOOL) findBoundsOfContour:(FBBezierContour *)testContour onRay:(FBBezierCurve *)ray minimum:(CGPoint *)testMinimum maximum:(CGPoint *)testMaximum
 {
     // Find the bounds of test contour that lie on ray. Simply intersect the ray with test contour. For a horizontal ray, the minimum is the point
     //  with the lowest x value, the maximum with the highest x value. For a vertical ray, use the high and low y values.
@@ -976,7 +979,7 @@
     return YES;
 }
 
-- (BOOL) findCrossingsOnContainers:(NSArray *)containers onRay:(FBBezierCurve *)ray beforeMinimum:(NSPoint)testMinimum afterMaximum:(NSPoint)testMaximum crossingsBefore:(NSMutableArray *)crossingsBeforeMinimum crossingsAfter:(NSMutableArray *)crossingsAfterMaximum
+- (BOOL) findCrossingsOnContainers:(NSArray *)containers onRay:(FBBezierCurve *)ray beforeMinimum:(CGPoint)testMinimum afterMaximum:(CGPoint)testMaximum crossingsBefore:(NSMutableArray *)crossingsBeforeMinimum crossingsAfter:(NSMutableArray *)crossingsAfterMaximum
 {
     // Find intersections where the ray intersects the possible containers, before the minimum point, or after the maximum point. Store these
     //  as FBEdgeCrossings in the out parameters.
@@ -1011,7 +1014,7 @@
                 // Special case if the bounds are just a point, and this crossing is on that point. In that case
                 //  it could fall on either side, and we'll need to do some special processing on it later. For now,
                 //  remember it, and move on to the next intersection.
-                if ( NSEqualPoints(testMaximum, testMinimum) && NSEqualPoints(testMaximum, intersection.location) ) {
+                if ( CGPointEqualToPoint(testMaximum, testMinimum) && CGPointEqualToPoint(testMaximum, intersection.location) ) {
                     [ambiguousCrossings addObject:crossing];
                     continue;
                 }
@@ -1060,8 +1063,8 @@
     // This method attempts to eliminate all or all but one of the containers that might contain test contour, using the ray specified.
     
     // First determine the exterior bounds of testContour on the given ray
-    NSPoint testMinimum = NSZeroPoint;
-    NSPoint testMaximum = NSZeroPoint;    
+    CGPoint testMinimum = CGPointZero;
+    CGPoint testMaximum = CGPointZero;    
     BOOL foundBounds = [self findBoundsOfContour:testContour onRay:ray minimum:&testMinimum maximum:&testMaximum];
     if ( !foundBounds)
         return NO;
@@ -1277,7 +1280,7 @@
 {
     // Add a contour to ouselves, and force the bounds to be recalculated
     [_contours addObject:contour];
-    _bounds = NSZeroRect;
+    _bounds = CGRectZero;
 }
 
 - (NSArray *) nonintersectingContours
@@ -1349,8 +1352,8 @@
 {
     return [NSString stringWithFormat:@"<%@: bounds = (%f, %f)(%f, %f) contours = %@>", 
             NSStringFromClass([self class]), 
-            NSMinX(self.bounds), NSMinY(self.bounds),
-            NSWidth(self.bounds), NSHeight(self.bounds),
+            CGRectGetMinX(self.bounds), CGRectGetMinY(self.bounds),
+            CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds),
             FBArrayDescription(_contours)];
 }
 

@@ -42,7 +42,7 @@
 
 @end
 
-static NSPoint FBComputeTangentFromRightOffset(FBBezierCurve *curve, CGFloat offset)
+static CGPoint FBComputeTangentFromRightOffset(FBBezierCurve *curve, CGFloat offset)
 {
     if ( offset == 0.0 )
         return FBSubtractPoint(curve.controlPoint2, curve.endPoint2);
@@ -52,7 +52,7 @@ static NSPoint FBComputeTangentFromRightOffset(FBBezierCurve *curve, CGFloat off
     return FBSubtractPoint(leftCurve.controlPoint2, leftCurve.endPoint2);
 }
 
-static NSPoint FBComputeTangentFromLeftOffset(FBBezierCurve *curve, CGFloat offset)
+static CGPoint FBComputeTangentFromLeftOffset(FBBezierCurve *curve, CGFloat offset)
 {
     if ( offset == 0.0 )
         return FBSubtractPoint(curve.controlPoint1, curve.endPoint1);
@@ -62,7 +62,7 @@ static NSPoint FBComputeTangentFromLeftOffset(FBBezierCurve *curve, CGFloat offs
     return FBSubtractPoint(rightCurve.controlPoint1, rightCurve.endPoint1);
 }
 
-static void FBComputeEdge1Tangents(FBEdgeOverlap *firstOverlap, FBEdgeOverlap *lastOverlap, CGFloat offset, NSPoint edge1Tangents[2])
+static void FBComputeEdge1Tangents(FBEdgeOverlap *firstOverlap, FBEdgeOverlap *lastOverlap, CGFloat offset, CGPoint edge1Tangents[2])
 {
     // edge1Tangents are firstOverlap.range1.minimum going to previous and lastOverlap.range1.maximum going to next
     if ( firstOverlap.range.isAtStartOfCurve1 ) {
@@ -77,7 +77,7 @@ static void FBComputeEdge1Tangents(FBEdgeOverlap *firstOverlap, FBEdgeOverlap *l
         edge1Tangents[1] = FBComputeTangentFromLeftOffset(lastOverlap.range.curve1RightBezier, offset);
 }
 
-static void FBComputeEdge2Tangents(FBEdgeOverlap *firstOverlap, FBEdgeOverlap *lastOverlap, CGFloat offset, NSPoint edge2Tangents[2])
+static void FBComputeEdge2Tangents(FBEdgeOverlap *firstOverlap, FBEdgeOverlap *lastOverlap, CGFloat offset, CGPoint edge2Tangents[2])
 {
     // edge2Tangents are firstOverlap.range2.minimum going to previous and lastOverlap.range2.maximum going to next
     //  unless reversed, then
@@ -107,12 +107,11 @@ static void FBComputeEdge2Tangents(FBEdgeOverlap *firstOverlap, FBEdgeOverlap *l
     }
 }
 
-static BOOL FBAreTangentsAmbigious(NSPoint edge1Tangents[2], NSPoint edge2Tangents[2])
+static BOOL FBAreTangentsAmbigious(CGPoint edge1Tangents[2], CGPoint edge2Tangents[2])
 {
-    NSPoint normalEdge1[2] = { FBNormalizePoint(edge1Tangents[0]), FBNormalizePoint(edge1Tangents[1]) };
-    NSPoint normalEdge2[2] = { FBNormalizePoint(edge2Tangents[0]), FBNormalizePoint(edge2Tangents[1]) };
-    
-    return NSEqualPoints(normalEdge1[0], normalEdge2[0]) || NSEqualPoints(normalEdge1[0], normalEdge2[1]) || NSEqualPoints(normalEdge1[1], normalEdge2[0]) || NSEqualPoints(normalEdge1[1], normalEdge2[1]);
+    CGPoint normalEdge1[2] = { FBNormalizePoint(edge1Tangents[0]), FBNormalizePoint(edge1Tangents[1]) };
+    CGPoint normalEdge2[2] = { FBNormalizePoint(edge2Tangents[0]), FBNormalizePoint(edge2Tangents[1]) };
+    return CGPointEqualToPoint(normalEdge1[0], normalEdge2[0]) || CGPointEqualToPoint(normalEdge1[0], normalEdge2[1]) || CGPointEqualToPoint(normalEdge1[1], normalEdge2[0]) || CGPointEqualToPoint(normalEdge1[1], normalEdge2[1]);
 }
 
 @implementation FBContourOverlap
@@ -280,8 +279,8 @@ static BOOL FBAreTangentsAmbigious(NSPoint edge1Tangents[2], NSPoint edge2Tangen
     FBEdgeOverlap *firstOverlap = [_overlaps objectAtIndex:0];
     FBEdgeOverlap *lastOverlap = [_overlaps lastObject];
 
-    NSPoint edge1Tangents[] = { NSZeroPoint, NSZeroPoint };
-    NSPoint edge2Tangents[] = { NSZeroPoint, NSZeroPoint };
+    CGPoint edge1Tangents[] = { CGPointZero, CGPointZero };
+    CGPoint edge2Tangents[] = { CGPointZero, CGPointZero };
     CGFloat offset = 0.0;
     
     do {

@@ -1,49 +1,49 @@
 //
-//  NSBezierPath+Boolean.m
+//  UIBezierPath+Boolean.m
 //  VectorBoolean
 //
 //  Created by Andrew Finnell on 5/31/11.
 //  Copyright 2011 Fortunate Bear, LLC. All rights reserved.
 //
 
-#import "NSBezierPath+Boolean.h"
-#import "NSBezierPath+Utilities.h"
+#import "UIBezierPath+Boolean.h"
+#import "UIBezierPath+Utilities.h"
 #import "FBBezierGraph.h"
 
-@implementation NSBezierPath (Boolean)
+@implementation UIBezierPath (Boolean)
 
-- (NSBezierPath *) fb_union:(NSBezierPath *)path
+- (UIBezierPath *) fb_union:(UIBezierPath *)path
 {
     FBBezierGraph *thisGraph = [FBBezierGraph bezierGraphWithBezierPath:self];
     FBBezierGraph *otherGraph = [FBBezierGraph bezierGraphWithBezierPath:path];
-    NSBezierPath *result = [[thisGraph unionWithBezierGraph:otherGraph] bezierPath];
+    UIBezierPath *result = [[thisGraph unionWithBezierGraph:otherGraph] bezierPath];
     [result fb_copyAttributesFrom:self];
     return result;
 }
 
-- (NSBezierPath *) fb_intersect:(NSBezierPath *)path
+- (UIBezierPath *) fb_intersect:(UIBezierPath *)path
 {
     FBBezierGraph *thisGraph = [FBBezierGraph bezierGraphWithBezierPath:self];
     FBBezierGraph *otherGraph = [FBBezierGraph bezierGraphWithBezierPath:path];
-    NSBezierPath *result = [[thisGraph intersectWithBezierGraph:otherGraph] bezierPath];
+    UIBezierPath *result = [[thisGraph intersectWithBezierGraph:otherGraph] bezierPath];
     [result fb_copyAttributesFrom:self];
     return result;
 }
 
-- (NSBezierPath *) fb_difference:(NSBezierPath *)path
+- (UIBezierPath *) fb_difference:(UIBezierPath *)path
 {
     FBBezierGraph *thisGraph = [FBBezierGraph bezierGraphWithBezierPath:self];
     FBBezierGraph *otherGraph = [FBBezierGraph bezierGraphWithBezierPath:path];
-    NSBezierPath *result = [[thisGraph differenceWithBezierGraph:otherGraph] bezierPath];
+    UIBezierPath *result = [[thisGraph differenceWithBezierGraph:otherGraph] bezierPath];
     [result fb_copyAttributesFrom:self];
     return result;
 }
 
-- (NSBezierPath *) fb_xor:(NSBezierPath *)path
+- (UIBezierPath *) fb_xor:(UIBezierPath *)path
 {
     FBBezierGraph *thisGraph = [FBBezierGraph bezierGraphWithBezierPath:self];
     FBBezierGraph *otherGraph = [FBBezierGraph bezierGraphWithBezierPath:path];
-    NSBezierPath *result = [[thisGraph xorWithBezierGraph:otherGraph] bezierPath];
+    UIBezierPath *result = [[thisGraph xorWithBezierGraph:otherGraph] bezierPath];
     [result fb_copyAttributesFrom:self];
     return result;
 }
