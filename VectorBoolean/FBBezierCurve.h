@@ -42,6 +42,7 @@
 - (CGPoint) pointAtParameter:(CGFloat)parameter leftBezierCurve:(FBBezierCurve **)leftBezierCurve rightBezierCurve:(FBBezierCurve **)rightBezierCurve;
 - (FBBezierCurve *) subcurveWithRange:(FBRange)range;
 - (NSArray *) splitSubcurvesWithRange:(FBRange)range;
+- (NSArray *) splitCurveAtParameter:(CGFloat)parameter;
 
 - (CGFloat) lengthAtParameter:(CGFloat)parameter;
 - (CGFloat) length;
