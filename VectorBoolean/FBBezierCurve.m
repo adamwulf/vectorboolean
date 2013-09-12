@@ -377,6 +377,13 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
     return [self intersectionsWithBezierCurve:curve usRange:&usRange themRange:&themRange originalUs:self originalThem:curve overlapRange:intersectRange depth:0];
 }
 
+-(BOOL) rect:(CGRect)rect isNear:(CGPoint)point{
+    return point.x + 10 > rect.origin.x &&
+    point.x - 10 < rect.origin.x + rect.size.width &&
+    point.y + 10 > rect.origin.y &&
+    point.y - 10 < rect.origin.y + rect.size.height;
+}
+
 - (NSArray *) intersectionsWithBezierCurve:(FBBezierCurve *)curve usRange:(FBRange *)usRange themRange:(FBRange *)themRange originalUs:(FBBezierCurve *)originalUs originalThem:(FBBezierCurve *)originalThem overlapRange:(FBBezierIntersectRange **)intersectRange depth:(NSUInteger)depth
 {
     // This is the main work loop. At a high level this method sits in a loop and removes sections (ranges) of the two bezier curves that it knows
@@ -412,16 +419,17 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
         us = [nonpointUs bezierClipWithBezierCurve:nonpointThem original:originalUs rangeOfOriginal:usRange intersects:&intersects];
         if ( !intersects )
             return [NSArray array]; // If they don't intersect at all stop now
-        if ( iterations > 0 && (us.isPoint || them.isPoint) )
+        if (us.isPoint || them.isPoint)
             break;
         
         // Remove the range of them that doesn't intersect with us
         if ( !us.isPoint )
             nonpointUs = us;
         them = [nonpointThem bezierClipWithBezierCurve:nonpointUs original:originalThem rangeOfOriginal:themRange intersects:&intersects];
+        
         if ( !intersects )
             return [NSArray array];  // If they don't intersect at all stop now
-        if ( iterations > 0 && (us.isPoint || them.isPoint) )
+        if (us.isPoint || them.isPoint)
             break;
         
         // See if either of curves ranges is reduced by less than 20%.
@@ -559,6 +567,7 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
     return [NSArray arrayWithObject:[FBBezierIntersection intersectionWithCurve1:originalUs parameter1:FBRangeAverage(*usRange) curve2:originalThem parameter2:FBRangeAverage(*themRange)]];
 }
 
+
 - (FBBezierCurve *) bezierClipWithBezierCurve:(FBBezierCurve *)curve original:(FBBezierCurve *)originalCurve rangeOfOriginal:(FBRange *)originalRange intersects:(BOOL *)intersects
 {
     // This method does the clipping of self. It removes the parts of self that we can determine don't intersect
@@ -580,6 +589,8 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
     //  with the other curve
     FBRange fatLineBounds = {};
     FBNormalizedLine fatLine = [curve regularFatLineBounds:&fatLineBounds];
+    
+    
     FBRange regularClippedRange = [self clipWithFatLine:fatLine bounds:fatLineBounds];
     // A range of [1, 0] is a special sentinel value meaning "they don't intersect". If they don't, bail early to save time
     if ( regularClippedRange.minimum == 1.0 && regularClippedRange.maximum == 0.0 ) {
@@ -597,8 +608,8 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
     }
     
     // Combine to form Voltron. Take the intersection of the regular fat line range and the perpendicular one.
-    FBRange clippedRange = FBRangeMake(MAX(regularClippedRange.minimum, perpendicularClippedRange.minimum), MIN(regularClippedRange.maximum, perpendicularClippedRange.maximum));    
-            
+    FBRange clippedRange = FBRangeMake(MAX(regularClippedRange.minimum, perpendicularClippedRange.minimum), MIN(regularClippedRange.maximum, perpendicularClippedRange.maximum));
+    
     // Right now the clipped range is relative to ourself, not the original curve. So map the newly clipped range onto the original range
     FBRange newRange = FBRangeMake(FBRangeScaleNormalizedValue(*originalRange, clippedRange.minimum), FBRangeScaleNormalizedValue(*originalRange, clippedRange.maximum));    
     *originalRange = newRange;
@@ -966,7 +977,7 @@ static CGFloat FBGaussQuadratureComputeCurveLengthForCubic(CGFloat z, NSUInteger
 {
     // If the two end points are close together, then we're a point. Ignore the control
     //  points.
-    static const CGFloat FBClosenessThreshold = 1e-3;
+    static const CGFloat FBClosenessThreshold = 1e-5;
     
     return FBArePointsCloseWithOptions(_endPoint1, _endPoint2, FBClosenessThreshold) 
         && FBArePointsCloseWithOptions(_endPoint1, _controlPoint1, FBClosenessThreshold) 
