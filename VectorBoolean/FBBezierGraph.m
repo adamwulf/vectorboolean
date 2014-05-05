@@ -16,7 +16,6 @@
 #import "FBContourOverlap.h"
 #import "FBDebug.h"
 #import "Geometry.h"
-#import "DrawKit-iOS.h"
 #import <math.h>
 
 

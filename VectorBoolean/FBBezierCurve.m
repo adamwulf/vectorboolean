@@ -11,7 +11,6 @@
 #import "Geometry.h"
 #import "FBBezierIntersection.h"
 #import "FBBezierIntersectRange.h"
-#import "DrawKit-iOS.h"
 
 //////////////////////////////////////////////////////////////////////////////////
 // Normalized lines

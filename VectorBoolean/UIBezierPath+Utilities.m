@@ -8,7 +8,6 @@
 
 #import "UIBezierPath+Utilities.h"
 #import "Geometry.h"
-#import "DrawKit-iOS.h"
 
 static const CGFloat FBDebugPointSize = 10.0;
 static const CGFloat FBDebugSmallPointSize = 3.0;
